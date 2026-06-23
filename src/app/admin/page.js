@@ -1,40 +1,37 @@
 import { getServiceSupabase } from "@/lib/supabase";
+import AdminDashboardClient from "@/components/AdminDashboardClient";
 
-export default async function AdminDashboard() {
+export const revalidate = 0; // Don't cache admin page
+
+export default async function AdminPage() {
   const supabase = getServiceSupabase();
-  
-  // Basic stats
-  const { count: userCount } = await supabase.from('User').select('*', { count: 'exact', head: true });
-  const { count: episodeCount } = await supabase.from('Episode').select('*', { count: 'exact', head: true });
-  const { count: roastCount } = await supabase.from('Roast').select('*', { count: 'exact', head: true });
+
+  // Fetch episodes
+  const { data: episodes } = await supabase
+    .from("Episode")
+    .select("*, ContestantEpisodeAppearance(id)")
+    .order("season_number", { ascending: false })
+    .order("episode_number", { ascending: false });
+
+  // Fetch held roasts
+  const { data: heldRoasts } = await supabase
+    .from("Roast")
+    .select("*, User(username), Contestant(name)")
+    .eq("moderation_status", "HELD")
+    .order("created_at", { ascending: false });
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-black">Platform Overview</h1>
-        <p className="text-neutral-400 mt-2">V1 operational status.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Registered Users" value={userCount || 0} />
-        <StatCard title="Episodes Tracked" value={episodeCount || 0} />
-        <StatCard title="Total Roasts" value={roastCount || 0} />
-      </div>
+    <div className="space-y-12">
       
-      {/* Moderation Queue Alert Placeholder */}
-      <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
-        <h2 className="text-xl font-bold mb-4">Pending Moderation</h2>
-        <p className="text-neutral-400 text-sm">Queue is empty. The internet is surprisingly well-behaved today.</p>
+      <div className="border-b-4 border-brand-black pb-4">
+        <h2 className="text-5xl font-display font-black uppercase tracking-tighter text-brand-black">The Switchboard</h2>
+        <p className="text-brand-black/60 font-medium mt-2 max-w-2xl">
+          Control the flow of the show. Advance episodes from UPCOMING to LIVE to REVEALED. Add contestants and drop the hammer on bad roasts.
+        </p>
       </div>
-    </div>
-  );
-}
 
-function StatCard({ title, value }) {
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
-      <div className="text-sm font-bold uppercase tracking-wider text-neutral-500 mb-2">{title}</div>
-      <div className="text-4xl font-black text-white">{value}</div>
+      <AdminDashboardClient initialEpisodes={episodes || []} initialRoasts={heldRoasts || []} />
+
     </div>
   );
 }

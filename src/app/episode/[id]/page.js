@@ -1,20 +1,30 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import ContestantCard from "@/components/ContestantCard";
 import RevelationSequence, { RevelationItem } from "@/components/RevelationSequence";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const revalidate = 60; // ISR cache 60 seconds
 
 export default async function EpisodePage({ params }) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
   const supabase = getServiceSupabase();
   
   const { data: episode, error } = await supabase
     .from("Episode")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error || !episode) {
-    return <div className="p-12 text-center text-red-500 font-bold">Episode not found.</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 selection:bg-broadcast-red/30">
+        <div className="border-4 border-brand-black p-12 text-center shadow-[16px_16px_0px_0px_#0A0A0A] bg-white">
+          <div className="text-4xl font-display font-black uppercase text-brand-black">Episode not found.</div>
+        </div>
+      </div>
+    );
   }
 
   const { data: appearances } = await supabase
@@ -25,9 +35,6 @@ export default async function EpisodePage({ params }) {
     `)
     .eq("episode_id", episode.id);
 
-  // Sort logic based on status
-  // If revealed, sort by latent_score ascending (worst first)
-  // Else sort by created_at or ID
   const sortedAppearances = appearances?.sort((a, b) => {
     if (episode.status === "REVEALED" || episode.status === "ARCHIVED") {
       return (a.latent_score || 0) - (b.latent_score || 0);
@@ -36,57 +43,60 @@ export default async function EpisodePage({ params }) {
   }) || [];
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30">
+    <div className="min-h-screen bg-brand-white text-brand-black selection:bg-broadcast-red/30">
       
-      {/* Sticky Episode Header */}
-      <div className="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800 p-4 sm:p-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Sticky Brutalist Header */}
+      <div className="sticky top-16 z-40 bg-white border-b-4 border-brand-black p-4 sm:p-6 shadow-[0px_4px_0px_0px_#0A0A0A]">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-xl sm:text-2xl font-black">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
-              <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded border ${
-                episode.status === 'LIVE' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                episode.status === 'UPCOMING' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
-                'bg-rose-500/10 text-rose-500 border-rose-500/20'
+              <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight uppercase">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
+              <span className={`px-2 py-1 text-[10px] sm:text-xs font-display font-black uppercase tracking-widest border-2 ${
+                episode.status === 'LIVE' ? 'bg-broadcast-red text-white border-broadcast-red animate-pulse-fast' : 
+                episode.status === 'UPCOMING' ? 'bg-brand-gray text-brand-black/50 border-brand-black/20' :
+                'bg-brand-black text-white border-brand-black'
               }`}>
                 {episode.status}
               </span>
             </div>
-            <div className="text-sm text-neutral-500">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
+            <div className="text-sm font-mono font-bold text-brand-black/50">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
           </div>
           
           {episode.status === "LIVE" && (
-            <div className="flex items-center gap-2 text-rose-500 font-bold text-sm bg-rose-500/10 px-4 py-2 rounded-lg border border-rose-500/20">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            <div className="flex items-center gap-3 bg-broadcast-red text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 border-2 border-brand-black shadow-[4px_4px_0px_0px_#0A0A0A]">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast"></span>
               Voting Window Open
             </div>
           )}
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-8 mt-4">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-12 space-y-12">
         
         {episode.admin_note && (
-          <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl text-neutral-300 italic">
-            "{episode.admin_note}"
+          <div className="bg-brand-black text-white p-6 border-4 border-brand-black shadow-[8px_8px_0px_0px_#E53935] font-mono font-bold">
+            <span className="text-broadcast-red block mb-2 uppercase tracking-widest text-xs font-display">System Broadcast:</span>
+            {episode.admin_note}
           </div>
         )}
 
         {/* Prediction Banner for Upcoming */}
         {episode.status === "UPCOMING" && (
-          <div className="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 p-6 sm:p-8 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="bg-white border-4 border-brand-black p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[12px_12px_0px_0px_#0A0A0A]">
             <div>
-              <h2 className="text-xl font-bold mb-2">The Oracle Board is open</h2>
-              <p className="text-neutral-400 text-sm">Lock in your predictions for Top, Bottom, and Alignment before air time. Once it starts, your calls are permanent.</p>
+              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-brand-black mb-2">The Oracle Board is open</h2>
+              <p className="text-brand-black/70 font-medium">Lock in your predictions for Top, Bottom, and Alignment before air time. Once it starts, your calls are permanent.</p>
             </div>
-            <button className="shrink-0 bg-white text-black hover:bg-neutral-200 px-6 py-3 rounded-lg font-bold transition-colors">
+            <button className="shrink-0 bg-brand-black text-white hover:bg-broadcast-red hover:text-white border-4 border-brand-black px-8 py-4 font-display font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_#0A0A0A]">
               Make Predictions
             </button>
           </div>
         )}
 
-        <div className="space-y-6">
-          <h2 className="text-lg font-black tracking-widest text-neutral-500 uppercase">The Lineup</h2>
+        <div className="space-y-8">
+          <h2 className="text-4xl font-display font-black tracking-tighter uppercase text-brand-black border-b-4 border-brand-black pb-2">
+            The Lineup
+          </h2>
           
           <RevelationSequence isRevealed={episode.status === "REVEALED" || episode.status === "ARCHIVED"}>
             {sortedAppearances.map((app) => (
@@ -101,7 +111,7 @@ export default async function EpisodePage({ params }) {
           </RevelationSequence>
 
           {sortedAppearances.length === 0 && (
-            <div className="text-center py-12 text-neutral-600 italic border border-dashed border-neutral-800 rounded-2xl">
+            <div className="text-center py-24 bg-brand-gray text-brand-black/50 font-display font-black uppercase tracking-widest text-2xl border-4 border-brand-black/10 border-dashed">
               No contestants have been added to this episode yet.
             </div>
           )}

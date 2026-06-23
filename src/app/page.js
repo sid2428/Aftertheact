@@ -1,6 +1,7 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HeroStagger, HeroItem } from "@/components/HomeClientWrapper";
+import DivergenceSeismograph from "@/components/DivergenceSeismograph";
 
 export const revalidate = 60;
 
@@ -54,11 +55,15 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Episodes Feed - Scrolled down */}
-      <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-12 sm:mt-24 mb-32 space-y-8">
-        <div className="flex justify-between items-end border-b-4 border-brand-black pb-2">
-          <h2 className="text-3xl font-display font-black uppercase tracking-widest text-brand-black">Episode Directory</h2>
-        </div>
+      {/* Divergence Seismograph & Episodes Feed - Scrolled down */}
+      <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-12 sm:mt-24 mb-32 space-y-16">
+        
+        <DivergenceSeismograph divergenceValue={2.45} history={[0.5, 1.2, -0.8, 2.1, 3.5, 1.8, 0.2, -1.5, 2.45]} />
+
+        <div className="space-y-8">
+          <div className="flex justify-between items-end border-b-4 border-brand-black pb-2">
+            <h2 className="text-3xl font-display font-black uppercase tracking-widest text-brand-black">Episode Directory</h2>
+          </div>
         
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {episodes && episodes.map(ep => (
@@ -96,6 +101,7 @@ export default async function Home() {
               No episodes logged. The acts are still preparing their sob stories. 🎻😭
             </div>
           )}
+        </div>
         </div>
       </section>
 

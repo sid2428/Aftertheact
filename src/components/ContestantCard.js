@@ -1,5 +1,7 @@
 import LiveVoting from "./LiveVoting";
 import { cn } from "@/lib/utils";
+import ControversyBadge from "./ControversyBadge";
+import SplitFlapScoreboard from "./SplitFlapScoreboard";
 
 export default function ContestantCard({ contestant, appearance, episodeStatus }) {
   const isVotingLive = episodeStatus === "LIVE";
@@ -52,26 +54,11 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
 
         {isRevealed && (
           <div className="space-y-6 mt-2">
-            <div className="grid grid-cols-3 gap-0 border-4 border-brand-black divide-x-4 divide-brand-black text-center bg-white">
-              <div className="p-3">
-                <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-brand-black/50 mb-1">Peoples Verdict</div>
-                <div className="text-2xl sm:text-3xl font-mono font-black">{appearance.peoples_verdict_weighted?.toFixed(1) || "0.0"}</div>
-              </div>
-              <div className="p-3">
-                <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-brand-black/50 mb-1">Judge Avg</div>
-                <div className="text-2xl sm:text-3xl font-mono font-black">{appearance.judge_average?.toFixed(1) || "0.0"}</div>
-              </div>
-              <div className="p-3 bg-brand-black text-white">
-                <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-broadcast-red mb-1">Latent Score</div>
-                <div className="text-3xl sm:text-4xl font-mono font-black text-broadcast-red">{appearance.latent_score?.toFixed(1) || "0.0"}</div>
-              </div>
-            </div>
+            <SplitFlapScoreboard appearance={appearance} />
 
             {/* Controversy Flag */}
             {appearance.controversy_flag && (
-              <div className="bg-controversy-orange text-white font-display font-black uppercase tracking-widest p-2 text-center text-sm border-4 border-brand-black">
-                Controversy Detected (Delta &gt; 3.0)
-              </div>
+              <ControversyBadge />
             )}
 
             {/* Roast Section Teaser */}

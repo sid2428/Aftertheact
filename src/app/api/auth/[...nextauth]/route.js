@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { getServiceSupabase } from '@/lib/supabase';
 import crypto from 'crypto';
 
@@ -9,9 +10,33 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    CredentialsProvider({
+      name: 'Admin Panel',
+      credentials: {
+        username: { label: "Username", type: "text", placeholder: "admin" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (
+          credentials.username === process.env.ADMIN_USERNAME &&
+          credentials.password === process.env.ADMIN_PASSWORD
+        ) {
+          return { id: "admin-master", name: "Showrunner", email: "admin@aftertheact.com", isAdmin: true };
+        }
+        return null;
+      }
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      if (account?.provider === 'credentials') {
+        // Admin credentials bypass DB entirely
+        user.dbId = user.id;
+        user.username = user.name;
+        user.isAdmin = true;
+        return true;
+      }
+
       if (!user.email) return false;
       
       const supabase = getServiceSupabase();
@@ -19,7 +44,7 @@ export const authOptions = {
       // Check if user exists in our database
       const { data: existingUser, error: checkError } = await supabase
         .from('User')
-        .select('id, username')
+        .select('id, username, is_admin')
         .eq('email', user.email)
         .single();
         
@@ -42,7 +67,7 @@ export const authOptions = {
             avatar_url: user.image || null,
             google_id: account.provider === 'google' ? account.providerAccountId : null,
           })
-          .select('id')
+          .select('id, is_admin')
           .single();
           
         if (insertError) {
@@ -52,9 +77,11 @@ export const authOptions = {
         
         user.dbId = newUser.id;
         user.username = tempUsername;
+        user.isAdmin = newUser.is_admin || false;
       } else {
         user.dbId = existingUser.id;
         user.username = existingUser.username;
+        user.isAdmin = existingUser.is_admin || false;
       }
       
       return true;
@@ -63,6 +90,7 @@ export const authOptions = {
       if (user) {
         token.dbId = user.dbId;
         token.username = user.username;
+        token.isAdmin = user.isAdmin;
       }
       // Handle username updates from client
       if (trigger === "update" && session?.username) {
@@ -74,6 +102,7 @@ export const authOptions = {
       if (session?.user) {
         session.user.id = token.dbId;
         session.user.username = token.username;
+        session.user.isAdmin = token.isAdmin;
       }
       return session;
     },

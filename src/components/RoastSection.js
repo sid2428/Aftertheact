@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitRoast, upvoteRoast } from "@/app/actions/roasts";
+import RoastOfTheNightBadge from "./RoastOfTheNightBadge";
 
 export default function RoastSection({ episodeId, contestantId, roasts, isArchived }) {
   const [content, setContent] = useState("");
@@ -81,7 +82,7 @@ export default function RoastSection({ episodeId, contestantId, roasts, isArchiv
             <div className="flex justify-between items-start mb-3 border-b-2 border-brand-black/10 pb-3">
               <div className="flex items-center gap-2">
                 <span className="font-display font-black text-lg uppercase tracking-tight text-brand-black">{roast.User?.username || "Unknown"}</span>
-                {roast.is_pinned && <span className="text-[10px] font-display font-black uppercase tracking-widest text-white bg-broadcast-red px-2 py-1 shadow-[2px_2px_0px_0px_rgba(10,10,10,1)]">Roast of the night</span>}
+                {roast.is_pinned && <RoastOfTheNightBadge />}
               </div>
               <button 
                 onClick={() => handleUpvote(roast.id)}

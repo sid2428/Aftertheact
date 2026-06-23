@@ -4,7 +4,7 @@ import { redis } from "@/lib/upstash";
 export const dynamic = 'force-dynamic';
 
 export async function GET(req, { params }) {
-  const episodeId = params.id;
+  const { id: episodeId } = await params;
   
   const encoder = new TextEncoder();
   
