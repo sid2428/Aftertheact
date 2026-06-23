@@ -5,30 +5,31 @@
   --font-display: var(--font-oswald);
   --font-mono: var(--font-jetbrains-mono);
   
-  --color-broadcast-red: #E53935;
-  --color-broadcast-dark: #B71C1C;
+  /* Brand Accents */
+  --color-latent-gold: #D4AF37;
+  --color-latent-gold-light: #F5D97B;
+  --color-latent-crimson: #8B1E2D;
   
-  --color-controversy-orange: #FF9800;
-  --color-controversy-dark: #F57C00;
-  
-  --color-oracle-green: #4CAF50;
-  --color-oracle-gold: #FFD700;
-  
-  --color-brand-black: #0A0A0A;
-  --color-brand-white: #F9FAFB;
-  --color-brand-gray: #E5E7EB;
+  /* Dark Luxury Base */
+  --color-brand-bg: #0A0A0A;
+  --color-brand-panel: #111111;
+  --color-brand-elevated: #161616;
+  --color-brand-border: rgba(255, 255, 255, 0.08);
+
+  /* Legacy aliases to prevent breaking immediately, but redefining them dark */
+  --color-brand-black: #0A0A0A; 
+  --color-brand-white: #FFFFFF;
+  --color-brand-gray: #111111;
+  --color-broadcast-red: #8B1E2D;
+  --color-broadcast-dark: #63121E;
 
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  /* Custom utility variables for gradients */
+  --background-image-gold-gradient: linear-gradient(135deg, #F5D97B 0%, #D4AF37 50%, #B8860B 100%);
 }
 
-/* Light-first Broadcast Scoreboard Theme */
 :root {
-  --foreground-rgb: 10, 10, 10;
-  --background-start-rgb: 249, 250, 251; /* brand-white */
-  --background-end-rgb: 243, 244, 246;
-}
-
-.dark {
   --foreground-rgb: 249, 250, 251;
   --background-start-rgb: 10, 10, 10;
   --background-end-rgb: 10, 10, 10;
@@ -36,11 +37,23 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  background: var(--color-brand-bg);
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .text-gradient-gold {
+    background: var(--background-image-gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass-panel {
+    background: rgba(17, 17, 17, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-brand-border);
   }
 }

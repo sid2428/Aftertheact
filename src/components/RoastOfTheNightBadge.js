@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 
 export default function RoastOfTheNightBadge() {
   useEffect(() => {
-    // Fire brutalist-colored confetti on mount
+    // Fire cinematic confetti on mount
     const end = Date.now() + 1000;
 
     const frame = () => {
@@ -14,14 +14,14 @@ export default function RoastOfTheNightBadge() {
         angle: 60,
         spread: 55,
         origin: { x: 0, y: 0.8 },
-        colors: ['#E53935', '#0A0A0A', '#FFFFFF']
+        colors: ['#8B1E2D', '#D4AF37', '#FFFFFF']
       });
       confetti({
         particleCount: 5,
         angle: 120,
         spread: 55,
         origin: { x: 1, y: 0.8 },
-        colors: ['#E53935', '#0A0A0A', '#FFFFFF']
+        colors: ['#8B1E2D', '#D4AF37', '#FFFFFF']
       });
 
       if (Date.now() < end) {
@@ -37,7 +37,7 @@ export default function RoastOfTheNightBadge() {
   }, []);
 
   return (
-    <span className="text-[10px] font-display font-black uppercase tracking-widest text-white bg-broadcast-red px-2 py-1 shadow-[2px_2px_0px_0px_rgba(10,10,10,1)]">
+    <span className="text-[10px] font-display font-black uppercase tracking-widest text-white bg-latent-crimson px-2 py-1 shadow-[0_0_10px_rgba(139,30,45,0.6)] rounded-sm border border-latent-crimson/50">
       Roast of the night
     </span>
   );

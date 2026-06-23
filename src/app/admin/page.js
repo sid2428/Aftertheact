@@ -22,10 +22,9 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-12">
-      
-      <div className="border-b-4 border-brand-black pb-4">
-        <h2 className="text-5xl font-display font-black uppercase tracking-tighter text-brand-black">The Switchboard</h2>
-        <p className="text-brand-black/60 font-medium mt-2 max-w-2xl">
+      <div className="border-b border-brand-border pb-4">
+        <h2 className="text-5xl font-display font-black uppercase tracking-tighter text-white">The Switchboard</h2>
+        <p className="text-white/60 font-medium mt-2 max-w-2xl">
           Control the flow of the show. Advance episodes from UPCOMING to LIVE to REVEALED. Add contestants and drop the hammer on bad roasts.
         </p>
       </div>

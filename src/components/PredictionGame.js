@@ -32,17 +32,18 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
   };
 
   return (
-    <div className="bg-white border-4 border-brand-black p-6 sm:p-10 shadow-[12px_12px_0px_0px_#0A0A0A]">
-      <div className="mb-8 border-b-4 border-brand-black pb-4">
-        <h2 className="text-3xl font-display font-black text-brand-black tracking-tight uppercase">The Oracle Board</h2>
-        <p className="text-brand-black/70 font-medium mt-2">
+    <div className="bg-[#111111] border border-brand-border p-6 sm:p-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] rounded-md relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-latent-gold to-transparent opacity-50" />
+      <div className="mb-8 border-b border-brand-border pb-4 relative z-10">
+        <h2 className="text-3xl font-display font-black text-white tracking-tight uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">The Oracle Board</h2>
+        <p className="text-white/60 font-medium mt-2">
           Lock in your predictions. Your Oracle Score is permanent. Choose wisely.
         </p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-8 relative z-10">
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-brand-black mb-3">
+          <label className="block text-sm font-display font-black uppercase tracking-widest text-latent-gold mb-3 drop-shadow-[0_0_5px_rgba(212,175,55,0.3)]">
             1. Who will top the episode?
           </label>
           <div className="relative">
@@ -50,21 +51,21 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
               disabled={isLocked}
               value={topId} 
               onChange={(e) => setTopId(e.target.value)}
-              className="w-full bg-brand-gray appearance-none border-4 border-brand-black rounded-none p-4 text-brand-black font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-broadcast-red transition-colors"
+              className="w-full bg-[#050505] appearance-none border border-brand-border rounded-sm p-4 text-white font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-latent-gold transition-colors shadow-inner"
             >
               <option value="" disabled>Select the Latent Legend...</option>
               {contestants.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-brand-black">
+            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/50">
               ▼
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-brand-black mb-3">
+          <label className="block text-sm font-display font-black uppercase tracking-widest text-white/70 mb-3">
             2. Who will bottom the episode?
           </label>
           <div className="relative">
@@ -72,31 +73,31 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
               disabled={isLocked}
               value={bottomId} 
               onChange={(e) => setBottomId(e.target.value)}
-              className="w-full bg-brand-gray appearance-none border-4 border-brand-black rounded-none p-4 text-brand-black font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-broadcast-red transition-colors"
+              className="w-full bg-[#050505] appearance-none border border-brand-border rounded-sm p-4 text-white font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-latent-gold transition-colors shadow-inner"
             >
               <option value="" disabled>Select the Rock Bottom...</option>
               {contestants.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-brand-black">
+            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/50">
               ▼
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-brand-black mb-3">
+          <label className="block text-sm font-display font-black uppercase tracking-widest text-white/70 mb-3">
             3. Will Judges & Audience Agree? (Divergence &lt; 1.5)
           </label>
           <div className="grid grid-cols-2 gap-4">
             <button 
               disabled={isLocked}
               onClick={() => setAlignment(true)}
-              className={`py-4 font-display font-black uppercase tracking-widest border-4 transition-all shadow-[4px_4px_0px_0px_#0A0A0A] ${
+              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
                 alignment === true 
-                  ? "bg-broadcast-red text-white border-brand-black translate-x-[2px] translate-y-[2px] shadow-[2px_2px_0px_0px_#0A0A0A]" 
-                  : "bg-white text-brand-black border-brand-black hover:bg-brand-gray disabled:opacity-50 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0"
+                  ? "bg-latent-gold/20 text-latent-gold border-latent-gold shadow-[0_0_15px_rgba(212,175,55,0.3)]" 
+                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
               }`}
             >
               YES (Agree)
@@ -104,10 +105,10 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
             <button 
               disabled={isLocked}
               onClick={() => setAlignment(false)}
-              className={`py-4 font-display font-black uppercase tracking-widest border-4 transition-all shadow-[4px_4px_0px_0px_#0A0A0A] ${
+              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
                 alignment === false 
-                  ? "bg-broadcast-red text-white border-brand-black translate-x-[2px] translate-y-[2px] shadow-[2px_2px_0px_0px_#0A0A0A]" 
-                  : "bg-white text-brand-black border-brand-black hover:bg-brand-gray disabled:opacity-50 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0"
+                  ? "bg-latent-crimson/20 text-latent-crimson border-latent-crimson shadow-[0_0_15px_rgba(139,30,45,0.3)]" 
+                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
               }`}
             >
               NO (Diverge)
@@ -116,16 +117,16 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
         </div>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 relative z-10">
         {isLocked ? (
-          <div className="text-center py-4 bg-brand-black text-white font-display font-black uppercase tracking-widest border-4 border-brand-black shadow-[4px_4px_0px_0px_#E53935]">
+          <div className="text-center py-4 bg-[#050505] text-latent-gold font-display font-black uppercase tracking-widest border border-latent-gold/30 rounded-sm shadow-[0_0_20px_rgba(212,175,55,0.1)]">
             Predictions Locked. Awaiting Revelation.
           </div>
         ) : (
           <button 
             disabled={isSubmitting}
             onClick={handleLock}
-            className="w-full bg-brand-black text-white hover:bg-broadcast-red hover:text-white border-4 border-brand-black font-display font-black uppercase tracking-widest py-5 transition-colors shadow-[8px_8px_0px_0px_#0A0A0A] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_#0A0A0A] disabled:opacity-50"
+            className="w-full bg-white text-[#0A0A0A] hover:bg-latent-gold hover:text-[#0A0A0A] border border-transparent font-display font-black uppercase tracking-widest py-5 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 rounded-sm"
           >
             {isSubmitting ? "Locking..." : "Lock Predictions"}
           </button>

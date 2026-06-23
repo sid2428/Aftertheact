@@ -1,6 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import Link from "next/link";
-import { HeroStagger, HeroItem } from "@/components/HomeClientWrapper";
+import { HeroStagger, HeroItem, FloatingScoreCard } from "@/components/HomeClientWrapper";
 import DivergenceSeismograph from "@/components/DivergenceSeismograph";
 
 export const revalidate = 60;
@@ -15,93 +15,121 @@ export default async function Home() {
     .limit(10);
 
   return (
-    <div className="selection:bg-broadcast-red/30">
+    <div className="bg-[#0A0A0A] min-h-screen">
       
-      {/* Hero Section */}
-      <div className="min-h-[85vh] flex flex-col items-center justify-center relative border-b-8 border-brand-black bg-brand-white px-6">
+      {/* Cinematic Hero Section */}
+      <div className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden px-6">
+        
+        {/* Background Gradients & Glows */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-latent-gold/10 blur-[120px] rounded-full pointer-events-none" />
+
+        {/* Floating Score Cards (Parallax/Motion) */}
+        <FloatingScoreCard delay={0.2} x="-35vw" y="-15vh" title="People's Verdict" value="8.7" />
+        <FloatingScoreCard delay={0.4} x="25vw" y="-20vh" title="Judge Score" value="4.2" variant="crimson" />
+        <FloatingScoreCard delay={0.6} x="-30vw" y="15vh" title="Top Pick" value="Raju Sharma" variant="gold" />
+        <FloatingScoreCard delay={0.8} x="28vw" y="10vh" variant="crimson">
+          <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-latent-crimson mb-1">Prediction Locked</div>
+          <div className="text-xl font-display font-black uppercase text-white">Result: Disaster</div>
+        </FloatingScoreCard>
+
+        {/* Hero Content Stagger */}
         <HeroStagger>
           <HeroItem>
-            <div className="inline-block bg-brand-black text-white px-6 py-2 font-display font-black uppercase tracking-widest mb-6 shadow-[4px_4px_0px_0px_#E53935]">
-              The Hate Engine 🚂
-            </div>
-          </HeroItem>
-          <HeroItem>
-            <h1 className="text-7xl sm:text-9xl md:text-[10rem] font-display font-black tracking-tighter uppercase leading-[0.85] text-brand-black">
-              JUDGE THE<br/><span className="text-broadcast-red relative inline-block">
-                JUDGES
-                <span className="absolute -bottom-2 sm:-bottom-4 left-0 w-full h-2 sm:h-4 bg-brand-black" />
-              </span><br/>🧑‍⚖️
+            <h1 className="text-6xl sm:text-8xl md:text-[9rem] font-display font-black tracking-tighter uppercase leading-[0.85] text-center drop-shadow-2xl">
+              <span className="text-white">AFTER</span><span className="text-gradient-gold">THE</span><span className="text-white">ACT</span>
             </h1>
           </HeroItem>
+          
           <HeroItem>
-            <p className="text-xl sm:text-3xl text-brand-black/70 max-w-3xl mx-auto font-medium mt-8 leading-snug">
-              Vote live. Ruin dreams. Roast the acts. Prove you have better taste than the actual judges (you don't). 💅📉
+            <p className="text-xl sm:text-3xl text-white/70 max-w-2xl mx-auto font-medium mt-6 leading-snug text-center">
+              The show ends.<br/><span className="text-white">The receipts begin.</span>
             </p>
           </HeroItem>
-          <HeroItem className="pt-12 flex flex-col sm:flex-row justify-center gap-6">
-            <Link href="/scoreboard" className="bg-brand-black text-white border-4 border-brand-black font-display font-black uppercase tracking-widest px-10 py-5 hover:bg-white hover:text-brand-black transition-colors shadow-[8px_8px_0px_0px_#0A0A0A] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_#0A0A0A]">
-              View Scoreboard
-            </Link>
-            <Link href="/api/auth/signin" className="bg-white text-brand-black border-4 border-brand-black font-display font-black uppercase tracking-widest px-10 py-5 hover:bg-brand-gray transition-colors shadow-[8px_8px_0px_0px_#E53935] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_#E53935]">
+          
+          <HeroItem className="pt-10 flex flex-col sm:flex-row justify-center gap-6 relative z-20">
+            <Link href="/api/auth/signin" className="bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] font-display font-black uppercase tracking-widest px-10 py-5 hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all rounded-sm">
               Join the Jury
             </Link>
+            <Link href="/scoreboard" className="glass-panel text-white font-display font-black uppercase tracking-widest px-10 py-5 hover:bg-white/10 transition-colors rounded-sm">
+              Explore Scoreboard
+            </Link>
+          </HeroItem>
+
+          <HeroItem className="pt-20 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16 text-center max-w-4xl mx-auto border-t border-white/10 mt-16 pt-12">
+            <div>
+              <div className="text-4xl font-display font-black text-latent-gold mb-1">43,281</div>
+              <div className="text-xs font-mono font-bold uppercase tracking-widest text-white/50">Predictions Logged</div>
+            </div>
+            <div>
+              <div className="text-4xl font-display font-black text-white mb-1">8,214</div>
+              <div className="text-xs font-mono font-bold uppercase tracking-widest text-white/50">Public Verdicts</div>
+            </div>
+            <div>
+              <div className="text-4xl font-display font-black text-latent-crimson mb-1">1,902</div>
+              <div className="text-xs font-mono font-bold uppercase tracking-widest text-latent-crimson/70">Legendary Ls</div>
+            </div>
           </HeroItem>
         </HeroStagger>
-        
-        {/* Scroll Down Indicator */}
-        <div className="absolute bottom-12 flex flex-col items-center gap-2">
-          <span className="text-xs font-display font-black uppercase tracking-widest text-brand-black/50">Scroll to view</span>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-broadcast-red animate-bounce"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
-        </div>
       </div>
 
-      {/* Divergence Seismograph & Episodes Feed - Scrolled down */}
-      <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-12 sm:mt-24 mb-32 space-y-16">
+      {/* Divergence & Episodes Feed */}
+      <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-12 mb-32 space-y-24 relative z-20">
         
-        <DivergenceSeismograph divergenceValue={2.45} history={[0.5, 1.2, -0.8, 2.1, 3.5, 1.8, 0.2, -1.5, 2.45]} />
+        {/* Live Controversy Meter */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+            <div className="w-3 h-3 rounded-full bg-latent-crimson animate-pulse-fast" />
+            <h2 className="text-2xl font-display font-black uppercase tracking-widest text-white">Live Controversy Meter</h2>
+          </div>
+          <div className="glass-panel p-6 rounded-md">
+            <DivergenceSeismograph divergenceValue={2.45} history={[0.5, 1.2, -0.8, 2.1, 3.5, 1.8, 0.2, -1.5, 2.45]} />
+          </div>
+        </div>
 
+        {/* Episode Directory */}
         <div className="space-y-8">
-          <div className="flex justify-between items-end border-b-4 border-brand-black pb-2">
-            <h2 className="text-3xl font-display font-black uppercase tracking-widest text-brand-black">Episode Directory</h2>
+          <div className="flex justify-between items-end border-b border-white/10 pb-4">
+            <h2 className="text-2xl font-display font-black uppercase tracking-widest text-white">Episode Directory</h2>
           </div>
         
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {episodes && episodes.map(ep => (
-            <Link key={ep.id} href={`/episode/${ep.id}`} className="group block bg-white border-4 border-brand-black hover:border-broadcast-red hover:shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] transition-all relative overflow-hidden">
-              
-              <div className="p-6 relative z-10 flex flex-col h-full justify-between min-h-[200px]">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="font-display font-black text-5xl text-brand-black/20 group-hover:text-brand-black transition-colors">
-                      E{ep.episode_number}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {episodes && episodes.map(ep => (
+              <Link key={ep.id} href={`/episode/${ep.id}`} className="group block bg-[#111111] border border-white/10 hover:border-latent-gold/50 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)] transition-all relative overflow-hidden rounded-md">
+                
+                <div className="p-6 relative z-10 flex flex-col h-full justify-between min-h-[200px]">
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="font-display font-black text-5xl text-white/5 group-hover:text-white/10 transition-colors">
+                        E{ep.episode_number}
+                      </div>
+                      <span className={`px-2 py-1 text-[10px] font-display font-black uppercase tracking-widest rounded-sm ${
+                        ep.status === 'LIVE' ? 'bg-latent-crimson/20 text-latent-crimson border border-latent-crimson/50 animate-pulse-fast' : 
+                        ep.status === 'UPCOMING' ? 'bg-white/5 text-white/50 border border-white/10' :
+                        'bg-white/10 text-white border border-white/20'
+                      }`}>
+                        {ep.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 text-[10px] font-display font-black uppercase tracking-widest border-2 ${
-                      ep.status === 'LIVE' ? 'bg-broadcast-red text-white border-broadcast-red animate-pulse-fast' : 
-                      ep.status === 'UPCOMING' ? 'bg-brand-gray text-brand-black/50 border-brand-black/20' :
-                      'bg-brand-black text-white border-brand-black'
-                    }`}>
-                      {ep.status}
-                    </span>
+                    
+                    <h3 className="text-2xl font-display font-black uppercase leading-tight mb-2 text-white">S{ep.season_number} — {ep.title}</h3>
+                    <div className="text-sm font-mono font-bold text-white/40">Air: {new Date(ep.air_date).toLocaleDateString()}</div>
                   </div>
                   
-                  <h3 className="text-2xl font-display font-black uppercase leading-tight mb-2">S{ep.season_number} — {ep.title}</h3>
-                  <div className="text-sm font-mono font-bold text-brand-black/50">Air: {new Date(ep.air_date).toLocaleDateString()}</div>
+                  <div className={`mt-8 text-sm font-display font-black uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform ${ep.status === 'LIVE' ? 'text-latent-crimson' : 'text-latent-gold'}`}>
+                    {ep.status === 'LIVE' ? 'Vote Now' : ep.status === 'UPCOMING' ? 'Predict Now' : 'View Results'}
+                    <span>→</span>
+                  </div>
                 </div>
-                
-                <div className="mt-8 text-sm font-display font-black text-broadcast-red uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform">
-                  {ep.status === 'LIVE' ? 'Vote Now' : ep.status === 'UPCOMING' ? 'Predict Now' : 'View Results'}
-                  <span>→</span>
-                </div>
+              </Link>
+            ))}
+            
+            {(!episodes || episodes.length === 0) && (
+              <div className="col-span-full py-16 text-center text-white/30 font-display font-black uppercase tracking-widest text-xl border border-dashed border-white/10 rounded-md">
+                No episodes logged. The acts are still preparing their sob stories. 🎻😭
               </div>
-            </Link>
-          ))}
-          
-          {(!episodes || episodes.length === 0) && (
-            <div className="col-span-full py-16 text-center text-brand-black/50 font-display font-black uppercase tracking-widest text-2xl border-4 border-dashed border-brand-black/20">
-              No episodes logged. The acts are still preparing their sob stories. 🎻😭
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
       </section>
 

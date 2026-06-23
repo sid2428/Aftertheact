@@ -24,7 +24,7 @@ export default function ControversyBadge() {
       translateX: () => anime.random(-5, 5),
       opacity: () => anime.random(0.2, 1),
       color: () => {
-        const colors = ['#fff', '#000', '#E53935'];
+        const colors = ['#fff', '#000', '#8B1E2D'];
         return colors[Math.floor(Math.random() * colors.length)];
       },
       duration: 50,
@@ -49,9 +49,9 @@ export default function ControversyBadge() {
   }, []);
 
   return (
-    <div className="bg-controversy-orange text-white font-display font-black uppercase tracking-widest p-2 text-center text-sm border-4 border-brand-black overflow-hidden relative">
-      <div className="absolute inset-0 bg-white/20 mix-blend-overlay opacity-0 glitch-flash pointer-events-none"></div>
-      <span ref={textRef} className="relative z-10">Controversy Detected (Delta &gt; 3.0)</span>
+    <div className="bg-latent-crimson text-white font-display font-black uppercase tracking-widest p-2 text-center text-sm border border-latent-crimson/50 overflow-hidden relative rounded-sm shadow-[0_0_15px_rgba(139,30,45,0.6)]">
+      <div className="absolute inset-0 bg-white/10 mix-blend-overlay opacity-0 glitch-flash pointer-events-none"></div>
+      <span ref={textRef} className="relative z-10 drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]">Controversy Detected (Delta &gt; 3.0)</span>
     </div>
   );
 }

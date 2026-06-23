@@ -95,14 +95,14 @@ function ScoreBoardBank({ label, score, position, highlight = false, delayOffset
 
   return (
     <group position={position}>
-      <Text position={[0, 0.9, 0]} fontSize={0.25} color={highlight ? "#E53935" : "#666"} anchorX="center">
+      <Text position={[0, 0.9, 0]} fontSize={0.25} color={highlight ? "#8B1E2D" : "#666"} anchorX="center">
         {label.toUpperCase()}
       </Text>
       
       {/* Container Box */}
       <mesh position={[0, 0, -0.2]}>
         <planeGeometry args={[chars.length * 0.9 + 0.2, 1.4]} />
-        <meshBasicMaterial color={highlight ? "#E53935" : "#000"} />
+        <meshBasicMaterial color={highlight ? "#8B1E2D" : "#000"} />
       </mesh>
 
       {chars.map((char, i) => (
@@ -119,7 +119,7 @@ function ScoreBoardBank({ label, score, position, highlight = false, delayOffset
 
 export default function SplitFlap3D({ appearance }) {
   return (
-    <div className="w-full h-48 sm:h-56 bg-brand-gray border-4 border-brand-black overflow-hidden relative">
+    <div className="w-full h-48 sm:h-56 bg-[#0A0A0A] border border-brand-border overflow-hidden relative rounded-md shadow-[0_0_20px_rgba(0,0,0,0.5)]">
       <Canvas>
         <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={60} />
         <ambientLight intensity={1} />

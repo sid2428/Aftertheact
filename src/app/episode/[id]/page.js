@@ -43,28 +43,28 @@ export default async function EpisodePage({ params }) {
   }) || [];
 
   return (
-    <div className="min-h-screen bg-brand-white text-brand-black selection:bg-broadcast-red/30">
+    <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-latent-crimson/30">
       
       {/* Sticky Brutalist Header */}
-      <div className="sticky top-16 z-40 bg-white border-b-4 border-brand-black p-4 sm:p-6 shadow-[0px_4px_0px_0px_#0A0A0A]">
+      <div className="sticky top-16 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-brand-border p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight uppercase">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
-              <span className={`px-2 py-1 text-[10px] sm:text-xs font-display font-black uppercase tracking-widest border-2 ${
-                episode.status === 'LIVE' ? 'bg-broadcast-red text-white border-broadcast-red animate-pulse-fast' : 
-                episode.status === 'UPCOMING' ? 'bg-brand-gray text-brand-black/50 border-brand-black/20' :
-                'bg-brand-black text-white border-brand-black'
+              <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
+              <span className={`px-2 py-1 text-[10px] sm:text-xs font-display font-black uppercase tracking-widest border rounded-sm ${
+                episode.status === 'LIVE' ? 'bg-latent-crimson/20 text-latent-crimson border-latent-crimson animate-pulse-fast shadow-[0_0_10px_rgba(139,30,45,0.5)]' : 
+                episode.status === 'UPCOMING' ? 'bg-[#050505] text-white/50 border-white/20' :
+                'bg-latent-gold/20 text-latent-gold border-latent-gold/50'
               }`}>
                 {episode.status}
               </span>
             </div>
-            <div className="text-sm font-mono font-bold text-brand-black/50">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
+            <div className="text-sm font-mono font-bold text-white/50">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
           </div>
           
           {episode.status === "LIVE" && (
-            <div className="flex items-center gap-3 bg-broadcast-red text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 border-2 border-brand-black shadow-[4px_4px_0px_0px_#0A0A0A]">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast"></span>
+            <div className="flex items-center gap-3 bg-latent-crimson text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 rounded-sm shadow-[0_0_20px_rgba(139,30,45,0.6)]">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
               Voting Window Open
             </div>
           )}
@@ -74,27 +74,29 @@ export default async function EpisodePage({ params }) {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-12 space-y-12">
         
         {episode.admin_note && (
-          <div className="bg-brand-black text-white p-6 border-4 border-brand-black shadow-[8px_8px_0px_0px_#E53935] font-mono font-bold">
-            <span className="text-broadcast-red block mb-2 uppercase tracking-widest text-xs font-display">System Broadcast:</span>
+          <div className="bg-[#111111] text-white p-6 border border-latent-crimson/30 rounded-md shadow-[0_0_20px_rgba(139,30,45,0.2)] font-mono font-bold relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-latent-crimson" />
+            <span className="text-latent-crimson block mb-2 uppercase tracking-widest text-xs font-display">System Broadcast:</span>
             {episode.admin_note}
           </div>
         )}
 
         {/* Prediction Banner for Upcoming */}
         {episode.status === "UPCOMING" && (
-          <div className="bg-white border-4 border-brand-black p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[12px_12px_0px_0px_#0A0A0A]">
-            <div>
-              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-brand-black mb-2">The Oracle Board is open</h2>
-              <p className="text-brand-black/70 font-medium">Lock in your predictions for Top, Bottom, and Alignment before air time. Once it starts, your calls are permanent.</p>
+          <div className="bg-[#111111] border border-latent-gold/30 rounded-md p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-latent-gold/5 to-transparent pointer-events-none" />
+            <div className="relative z-10">
+              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-latent-gold mb-2 drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">The Oracle Board is open</h2>
+              <p className="text-white/70 font-medium">Lock in your predictions for Top, Bottom, and Alignment before air time. Once it starts, your calls are permanent.</p>
             </div>
-            <button className="shrink-0 bg-brand-black text-white hover:bg-broadcast-red hover:text-white border-4 border-brand-black px-8 py-4 font-display font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_#0A0A0A]">
+            <button className="shrink-0 relative z-10 bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] border border-transparent rounded-sm px-8 py-4 font-display font-black uppercase tracking-widest transition-all">
               Make Predictions
             </button>
           </div>
         )}
 
         <div className="space-y-8">
-          <h2 className="text-4xl font-display font-black tracking-tighter uppercase text-brand-black border-b-4 border-brand-black pb-2">
+          <h2 className="text-4xl font-display font-black tracking-tighter uppercase text-white border-b border-white/10 pb-2">
             The Lineup
           </h2>
           
@@ -111,7 +113,7 @@ export default async function EpisodePage({ params }) {
           </RevelationSequence>
 
           {sortedAppearances.length === 0 && (
-            <div className="text-center py-24 bg-brand-gray text-brand-black/50 font-display font-black uppercase tracking-widest text-2xl border-4 border-brand-black/10 border-dashed">
+            <div className="text-center py-24 bg-[#050505] text-white/30 font-display font-black uppercase tracking-widest text-2xl border border-white/10 border-dashed rounded-md">
               No contestants have been added to this episode yet.
             </div>
           )}

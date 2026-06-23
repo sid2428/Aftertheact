@@ -35,23 +35,24 @@ export default function DivergenceSeismograph({ divergenceValue, history = [] })
   }, "");
 
   return (
-    <div className="border-4 border-brand-black bg-white p-4 shadow-[8px_8px_0px_0px_#0A0A0A]">
-      <div className="flex justify-between items-end mb-4">
-        <h3 className="text-xl font-display font-black uppercase tracking-widest text-brand-black">Judge vs. Internet Divergence</h3>
-        <span className="text-3xl font-mono font-black text-broadcast-red">{divergenceValue?.toFixed(2) || "0.00"}</span>
+    <div className="border border-brand-border bg-[#111111] p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] rounded-md relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-latent-crimson to-transparent opacity-50" />
+      <div className="flex justify-between items-end mb-4 relative z-10">
+        <h3 className="text-xl font-display font-black uppercase tracking-widest text-white/80">Judge vs. Internet Divergence</h3>
+        <span className="text-3xl font-mono font-black text-latent-crimson drop-shadow-[0_0_10px_rgba(139,30,45,0.4)]">{divergenceValue?.toFixed(2) || "0.00"}</span>
       </div>
       
-      <div className="h-24 w-full bg-brand-gray relative overflow-hidden border-2 border-brand-black/20">
+      <div className="h-24 w-full bg-[#050505] relative overflow-hidden border border-brand-border rounded-sm z-10">
         <div className="absolute inset-0 grid grid-rows-3 opacity-10">
-          <div className="border-b-2 border-brand-black"></div>
-          <div className="border-b-2 border-brand-black"></div>
+          <div className="border-b border-white"></div>
+          <div className="border-b border-white"></div>
         </div>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible drop-shadow-[0_0_8px_rgba(139,30,45,0.6)]">
           <path
             ref={pathRef}
             d={pathData}
             fill="none"
-            stroke="#E53935"
+            stroke="#8B1E2D"
             strokeWidth="3"
             strokeLinejoin="miter"
             strokeLinecap="square"

@@ -16,15 +16,15 @@ export default async function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-brand-gray flex flex-col selection:bg-broadcast-red/30">
+    <div className="min-h-screen bg-[#0A0A0A] flex flex-col selection:bg-latent-crimson/30">
       {/* Admin Subnav / Header */}
-      <div className="bg-brand-black border-b-4 border-brand-black text-white px-6 py-4 shadow-[0px_8px_0px_0px_#0A0A0A] relative z-10">
+      <div className="bg-[#111111] border-b border-brand-border px-6 py-4 relative z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <h1 className="font-display font-black text-2xl uppercase tracking-widest text-white flex items-center gap-3">
-            <span className="w-3 h-3 bg-broadcast-red border-2 border-brand-black shadow-[2px_2px_0px_0px_#E53935] animate-pulse-fast"></span>
+            <span className="w-3 h-3 bg-latent-crimson rounded-full shadow-[0_0_10px_rgba(139,30,45,0.8)] animate-pulse-fast"></span>
             Control Panel
           </h1>
-          <div className="text-xs font-mono font-bold text-white/50 border-2 border-white/20 px-3 py-1 bg-brand-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]">
+          <div className="text-xs font-mono font-bold text-latent-gold border border-latent-gold/30 px-3 py-1 bg-latent-gold/10 rounded-sm">
             SHOWRUNNER_ACCESS
           </div>
         </div>
