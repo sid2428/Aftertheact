@@ -153,3 +153,38 @@ CREATE TABLE IF NOT EXISTS "ModerationLog" (
 --     RETURN NEW;
 -- END;
 -- $$ LANGUAGE plpgsql;
+
+-- Table: CommunityPost
+CREATE TABLE IF NOT EXISTS "CommunityPost" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES "User"(id) ON DELETE CASCADE,
+    contestant_tag UUID REFERENCES "Contestant"(id) ON DELETE SET NULL,
+    episode_tag UUID REFERENCES "Episode"(id) ON DELETE SET NULL,
+    text VARCHAR(280) NOT NULL,
+    like_count INTEGER DEFAULT 0,
+    reply_count INTEGER DEFAULT 0,
+    moderation_status VARCHAR(20) DEFAULT 'VISIBLE' CHECK (moderation_status IN ('VISIBLE', 'HELD', 'REMOVED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Table: CommunityPostLike
+CREATE TABLE IF NOT EXISTS "CommunityPostLike" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID REFERENCES "CommunityPost"(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES "User"(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(post_id, user_id)
+);
+
+-- Table: JudgeRating
+CREATE TABLE IF NOT EXISTS "JudgeRating" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    judge_id VARCHAR(255) NOT NULL,
+    user_id UUID REFERENCES "User"(id) ON DELETE CASCADE,
+    harshness_score INTEGER NOT NULL CHECK (harshness_score BETWEEN 1 AND 10),
+    accuracy_score INTEGER NOT NULL CHECK (accuracy_score BETWEEN 1 AND 10),
+    entertainment_score INTEGER NOT NULL CHECK (entertainment_score BETWEEN 1 AND 10),
+    comment VARCHAR(280),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(judge_id, user_id)
+);

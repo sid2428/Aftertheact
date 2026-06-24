@@ -3,10 +3,27 @@
 import { useState } from "react";
 import { updateEpisodeStatus, triggerRevelation, addContestantToEpisode, createEpisode } from "@/app/actions/admin";
 
-export default function AdminDashboardClient({ initialEpisodes, initialRoasts }) {
+export default function AdminDashboardClient({ initialEpisodes, initialRoasts, initialReportedPosts = [] }) {
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [roasts, setRoasts] = useState(initialRoasts);
+  const [reportedPosts, setReportedPosts] = useState(initialReportedPosts);
   const [loadingAction, setLoadingAction] = useState(null);
+
+  const moderatePost = async (postId, action) => {
+    setLoadingAction(`moderate-${postId}`);
+    const res = await fetch(`/api/admin/community/posts/${postId}/moderate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    const json = await res.json();
+    if (json.success) {
+      setReportedPosts((posts) => posts.filter((p) => p.id !== postId));
+    } else {
+      alert("Error: " + (json.error || "Moderation failed."));
+    }
+    setLoadingAction(null);
+  };
   
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [contestantForm, setContestantForm] = useState({ name: '', talent_type: '', bio: '', judge_average: 0, latent_score: 0, peoples_verdict_weighted: 0 });
@@ -222,7 +239,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts })
                   <span className="font-display font-black text-sm uppercase text-latent-gold">{r.User?.username}</span>
                   <span className="text-[10px] font-mono text-white/50">Target: {r.Contestant?.name}</span>
                 </div>
-                <p className="text-sm font-medium mb-4 text-white/80">"{r.content}"</p>
+                <p className="text-sm font-medium mb-4 text-white/80">&ldquo;{r.content}&rdquo;</p>
                 <div className="flex gap-2">
                   <button className="flex-1 bg-oracle-green/20 text-oracle-green border border-oracle-green/50 font-display font-black uppercase text-xs py-1.5 rounded-sm hover:bg-oracle-green hover:text-[#0A0A0A] transition-colors">Approve</button>
                   <button className="flex-1 bg-latent-crimson/20 text-latent-crimson border border-latent-crimson/50 font-display font-black uppercase text-xs py-1.5 rounded-sm hover:bg-latent-crimson hover:text-white transition-colors">Drop</button>
@@ -231,6 +248,46 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts })
             ))}
             {roasts.length === 0 && (
               <div className="text-center font-mono font-bold text-white/30 py-8">Queue is clean.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Reported Posts (The Green Room) */}
+        <div className="bg-[#050505] text-white border border-latent-gold/30 shadow-[0_0_20px_rgba(212,175,55,0.15)] p-6 rounded-md relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-latent-gold" />
+          <h3 className="text-xl font-display font-black uppercase tracking-widest text-latent-gold border-b border-latent-gold/20 pb-2 mb-6 flex justify-between items-center">
+            Reported Posts
+            <span className="text-[#0A0A0A] bg-latent-gold px-2 py-0.5 rounded-full text-xs font-mono">{reportedPosts.length}</span>
+          </h3>
+
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+            {reportedPosts.map((p) => (
+              <div key={p.id} className="bg-[#111111] text-white p-4 border border-brand-border rounded-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-display font-black text-sm uppercase text-latent-gold">{p.User?.username || "Unknown"}</span>
+                  <span className="text-[10px] font-mono text-latent-crimson">{p.report_count} {p.report_count === 1 ? "report" : "reports"}</span>
+                </div>
+                <p className="text-sm font-medium mb-4 text-white/80 break-words">&ldquo;{p.text}&rdquo;</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => moderatePost(p.id, "approve")}
+                    disabled={loadingAction === `moderate-${p.id}`}
+                    className="flex-1 bg-oracle-green/20 text-oracle-green border border-oracle-green/50 font-display font-black uppercase text-xs py-1.5 rounded-sm hover:bg-oracle-green hover:text-[#0A0A0A] transition-colors disabled:opacity-50"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => moderatePost(p.id, "remove")}
+                    disabled={loadingAction === `moderate-${p.id}`}
+                    className="flex-1 bg-latent-crimson/20 text-latent-crimson border border-latent-crimson/50 font-display font-black uppercase text-xs py-1.5 rounded-sm hover:bg-latent-crimson hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    Remove Post
+                  </button>
+                </div>
+              </div>
+            ))}
+            {reportedPosts.length === 0 && (
+              <div className="text-center font-mono font-bold text-white/30 py-8">No reports.</div>
             )}
           </div>
         </div>

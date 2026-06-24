@@ -14,7 +14,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end border-b border-white/10 pb-4">
-        <h2 className="text-2xl font-display font-black uppercase tracking-widest text-white">Episode Directory</h2>
+        <h2 className="text-2xl font-display font-black uppercase tracking-widest text-white">The Lineup</h2>
         <button
           onClick={() => setDescending((d) => !d)}
           className="flex items-center gap-2 text-xs font-display font-black uppercase tracking-widest text-white/50 hover:text-latent-gold transition-colors"
@@ -42,7 +42,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
                 </div>
 
                 <h3 className="text-2xl font-display font-black uppercase leading-tight mb-2 text-white">S{ep.season_number} — {ep.title}</h3>
-                <div className="text-sm font-mono font-bold text-white/40">Air: {new Date(ep.air_date).toLocaleDateString()}</div>
+                <div className="text-sm font-mono font-bold text-white/40">Air: {new Date(ep.air_date).toLocaleDateString('en-GB')}</div>
               </div>
 
               <div className={`mt-8 text-sm font-display font-black uppercase tracking-widest flex items-center gap-2 group-hover:translate-x-2 transition-transform ${ep.status === 'LIVE' ? 'text-latent-crimson' : 'text-latent-gold'}`}>

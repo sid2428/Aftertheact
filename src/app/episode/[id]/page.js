@@ -7,6 +7,22 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const revalidate = 60; // ISR cache 60 seconds
 
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const supabase = getServiceSupabase();
+  const { data: episode } = await supabase
+    .from("Episode")
+    .select("title, season_number, episode_number")
+    .eq("id", id)
+    .single();
+
+  if (!episode) return { title: "Episode" };
+  return {
+    title: `S${episode.season_number}E${episode.episode_number} — ${episode.title}`,
+    description: `Verdicts and scores for ${episode.title}.`,
+  };
+}
+
 export default async function EpisodePage({ params }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
@@ -43,6 +59,13 @@ export default async function EpisodePage({ params }) {
     return a.id.localeCompare(b.id);
   }) || [];
 
+  const isClosed = episode.status === "REVEALED" || episode.status === "ARCHIVED";
+  const scored = sortedAppearances.filter((a) => a.latent_score != null);
+  const finalAverage = scored.length
+    ? scored.reduce((sum, a) => sum + a.latent_score, 0) / scored.length
+    : null;
+  const totalVotes = sortedAppearances.reduce((sum, a) => sum + (a.total_votes_raw || 0), 0);
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-latent-crimson/30">
       
@@ -66,14 +89,53 @@ export default async function EpisodePage({ params }) {
           {episode.status === "LIVE" && (
             <div className="flex items-center gap-3 bg-latent-crimson text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 rounded-sm shadow-[0_0_20px_rgba(139,30,45,0.6)]">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
-              Voting Window Open
+              LIVE — Cast Your Verdict
             </div>
           )}
         </div>
       </div>
 
+      {/* Mini-hero band */}
+      <div className="relative overflow-hidden border-b border-brand-border">
+        {episode.thumbnail_url && (
+          <img
+            src={episode.thumbnail_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: "blur(20px) brightness(0.3)" }}
+          />
+        )}
+        <div className="relative bg-gradient-to-r from-[#0A0A0A] via-[#111111]/60 to-[#0A0A0A]">
+          <div className="max-w-7xl mx-auto min-h-[90px] px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-between gap-4">
+            <div className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-white/50 shrink-0 w-[30%]">
+              <div>Season {episode.season_number}</div>
+              <div>Episode {episode.episode_number}</div>
+              <div className="text-white/30">{new Date(episode.air_date).toLocaleDateString()}</div>
+            </div>
+
+            <div className="flex-1 text-center font-display font-black uppercase tracking-tight text-white text-lg sm:text-2xl lg:text-3xl truncate">
+              {episode.title}
+            </div>
+
+            <div className="shrink-0 w-[30%] flex justify-end">
+              {episode.status === "LIVE" ? (
+                <div className="flex items-center gap-2 bg-latent-crimson/20 border border-latent-crimson/50 text-latent-crimson font-display font-black uppercase tracking-widest text-[10px] sm:text-xs px-3 py-2 rounded-sm animate-pulse-fast">
+                  <span className="w-2 h-2 rounded-full bg-latent-crimson" />
+                  Voting Open
+                </div>
+              ) : isClosed && finalAverage != null ? (
+                <div className="text-right">
+                  <div className="font-mono font-black text-2xl sm:text-3xl text-latent-gold leading-none">{finalAverage.toFixed(1)}</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-white/40">{totalVotes} votes</div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-12 space-y-12">
-        
+
         {episode.admin_note && (
           <div className="bg-[#111111] text-white p-6 border border-latent-crimson/30 rounded-md shadow-[0_0_20px_rgba(139,30,45,0.2)] font-mono font-bold relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-latent-crimson" />
@@ -102,16 +164,22 @@ export default async function EpisodePage({ params }) {
           </h2>
           
           {episode.status === "LIVE" ? (
-            <VotingSection
-              episodeId={episode.id}
-              contestants={sortedAppearances.map((app) => ({
-                id: app.Contestant.id,
-                name: app.Contestant.name,
-                talent_type: app.Contestant.talent_type,
-                image_url: app.Contestant.image_url,
-                initialRawScore: app.peoples_verdict_raw,
-              }))}
-            />
+            <div className="relative">
+              {/* Live heartbeat behind the voting cards */}
+              <div className="episode-pulse pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2" />
+              <div className="relative">
+                <VotingSection
+                  episodeId={episode.id}
+                  contestants={sortedAppearances.map((app) => ({
+                    id: app.Contestant.id,
+                    name: app.Contestant.name,
+                    talent_type: app.Contestant.talent_type,
+                    image_url: app.Contestant.image_url,
+                    initialRawScore: app.peoples_verdict_raw,
+                  }))}
+                />
+              </div>
+            </div>
           ) : (
             <RevelationSequence isRevealed={episode.status === "REVEALED" || episode.status === "ARCHIVED"}>
               {sortedAppearances.map((app) => (

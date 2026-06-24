@@ -28,18 +28,30 @@ export async function GET(request) {
 
       if (!scores) continue;
 
-      // 3. For each contestant, update Postgres with the raw scores
-      for (const [contestantId, dataStr] of Object.entries(scores)) {
-        const data = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
-        
-        if (data.votesCount > 0) {
-          const rawAverage = data.totalScore / data.votesCount;
-          
+      // 3. Reassemble the flat `{contestantId}:total` / `{contestantId}:count`
+      // fields into per-contestant aggregates, then write each to Postgres.
+      const totals = {};
+      const counts = {};
+      for (const [field, value] of Object.entries(scores)) {
+        const sep = field.lastIndexOf(":");
+        if (sep === -1) continue;
+        const contestantId = field.slice(0, sep);
+        const kind = field.slice(sep + 1);
+        const num = Number(value);
+        if (!Number.isFinite(num)) continue;
+        if (kind === "total") totals[contestantId] = num;
+        else if (kind === "count") counts[contestantId] = num;
+      }
+
+      for (const [contestantId, votesCount] of Object.entries(counts)) {
+        if (votesCount > 0) {
+          const rawAverage = (totals[contestantId] || 0) / votesCount;
+
           await supabase
             .from("ContestantEpisodeAppearance")
             .update({
               peoples_verdict_raw: rawAverage,
-              total_votes_raw: data.votesCount
+              total_votes_raw: votesCount
             })
             .match({ episode_id: episodeId, contestant_id: contestantId });
         }

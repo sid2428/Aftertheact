@@ -20,6 +20,21 @@ export default async function AdminPage() {
     .eq("moderation_status", "HELD")
     .order("created_at", { ascending: false });
 
+  // Fetch reported community posts (table may not be migrated yet).
+  let reportedPosts = [];
+  try {
+    const { data, error } = await supabase
+      .from("CommunityPost")
+      .select("id, text, report_count, created_at, User(username)")
+      .gt("report_count", 0)
+      .eq("moderation_status", "VISIBLE")
+      .order("report_count", { ascending: false });
+    if (error) throw error;
+    reportedPosts = data || [];
+  } catch (err) {
+    console.error("admin reported posts:", err.message);
+  }
+
   return (
     <div className="space-y-12">
       <div className="border-b border-brand-border pb-4">
@@ -29,7 +44,7 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <AdminDashboardClient initialEpisodes={episodes || []} initialRoasts={heldRoasts || []} />
+      <AdminDashboardClient initialEpisodes={episodes || []} initialRoasts={heldRoasts || []} initialReportedPosts={reportedPosts} />
 
     </div>
   );

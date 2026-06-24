@@ -15,6 +15,13 @@ export async function submitVote(episodeId, contestantId, score) {
 
   const userId = session.user.id;
 
+  // Validate the identifiers coming from the client. Both must be non-empty
+  // strings before they ever touch the database or Redis.
+  if (typeof episodeId !== "string" || episodeId.trim() === "" ||
+      typeof contestantId !== "string" || contestantId.trim() === "") {
+    return { success: false, error: "Invalid request." };
+  }
+
   // Validate score: finite number in [1, 10], quantized to 0.1. Never trust the client.
   score = normalizeScore(score);
   if (score === null) {
@@ -54,35 +61,51 @@ export async function submitVote(episodeId, contestantId, score) {
   // 3. Mark as voted in Redis (24h expiry is enough, permanent record goes to Postgres later)
   await redis.setex(`vote:${episodeId}:${contestantId}:${userId}`, 86400, score);
 
-  // 4. Atomically update the aggregate in Redis
-  // We use a Redis transaction (multi) to fetch and update, or we can use HGET/HSET
-  // Since Upstash JS client supports atomic HINCRBYFLOAT, we can just increment totals
-  // But we need to increment total score AND vote count.
-  // Instead, let's keep a hash where the value is a JSON string, and we update it via a simple get/set
-  // Upstash REST doesn't support complex server-side Lua scripts easily via the standard JS client without string passing.
-  // We'll just read, parse, increment, write. It's safe enough for V1 at 300-500 CCU.
-  
+  // 4. Atomically update the aggregate in Redis.
+  // Two server-side atomic ops avoid the lost-update race the old get/parse/set had:
+  //   - HINCRBYFLOAT accumulates the running total score
+  //   - HINCRBY accumulates the running vote count
+  // The SSE and flush routes read these `:total` / `:count` fields back.
   const hashKey = `episode:${episodeId}:scores`;
-  const currentDataStr = await redis.hget(hashKey, contestantId);
-  
-  let currentData = currentDataStr ? (typeof currentDataStr === 'string' ? JSON.parse(currentDataStr) : currentDataStr) : { totalScore: 0, votesCount: 0 };
-  
-  currentData.totalScore += score;
-  currentData.votesCount += 1;
+  const [newTotal, newCount] = await Promise.all([
+    redis.hincrbyfloat(hashKey, `${contestantId}:total`, score),
+    redis.hincrby(hashKey, `${contestantId}:count`, 1),
+  ]);
 
-  await redis.hset(hashKey, { [contestantId]: JSON.stringify(currentData) });
+  // 4b. Track unique voters for this episode. Only bump the counter the first
+  // time a given user votes in the episode, so it reflects people, not ballots.
+  const firstVoteMarker = await redis.set(
+    `episode:${episodeId}:voted:${userId}`,
+    1,
+    { nx: true, ex: 86400 }
+  );
+  if (firstVoteMarker) {
+    await redis.incr(`episode:${episodeId}:voter_count`);
+  }
 
-  // 5. Fire and forget to Postgres (permanent record)
-  // We do not wait for this to succeed before responding optimistic to user
-  supabase.from("UserVote").insert({
+  // 5. Fire and forget to Postgres (permanent record).
+  // Upsert (not insert) so a replayed vote can't violate the unique constraint;
+  // we never block the user response waiting for this write.
+  supabase.from("UserVote").upsert({
     user_id: userId,
     episode_id: episodeId,
     contestant_id: contestantId,
     score: score,
-    trust_score_at_vote: session.user.trust_score || 0.3 // fallback
-  }).then(({error}) => {
-    if (error) console.error("Postgres async vote insert error:", error);
+    trust_score_at_vote: session.user.trust_score ?? 0.3 // nullish: a real 0 trust score must survive
+  }, { onConflict: "user_id,episode_id,contestant_id" }).then(({ error }) => {
+    if (error) {
+      console.error(JSON.stringify({
+        event: "vote_insert_failed",
+        userId,
+        episodeId,
+        contestantId,
+        score,
+        error: error.message,
+      }));
+    }
   });
 
-  return { success: true, newRawAverage: currentData.totalScore / currentData.votesCount };
+  const total = Number(newTotal);
+  const count = Number(newCount);
+  return { success: true, newRawAverage: count > 0 ? total / count : score };
 }

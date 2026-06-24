@@ -15,33 +15,56 @@ export async function GET(req, { params }) {
 
       const interval = setInterval(async () => {
         try {
-          // We fetch the current live scores for all contestants in this episode
-          // The structure in Redis is a hash: `episode:{episodeId}:scores`
-          // where key is contestantId, value is JSON string of { totalScore, votesCount }
-          
-          const scores = await redis.hgetall(`episode:${episodeId}:scores`);
-          
-          if (scores) {
-            // Compute the unweighted average for each contestant
-            const liveAverages = {};
-            for (const [contestantId, dataStr] of Object.entries(scores)) {
-              const data = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
-              liveAverages[contestantId] = data.votesCount > 0 ? (data.totalScore / data.votesCount) : 0;
-            }
-            
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "LIVE_SCORES", scores: liveAverages })}\n\n`));
-          } else {
-            // Send empty object if no votes yet
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "LIVE_SCORES", scores: {} })}\n\n`));
+          // The hash `episode:{episodeId}:scores` stores two flat fields per
+          // contestant — `{contestantId}:total` and `{contestantId}:count` —
+          // written atomically by submitVote (HINCRBYFLOAT / HINCRBY).
+          const [scores, voterCountRaw] = await Promise.all([
+            redis.hgetall(`episode:${episodeId}:scores`),
+            redis.get(`episode:${episodeId}:voter_count`),
+          ]);
+
+          const totals = {};
+          const counts = {};
+          for (const [field, value] of Object.entries(scores || {})) {
+            const sep = field.lastIndexOf(":");
+            if (sep === -1) continue;
+            const contestantId = field.slice(0, sep);
+            const kind = field.slice(sep + 1);
+            const num = Number(value);
+            if (!Number.isFinite(num)) continue;
+            if (kind === "total") totals[contestantId] = num;
+            else if (kind === "count") counts[contestantId] = num;
           }
+
+          const liveAverages = {};
+          for (const contestantId of Object.keys(counts)) {
+            const count = counts[contestantId];
+            liveAverages[contestantId] = count > 0 ? (totals[contestantId] || 0) / count : 0;
+          }
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: "LIVE_SCORES",
+            scores: liveAverages,
+            voterCount: Number(voterCountRaw) || 0,
+          })}\n\n`));
         } catch (error) {
           console.error("SSE Redis Error:", error);
         }
-      }, 10000); // 10 seconds polling cadence as per spec
+      }, 5000); // 5 second polling cadence for a tighter "live" feel
+
+      // Heartbeat ping keeps idle proxies from closing the connection.
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "ping" })}\n\n`));
+        } catch {
+          // controller already closed; the abort handler will clean up
+        }
+      }, 25000);
 
       // Cleanup on disconnect
       req.signal.addEventListener("abort", () => {
         clearInterval(interval);
+        clearInterval(heartbeat);
         controller.close();
       });
     }

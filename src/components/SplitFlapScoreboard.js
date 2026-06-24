@@ -14,7 +14,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
   return (
     <div className="grid grid-cols-3 gap-0 border border-brand-border divide-x divide-brand-border text-center bg-[#111111] rounded-md overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]">
       <div className="p-3 sm:p-5">
-        <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Peoples Verdict</div>
+        <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Crowd Verdict</div>
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100 }}
           className="text-2xl sm:text-4xl font-mono font-black text-white"
@@ -23,7 +23,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
         </motion.div>
       </div>
       <div className="p-3 sm:p-5">
-        <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Judge Avg</div>
+        <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Panel Score</div>
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
           className="text-2xl sm:text-4xl font-mono font-black text-white"

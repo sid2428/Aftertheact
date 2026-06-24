@@ -1,5 +1,11 @@
 import { getServiceSupabase } from "@/lib/supabase";
-import Link from "next/link";
+import Image from "next/image";
+import LeaderboardHero from "@/components/LeaderboardHero";
+
+export const metadata = {
+  title: "Prophet's Wall",
+  description: "The sharpest predictors and the highest-ranked jurors of the season.",
+};
 
 export const revalidate = 300; // Cache for 5 minutes
 
@@ -25,27 +31,7 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen bg-[#0A0A0A] selection:bg-latent-crimson/30">
       
       {/* Full Viewport Hero */}
-      <div className="min-h-[60vh] flex flex-col items-center justify-center relative overflow-hidden px-6">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
-        
-        <div className="text-center space-y-6 z-10">
-          <div className="inline-block bg-[#111111] text-white/70 border border-white/10 px-6 py-2 font-display font-black uppercase tracking-widest mb-4 shadow-[0_0_15px_rgba(255,255,255,0.05)] rounded-sm">
-            The Hierarchy
-          </div>
-          
-          <h1 className="text-7xl sm:text-9xl md:text-[8rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">
-            THE <span className="text-latent-gold relative inline-block drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-              LEADERBOARDS
-              <span className="absolute -bottom-2 sm:-bottom-4 left-0 w-full h-2 sm:h-4 bg-latent-gold" />
-            </span>
-          </h1>
-          
-          <p className="text-xl sm:text-3xl text-white/70 max-w-3xl mx-auto font-medium mt-8 leading-snug">
-            The people who actually know what they're talking about. The rest of you are just making noise. 🏆📉
-          </p>
-        </div>
-      </div>
+      <LeaderboardHero topUsers={topUsers?.slice(0, 3) || []} />
 
       <div className="max-w-7xl mx-auto p-6 sm:p-12 mt-12 mb-32 relative z-20">
         <div className="grid lg:grid-cols-2 gap-12 sm:gap-24">
@@ -53,7 +39,7 @@ export default async function LeaderboardPage() {
           {/* Latent Points Leaderboard */}
           <section className="space-y-8">
             <div className="flex justify-between items-end border-b border-brand-border pb-2">
-              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-white">Season Rank</h2>
+              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-white">Standing</h2>
               <span className="text-xs font-display font-black uppercase tracking-widest text-white/50">By Latent Pts</span>
             </div>
             
@@ -62,9 +48,9 @@ export default async function LeaderboardPage() {
                 <div key={user.id} className="group relative border-b last:border-b-0 border-brand-border hover:bg-white/5 transition-colors p-4 flex items-center gap-4">
                   <div className="font-mono font-black text-2xl sm:text-3xl text-white/10 w-10 sm:w-12 text-center group-hover:text-latent-gold transition-colors">#{idx + 1}</div>
                   
-                  <div className="w-12 h-12 border border-brand-border bg-[#0A0A0A] overflow-hidden shrink-0 rounded-sm">
+                  <div className="relative w-12 h-12 border border-brand-border bg-[#0A0A0A] overflow-hidden shrink-0 rounded-sm">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={user.username} />
+                      <Image src={user.avatar_url} alt={user.username} fill sizes="48px" className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center font-display font-black text-xl text-white/10 uppercase">
                         {user.username[0]}
@@ -103,8 +89,8 @@ export default async function LeaderboardPage() {
           {/* Oracle Board */}
           <section className="space-y-8">
             <div className="flex justify-between items-end border-b border-brand-border pb-2">
-              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-white">The Oracle Board</h2>
-              <span className="text-xs font-display font-black uppercase tracking-widest text-white/50">Accuracy %</span>
+              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-white">Prophet&apos;s Wall</h2>
+              <span className="text-xs font-display font-black uppercase tracking-widest text-white/50">Oracle Accuracy</span>
             </div>
             
             <div className="space-y-0 rounded-md overflow-hidden border border-brand-border bg-[#111111] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
@@ -112,9 +98,9 @@ export default async function LeaderboardPage() {
                 <div key={user.id} className="group relative border-b last:border-b-0 border-brand-border hover:bg-white/5 transition-colors p-4 flex items-center gap-4">
                   <div className="font-mono font-black text-2xl sm:text-3xl text-white/10 w-10 sm:w-12 text-center group-hover:text-oracle-green transition-colors">#{idx + 1}</div>
                   
-                  <div className="w-12 h-12 border border-brand-border bg-[#0A0A0A] overflow-hidden shrink-0 rounded-sm">
+                  <div className="relative w-12 h-12 border border-brand-border bg-[#0A0A0A] overflow-hidden shrink-0 rounded-sm">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={user.username} />
+                      <Image src={user.avatar_url} alt={user.username} fill sizes="48px" className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center font-display font-black text-xl text-white/10 uppercase">
                         {user.username[0]}

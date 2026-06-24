@@ -4,9 +4,16 @@ import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import LiveVoting from "./LiveVoting";
 
-export default function VotingSection({ episodeId, contestants }) {
+export default function VotingSection({ episodeId, contestants, isEpisodeClosed = false }) {
   const cardRefs = useRef([]);
+  const rowRefs = useRef([]);
   const [lockingAll, setLockingAll] = useState(false);
+
+  // After a verdict reveal closes, ease the next contestant into view.
+  const scrollToNext = (i) => {
+    const next = rowRefs.current[i + 1];
+    if (next) next.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   const lockAll = async () => {
     setLockingAll(true);
@@ -24,7 +31,7 @@ export default function VotingSection({ episodeId, contestants }) {
           disabled={lockingAll}
           className="bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] font-display font-black uppercase tracking-widest px-8 py-3 rounded-sm hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] disabled:opacity-50 transition-all"
         >
-          {lockingAll ? "Locking All..." : "Lock All Votes"}
+          {lockingAll ? "Locking All..." : "Lock All Verdicts"}
         </motion.button>
       </div>
 
@@ -32,7 +39,7 @@ export default function VotingSection({ episodeId, contestants }) {
         {contestants.map((c, i) => {
           const flip = i % 2 === 1; // alternate image side
           return (
-            <div key={c.id} className={`flex flex-col gap-8 items-stretch min-h-[520px] ${flip ? "md:flex-row-reverse" : "md:flex-row"}`}>
+            <div key={c.id} ref={(el) => (rowRefs.current[i] = el)} className={`flex flex-col gap-8 items-stretch min-h-[520px] ${flip ? "md:flex-row-reverse" : "md:flex-row"}`}>
               {/* Photo — ~1/3 of the row */}
               <div className="w-full md:w-1/3 shrink-0">
                 <div className="relative aspect-square w-full border border-brand-border bg-[#050505] rounded-md overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
@@ -52,6 +59,8 @@ export default function VotingSection({ episodeId, contestants }) {
                   episodeId={episodeId}
                   contestantId={c.id}
                   initialRawScore={c.initialRawScore}
+                  isEpisodeClosed={isEpisodeClosed}
+                  onRevealClose={() => scrollToNext(i)}
                 />
               </div>
             </div>

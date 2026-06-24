@@ -37,7 +37,78 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: var(--color-brand-bg);
+  background: #080808;
+  position: relative;
+}
+
+/* Organic film-grain layer over the whole page. Sits above the base colour
+   but below all content via a body::after pseudo, so it never establishes a
+   stacking context that children could fall behind. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body::after {
+    animation: grain 0.6s steps(4) infinite;
+  }
+}
+
+@keyframes grain {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-3px, 2px); }
+  50%  { transform: translate(2px, -3px); }
+  75%  { transform: translate(-2px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Animatable angle for the glass-panel border shimmer. */
+@property --shimmer-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes shimmer-spin {
+  to { --shimmer-angle: 360deg; }
+}
+
+/* Slow heartbeat pulse behind the live voting cards. */
+@keyframes episodePulse {
+  0%   { box-shadow: 0 0 0 0px rgba(139, 30, 45, 0.2); }
+  100% { box-shadow: 0 0 0 80px rgba(139, 30, 45, 0); }
+}
+
+/* Hero CTA idle shimmer sweep. */
+@keyframes ctaSweep {
+  0%   { transform: translateX(-150%) skewX(-12deg); }
+  100% { transform: translateX(150%) skewX(-12deg); }
+}
+
+/* Attention pulse-ring around the primary CTA. */
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+
+/* Slow spotlight cones sweeping across the hero stage. */
+@keyframes spotSweepA {
+  0%, 100% { transform: translateX(-12%) rotate(-6deg); }
+  50%      { transform: translateX(14%) rotate(6deg); }
+}
+@keyframes spotSweepB {
+  0%, 100% { transform: translateX(12%) rotate(7deg); }
+  50%      { transform: translateX(-14%) rotate(-7deg); }
 }
 
 @layer utilities {
@@ -50,10 +121,106 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  /* The solid layer is clipped to padding-box (keeps content readable); the
+     conic gradient is clipped to border-box so only the 1px frame shows it.
+     Content is never overlaid, so this is safe on the sticky nav. */
   .glass-panel {
-    background: rgba(17, 17, 17, 0.7);
+    background:
+      linear-gradient(rgba(17, 17, 17, 0.7), rgba(17, 17, 17, 0.7)) padding-box,
+      conic-gradient(
+        from var(--shimmer-angle),
+        rgba(212, 175, 55, 0.25),
+        rgba(255, 255, 255, 0.04),
+        rgba(139, 30, 45, 0.2),
+        rgba(212, 175, 55, 0.25)
+      ) border-box;
+    border: 1px solid transparent;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--color-brand-border);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .glass-panel {
+      animation: shimmer-spin 60s linear infinite;
+    }
+  }
+
+  /* Faint red-carpet grid behind scoreboard rows. */
+  .scoreboard-table-wrapper {
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0px, transparent 1px),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .episode-pulse {
+    border-radius: 50%;
+    background: transparent;
+    will-change: box-shadow;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .episode-pulse {
+      animation: episodePulse 3s ease-out infinite;
+    }
+  }
+
+  /* Keyboard-accessible focus ring against the dark theme. */
+  :focus-visible {
+    outline: 2px solid #D4AF37;
+    outline-offset: 3px;
+  }
+
+  .cta-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.45) 50%,
+      transparent 65%
+    );
+    transform: translateX(-150%) skewX(-12deg);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cta-shimmer::after {
+      animation: ctaSweep 3s ease-in-out infinite;
+    }
+  }
+
+  .pulse-ring {
+    position: relative;
+  }
+  .pulse-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid rgba(139, 30, 45, 0.6);
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .pulse-ring::before {
+      animation: pulseRing 2.5s ease-out infinite;
+    }
+  }
+
+  .spotlight-cone {
+    position: absolute;
+    top: -10%;
+    width: 40%;
+    height: 120%;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.07), transparent 75%);
+    clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+    opacity: 0.07;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .spotlight-cone.spot-a { animation: spotSweepA 18s ease-in-out infinite; }
+    .spotlight-cone.spot-b { animation: spotSweepB 20s ease-in-out infinite; }
   }
 }

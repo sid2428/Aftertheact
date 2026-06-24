@@ -1,5 +1,11 @@
 import { getServiceSupabase } from "@/lib/supabase";
+import Image from "next/image";
 import { ScoreboardHero } from "@/components/ScoreboardHero";
+
+export const metadata = {
+  title: "The Verdict Board",
+  description: "Every score. Every receipt. The community's running judgement of every act.",
+};
 
 export const revalidate = 60; // ISR cache 60 seconds
 
@@ -9,14 +15,15 @@ export default async function CommunityScoreboard() {
   const { data: rankings } = await supabase
     .from("ContestantEpisodeAppearance")
     .select(`
+      id,
       latent_score,
       total_votes_raw,
       controversy_flag,
       Contestant (
-        name, slug, talent_type, image_url, is_removed_by_request
+        id, name, slug, talent_type, image_url, is_removed_by_request
       ),
       Episode (
-        season_number, episode_number
+        id, season_number, episode_number
       )
     `)
     .not("latent_score", "is", null)
@@ -33,7 +40,7 @@ export default async function CommunityScoreboard() {
     <div className="min-h-screen bg-[#0A0A0A] selection:bg-latent-crimson/30">
 
       {/* Full Viewport Hero */}
-      <ScoreboardHero />
+      <ScoreboardHero topThree={podium.map((e) => ({ name: e.Contestant.name, image_url: e.Contestant.image_url }))} />
 
       {/* Podium - Top 3 */}
       {podium.length > 0 && (
@@ -47,10 +54,13 @@ export default async function CommunityScoreboard() {
               const size = isFirst ? "w-28 h-28 sm:w-40 sm:h-40" : "w-20 h-20 sm:w-28 sm:h-28";
               return (
                 <div key={entry.id} className={`flex flex-col items-center text-center ${isFirst ? "mb-8 sm:mb-16" : ""}`}>
-                  <div className="text-2xl sm:text-4xl font-display font-black text-white/30 mb-2">#{place}</div>
-                  <div className={`rounded-full overflow-hidden border-4 ${ring} ${size} bg-[#111111] flex items-center justify-center`}>
+                  <div className="mb-2">
+                    <div className="text-[9px] sm:text-[10px] font-display font-black uppercase tracking-[0.3em] text-white/30">Rank</div>
+                    <div className="text-2xl sm:text-4xl font-display font-black text-white/40 leading-none">{place}</div>
+                  </div>
+                  <div className={`relative rounded-full overflow-hidden border-4 ${ring} ${size} bg-[#111111] flex items-center justify-center`}>
                     {c.image_url ? (
-                      <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
+                      <Image src={c.image_url} alt={c.name} fill sizes="160px" className="object-cover" unoptimized />
                     ) : (
                       <span className="font-display font-black text-3xl sm:text-5xl text-white/20">{c.name[0]}</span>
                     )}
@@ -66,11 +76,11 @@ export default async function CommunityScoreboard() {
 
       {/* The rest of the Scoreboard */}
       <div className="max-w-6xl mx-auto p-6 sm:p-12 mt-12 sm:mt-16 mb-32 relative z-20">
-        <div className="space-y-0 rounded-md overflow-hidden border border-brand-border bg-[#111111] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="scoreboard-table-wrapper space-y-0 rounded-md overflow-hidden border border-brand-border bg-[#111111] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
           <div className="hidden sm:grid grid-cols-[80px_1fr_120px] gap-6 p-4 border-b border-brand-border bg-[#050505] text-white/50 font-display font-black uppercase tracking-widest text-sm">
             <div className="text-center">Rank</div>
             <div>Contestant</div>
-            <div className="text-right">Latent Score</div>
+            <div className="text-right">Jury Score</div>
           </div>
 
           {rest.length > 0 ? (
@@ -81,14 +91,17 @@ export default async function CommunityScoreboard() {
                 <div key={index} className="group relative border-b last:border-b-0 border-brand-border hover:bg-white/5 transition-colors p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
                   
                   {/* Rank */}
-                  <div className="text-3xl sm:text-5xl font-mono font-black text-white/10 w-12 sm:w-16 text-center group-hover:text-latent-gold transition-colors">
-                    #{index + 4}
+                  <div className="w-12 sm:w-16 text-center shrink-0">
+                    <div className="text-[9px] font-display font-black uppercase tracking-[0.3em] text-white/20 group-hover:text-latent-gold/60 transition-colors">Rank</div>
+                    <div className="text-3xl sm:text-5xl font-mono font-black text-white/10 leading-none group-hover:text-latent-gold transition-colors">
+                      {index + 4}
+                    </div>
                   </div>
                   
                   {/* Image */}
                   <div className="relative w-16 h-16 sm:w-24 sm:h-24 shrink-0 border border-brand-border bg-[#0A0A0A] overflow-hidden rounded-sm">
                     {contestant.image_url ? (
-                      <img src={contestant.image_url} alt={contestant.name} className="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500" />
+                      <Image src={contestant.image_url} alt={contestant.name} fill sizes="96px" className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center font-display font-black text-3xl text-white/10">
                         {contestant.name[0]}

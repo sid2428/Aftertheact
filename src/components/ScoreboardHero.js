@@ -2,13 +2,50 @@
 
 import { motion } from "framer-motion";
 
-export function ScoreboardHero() {
+export function ScoreboardHero({ topThree = [] }) {
   return (
     <div className="min-h-[85vh] flex flex-col items-center justify-center relative overflow-hidden bg-[#0A0A0A]">
-      
+
       {/* Background Gradients & Glows */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-latent-crimson/5 blur-[100px] rounded-full pointer-events-none" />
+
+      {/* Left: fanned polaroid cards of the top 3 contestants */}
+      {topThree.length > 0 && (
+        <div className="hidden lg:block absolute bottom-16 left-10 xl:left-20 z-10 pointer-events-none">
+          {topThree.slice(0, 3).map((c, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 40, rotate: 0 }}
+              animate={{ opacity: 1, y: 0, rotate: [-6, 4, -5][i] || 0 }}
+              transition={{ delay: 0.8 + i * 0.15, duration: 0.6, ease: "easeOut" }}
+              className="absolute bottom-0"
+              style={{ left: `${i * 70}px`, zIndex: 10 - i }}
+            >
+              <div className="bg-white p-2 pb-6 shadow-[0_12px_40px_rgba(0,0,0,0.7)] border-4 border-white">
+                <div className="w-32 h-32 bg-[#111111] overflow-hidden flex items-center justify-center">
+                  {c.image_url ? (
+                    <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
+                  ) : (
+                    <span className="font-display font-black text-4xl text-black/20">{c.name?.[0]}</span>
+                  )}
+                </div>
+                <div className="mt-2 font-mono text-[10px] font-bold uppercase tracking-widest text-black/70 text-center truncate max-w-[128px]">
+                  {c.name}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Right: atmospheric vertical "VERDICT" */}
+      <div
+        className="hidden lg:block absolute right-4 xl:right-12 top-1/2 -translate-y-1/2 z-0 pointer-events-none select-none font-display font-black uppercase leading-none"
+        style={{ writingMode: "vertical-rl", color: "rgba(255,255,255,0.03)", fontSize: "clamp(8rem, 16vw, 16rem)" }}
+      >
+        Verdict
+      </div>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -22,7 +59,7 @@ export function ScoreboardHero() {
           transition={{ delay: 0.2 }}
           className="inline-block bg-[#111111] text-white/70 border border-white/10 px-6 py-2 font-display font-black uppercase tracking-widest mb-4 shadow-[0_0_15px_rgba(255,255,255,0.05)] rounded-sm"
         >
-          The Wall of Shame & Fame 🤡
+          Every Score. Every Receipt.
         </motion.div>
         
         <h1 className="text-7xl sm:text-9xl md:text-[10rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">

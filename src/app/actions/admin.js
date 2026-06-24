@@ -140,10 +140,15 @@ export async function savePanelMembers(formData) {
   for (let i = 0; i < MAX_PANEL; i++) {
     const image = (formData.get(`image_${i}`) || "").trim();
     const name = (formData.get(`name_${i}`) || "").trim();
-    if (image || name) members.push({ name, image });
+    const descriptor = (formData.get(`descriptor_${i}`) || "").trim();
+    const instagram_handle = (formData.get(`instagram_${i}`) || "").trim();
+    const bio = (formData.get(`bio_${i}`) || "").trim();
+    const id = (formData.get(`id_${i}`) || "").trim() || undefined;
+    if (image || name) members.push({ id, name, image, descriptor, instagram_handle, bio });
   }
   await setPanelMembers(members);
   revalidatePath("/admin/panel");
+  revalidatePath("/panel");
   revalidatePath("/");
 }
 
