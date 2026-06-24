@@ -196,7 +196,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts })
                 <input type="number" step="0.1" value={contestantForm.judge_average} onChange={e => setContestantForm({...contestantForm, judge_average: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold text-center rounded-sm focus:border-latent-gold outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-display font-black uppercase text-latent-crimson/80 mb-1">Latent Score</label>
+                <label className="block text-xs font-display font-black uppercase text-latent-crimson/80 mb-1">Self Score</label>
                 <input type="number" step="0.1" value={contestantForm.latent_score} onChange={e => setContestantForm({...contestantForm, latent_score: e.target.value})} className="w-full bg-[#050505] text-latent-crimson border border-latent-crimson/30 p-2 font-mono font-bold text-center rounded-sm focus:border-latent-crimson outline-none" />
               </div>
             </div>

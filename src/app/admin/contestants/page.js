@@ -31,6 +31,13 @@ export default async function AdminContestants() {
     revalidatePath("/admin/contestants");
   }
 
+  async function setContestantImage(formData) {
+    "use server";
+    const sb = getServiceSupabase();
+    await sb.from("Contestant").update({ image_url: formData.get("image_url") || null }).eq("id", formData.get("id"));
+    revalidatePath("/admin/contestants");
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -53,12 +60,17 @@ export default async function AdminContestants() {
                   )}
                   <div>
                     <div className="font-bold flex items-center gap-2">
-                      {c.name} 
+                      {c.name}
                       {c.is_removed_by_request && <span className="text-xs bg-red-900/50 text-red-400 px-2 rounded">REMOVED</span>}
                     </div>
                     <div className="text-sm text-neutral-500">{c.talent_type}</div>
                   </div>
                 </div>
+                <form action={setContestantImage} className="flex gap-2 items-center">
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="url" name="image_url" defaultValue={c.image_url || ""} placeholder="Photo URL" className="bg-neutral-800 border border-neutral-700 rounded p-1.5 text-white text-sm w-48" />
+                  <button className="text-rose-500 text-sm font-bold hover:underline">Save</button>
+                </form>
               </div>
             ))
           ) : (

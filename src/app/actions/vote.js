@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
 import { redis } from "@/lib/upstash";
+import { normalizeScore } from "@/lib/utils";
 
 export async function submitVote(episodeId, contestantId, score) {
   const session = await getServerSession(authOptions);
@@ -14,14 +15,15 @@ export async function submitVote(episodeId, contestantId, score) {
 
   const userId = session.user.id;
 
-  // Validate score
-  if (score < 1 || score > 10) {
+  // Validate score: finite number in [1, 10], quantized to 0.1. Never trust the client.
+  score = normalizeScore(score);
+  if (score === null) {
     return { success: false, error: "Invalid score. Must be between 1 and 10." };
   }
 
   const supabase = getServiceSupabase();
 
-  // 1. Check if voting window is open (we check Postgres)
+  // 1. Check the voting window is open AND this contestant is actually in this episode.
   const { data: episode } = await supabase
     .from("Episode")
     .select("status")
@@ -30,6 +32,16 @@ export async function submitVote(episodeId, contestantId, score) {
 
   if (episode?.status !== "LIVE") {
     return { success: false, error: "Voting window is closed." };
+  }
+
+  const { count: inEpisode } = await supabase
+    .from("ContestantEpisodeAppearance")
+    .select("id", { count: "exact", head: true })
+    .eq("episode_id", episodeId)
+    .eq("contestant_id", contestantId);
+
+  if (!inEpisode) {
+    return { success: false, error: "Contestant is not part of this episode." };
   }
 
   // 2. Rate limiting / Duplicate vote check in Redis (fast)

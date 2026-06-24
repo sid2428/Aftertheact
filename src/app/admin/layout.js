@@ -24,8 +24,12 @@ export default async function AdminLayout({ children }) {
             <span className="w-3 h-3 bg-latent-crimson rounded-full shadow-[0_0_10px_rgba(139,30,45,0.8)] animate-pulse-fast"></span>
             Control Panel
           </h1>
-          <div className="text-xs font-mono font-bold text-latent-gold border border-latent-gold/30 px-3 py-1 bg-latent-gold/10 rounded-sm">
-            SHOWRUNNER_ACCESS
+          <div className="flex items-center gap-6 font-display font-black uppercase text-sm text-white/60">
+            <Link href="/admin" className="hover:text-latent-gold transition-colors">Switchboard</Link>
+            <Link href="/admin/episodes" className="hover:text-latent-gold transition-colors">Episodes</Link>
+            <Link href="/admin/contestants" className="hover:text-latent-gold transition-colors">Contestants</Link>
+            <Link href="/admin/users" className="hover:text-latent-gold transition-colors">Users</Link>
+            <Link href="/admin/panel" className="hover:text-latent-gold transition-colors">Panel</Link>
           </div>
         </div>
       </div>

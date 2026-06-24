@@ -1,5 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import ContestantCard from "@/components/ContestantCard";
+import VotingSection from "@/components/VotingSection";
 import RevelationSequence, { RevelationItem } from "@/components/RevelationSequence";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -100,17 +101,30 @@ export default async function EpisodePage({ params }) {
             The Lineup
           </h2>
           
-          <RevelationSequence isRevealed={episode.status === "REVEALED" || episode.status === "ARCHIVED"}>
-            {sortedAppearances.map((app) => (
-              <RevelationItem key={app.id}>
-                <ContestantCard 
-                  contestant={app.Contestant} 
-                  appearance={app} 
-                  episodeStatus={episode.status} 
-                />
-              </RevelationItem>
-            ))}
-          </RevelationSequence>
+          {episode.status === "LIVE" ? (
+            <VotingSection
+              episodeId={episode.id}
+              contestants={sortedAppearances.map((app) => ({
+                id: app.Contestant.id,
+                name: app.Contestant.name,
+                talent_type: app.Contestant.talent_type,
+                image_url: app.Contestant.image_url,
+                initialRawScore: app.peoples_verdict_raw,
+              }))}
+            />
+          ) : (
+            <RevelationSequence isRevealed={episode.status === "REVEALED" || episode.status === "ARCHIVED"}>
+              {sortedAppearances.map((app) => (
+                <RevelationItem key={app.id}>
+                  <ContestantCard
+                    contestant={app.Contestant}
+                    appearance={app}
+                    episodeStatus={episode.status}
+                  />
+                </RevelationItem>
+              ))}
+            </RevelationSequence>
+          )}
 
           {sortedAppearances.length === 0 && (
             <div className="text-center py-24 bg-[#050505] text-white/30 font-display font-black uppercase tracking-widest text-2xl border border-white/10 border-dashed rounded-md">

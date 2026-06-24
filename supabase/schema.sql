@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS "UserVote" (
     user_id UUID REFERENCES "User"(id) ON DELETE CASCADE,
     episode_id UUID REFERENCES "Episode"(id) ON DELETE CASCADE,
     contestant_id UUID REFERENCES "Contestant"(id) ON DELETE CASCADE,
-    score INTEGER CHECK (score BETWEEN 1 AND 10),
+    score NUMERIC(3,1) CHECK (score BETWEEN 1 AND 10), -- 1.0–10.0, 0.1 precision
     trust_score_at_vote FLOAT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE (user_id, episode_id, contestant_id)
