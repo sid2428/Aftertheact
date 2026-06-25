@@ -8,8 +8,8 @@ import ScrollDigit from "./ScrollDigit";
 import RollingNumber from "./RollingNumber";
 import VerdictReveal from "./VerdictReveal";
 
-const INT_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10
-const DEC_OPTIONS = Array.from({ length: 10 }, (_, i) => i); // 0..9
+const INT_OPTIONS = [null, ...Array.from({ length: 10 }, (_, i) => i + 1)]; // —,1..10
+const DEC_OPTIONS = [null, ...Array.from({ length: 10 }, (_, i) => i)]; // —,0..9
 
 let audioCtx;
 function playLockSound() {
@@ -42,8 +42,40 @@ function playLockSound() {
   }
 }
 
+function useCountdown(revealAt) {
+  const [remaining, setRemaining] = useState(() => {
+    if (!revealAt) return null;
+    const diff = new Date(revealAt).getTime() - Date.now();
+    return diff > 0 ? diff : 0;
+  });
+
+  useEffect(() => {
+    if (!revealAt) return;
+    const tick = () => {
+      const diff = new Date(revealAt).getTime() - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [revealAt]);
+
+  return remaining;
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return null;
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+
 const LiveVoting = forwardRef(function LiveVoting(
-  { episodeId, contestantId, initialRawScore = 0, userVoteScore = null, isEpisodeClosed = false, onRevealClose },
+  { episodeId, contestantId, initialRawScore = 0, userVoteScore = null, isEpisodeClosed = false, revealAt = null, onRevealClose },
   ref
 ) {
   const [liveScore, setLiveScore] = useState(initialRawScore || 0);
@@ -58,6 +90,11 @@ const LiveVoting = forwardRef(function LiveVoting(
 
   const touched = intPart !== null || decPart !== null;
   const score = touched ? normalizeScore((intPart ?? 1) + (decPart ?? 0) / 10) : null;
+
+  const msRemaining = useCountdown(revealAt);
+  const countdownLabel = msRemaining != null ? formatCountdown(msRemaining) : null;
+  // Show crowd verdict only if there's no pending reveal countdown
+  const showCrowdVerdict = countdownLabel === null;
 
   useEffect(() => {
     // No live feed needed once voting has closed.
@@ -124,18 +161,16 @@ const LiveVoting = forwardRef(function LiveVoting(
 
   const handleIntChange = (v) => {
     setIntPart(v);
-    if (decPart === null) setDecPart(0);
-    if (v === 10) setDecPart(0); // cap at 10.0, no 10.1+
+    if (v === 10) setDecPart(0);
   };
 
   const handleDecChange = (v) => {
-    if (intPart === 10) return; // locked to .0 at the max
+    if (intPart === 10) return;
     setDecPart(v);
-    if (intPart === null) setIntPart(1);
   };
 
-  // ── Crowd average strip — prominent, live community average + voter count ──
-  const crowdStrip = (
+  // ── Top strip — countdown to reveal, or live crowd average once past reveal time ──
+  const crowdStrip = showCrowdVerdict ? (
     <div className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-brand-border bg-[#0A0A0A] px-4 py-3">
       <div className="flex items-center gap-2">
         <span className="h-2.5 w-2.5 rounded-full bg-latent-crimson animate-pulse-fast shadow-[0_0_8px_rgba(139,30,45,0.8)]" />
@@ -150,6 +185,16 @@ const LiveVoting = forwardRef(function LiveVoting(
           </span>
         )}
       </div>
+    </div>
+  ) : (
+    <div className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-latent-gold/20 bg-[#0A0A0A] px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-latent-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
+        <span className="font-display text-xs uppercase tracking-widest text-latent-gold">Reveal In</span>
+      </div>
+      <span className="font-number text-xl font-bold tracking-widest text-latent-gold tabular-nums">
+        {countdownLabel}
+      </span>
     </div>
   );
 
@@ -212,25 +257,18 @@ const LiveVoting = forwardRef(function LiveVoting(
             </AnimatePresence>
 
             <div className="relative z-10">
-              <ScrollDigit options={INT_OPTIONS} value={intPart ?? 1} onChange={handleIntChange} disabled={hasVoted} size="lg" />
+              <ScrollDigit options={INT_OPTIONS} value={intPart} onChange={handleIntChange} disabled={hasVoted} size="lg" />
             </div>
             <span className="relative z-10 font-number text-6xl font-bold text-white/40 sm:text-8xl">.</span>
             <div className="relative z-10">
               <ScrollDigit
                 options={DEC_OPTIONS}
-                value={decPart ?? 0}
+                value={decPart}
                 onChange={handleDecChange}
                 disabled={hasVoted || intPart === 10}
                 size="lg"
               />
             </div>
-
-            {/* Default state: "-" overlay, fades out on first touch */}
-            {!touched && (
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                <span className="font-number text-9xl font-bold leading-none text-white/20 sm:text-[12rem]">—</span>
-              </div>
-            )}
           </div>
 
           <div className="my-6 text-center font-display text-xs uppercase tracking-widest text-white/40 sm:text-sm">

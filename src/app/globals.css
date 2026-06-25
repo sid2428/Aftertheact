@@ -154,7 +154,7 @@ body::after {
      Content is never overlaid, so this is safe on the sticky nav. */
   .glass-panel {
     background:
-      linear-gradient(rgba(17, 17, 17, 0.7), rgba(17, 17, 17, 0.7)) padding-box,
+      linear-gradient(rgba(17, 17, 17, 1), rgba(17, 17, 17, 1)) padding-box,
       conic-gradient(
         from var(--shimmer-angle),
         rgba(212, 175, 55, 0.25),
@@ -163,8 +163,6 @@ body::after {
         rgba(212, 175, 55, 0.25)
       ) border-box;
     border: 1px solid transparent;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
   @media (prefers-reduced-motion: no-preference) {
     .glass-panel {

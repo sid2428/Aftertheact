@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import LiveVoting from "./LiveVoting";
 
-export default function VotingSection({ episodeId, contestants, isEpisodeClosed = false }) {
+export default function VotingSection({ episodeId, contestants, isEpisodeClosed = false, revealAt = null }) {
   const cardRefs = useRef([]);
   const rowRefs = useRef([]);
   const [lockingAll, setLockingAll] = useState(false);
@@ -61,6 +61,7 @@ export default function VotingSection({ episodeId, contestants, isEpisodeClosed 
                   initialRawScore={c.initialRawScore}
                   userVoteScore={c.userVoteScore}
                   isEpisodeClosed={isEpisodeClosed}
+                  revealAt={revealAt}
                   onRevealClose={() => scrollToNext(i)}
                 />
               </div>

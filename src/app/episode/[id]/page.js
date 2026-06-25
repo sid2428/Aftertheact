@@ -89,7 +89,7 @@ export default async function EpisodePage({ params }) {
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
               <span className={`px-2 py-1 text-[10px] sm:text-xs font-display font-black uppercase tracking-widest border rounded-sm ${
-                episode.status === 'LIVE' ? 'bg-latent-crimson/20 text-latent-crimson border-latent-crimson animate-pulse-fast shadow-[0_0_10px_rgba(139,30,45,0.5)]' : 
+                episode.status === 'LIVE' ? 'bg-latent-crimson/20 text-latent-crimson border-latent-crimson animate-pulse-fast shadow-[0_0_10px_rgba(139,30,45,0.5)]' :
                 episode.status === 'UPCOMING' ? 'bg-[#050505] text-white/50 border-white/20' :
                 'bg-latent-gold/20 text-latent-gold border-latent-gold/50'
               }`}>
@@ -98,7 +98,7 @@ export default async function EpisodePage({ params }) {
             </div>
             <div className="text-sm font-mono font-bold text-white/50">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
           </div>
-          
+
           {episode.status === "LIVE" && (
             <div className="flex items-center gap-3 bg-latent-crimson text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 rounded-sm shadow-[0_0_20px_rgba(139,30,45,0.6)]">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
@@ -183,6 +183,7 @@ export default async function EpisodePage({ params }) {
               <div className="relative">
                 <VotingSection
                   episodeId={episode.id}
+                  revealAt={episode.voting_window_close ?? null}
                   contestants={sortedAppearances.map((app) => ({
                     id: app.Contestant.id,
                     name: app.Contestant.name,

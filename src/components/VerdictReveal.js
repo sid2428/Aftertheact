@@ -27,7 +27,7 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
   const animatedUser = useCountUp(userScore, 0.8);
   const animatedCrowd = useCountUp(crowdAverage, 0.8);
 
-  // Confetti burst — fire once when the modal opens.
+  // Confetti burst + celebration sound — fire once when the modal opens.
   useEffect(() => {
     confetti({
       colors: ["#D4AF37", "#F5D97B", "#8B1E2D", "#ffffff"],
@@ -36,6 +36,27 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
       spread: 70,
       startVelocity: 30,
     });
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Ascending C major arpeggio: C5 → E5 → G5 → C6
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      });
+    } catch (_) {
+      // audio unavailable — silently skip
+    }
   }, []);
 
   // Auto-dismiss after 10s, with a depleting countdown ring.
