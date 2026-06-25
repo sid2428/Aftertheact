@@ -2,14 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +24,9 @@ export default function AdminLoginPage() {
       setError("Invalid credentials. The internet is watching.");
       setLoading(false);
     } else {
-      router.push("/admin");
+      // ponytail: full reload, not router.push — avoids serving the stale
+      // pre-login Router Cache entry for /admin (which redirects to here)
+      window.location.href = "/admin";
     }
   };
 

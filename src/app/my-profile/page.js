@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
+import ProfileCommentsPanel from "@/components/ProfileCommentsPanel";
 
 export default async function MyProfile() {
   const session = await getServerSession(authOptions);
@@ -20,6 +21,26 @@ export default async function MyProfile() {
   if (!userProfile) {
     return <div className="p-12 text-center font-display font-black text-xl">User record not found.</div>;
   }
+
+  const [{ data: votes }, { data: comments }] = await Promise.all([
+    supabase
+      .from("UserVote")
+      .select("id, score, Contestant(name), Episode(id, season_number, episode_number, title)")
+      .eq("user_id", session.user.id),
+    supabase
+      .from("CommunityPost")
+      .select("id, text, like_count, reply_count, created_at, Episode(season_number, episode_number)")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  // ponytail: plain object grouping, swap for a lib if episode counts get large
+  const votesByEpisode = (votes || []).reduce((acc, v) => {
+    const epId = v.Episode?.id || "unknown";
+    if (!acc[epId]) acc[epId] = { episode: v.Episode, votes: [] };
+    acc[epId].votes.push(v);
+    return acc;
+  }, {});
 
   return (
     <div className="max-w-4xl mx-auto p-6 sm:p-12 space-y-12">
@@ -131,7 +152,43 @@ export default async function MyProfile() {
           <div className="text-2xl font-mono font-black text-[#4CAF50]">{userProfile.trust_score?.toFixed(2)}</div>
         </div>
       </div>
-      
+
+      {/* Votes by Episode */}
+      <div className="bg-[#111111] border border-brand-border p-6 rounded-md shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+        <h2 className="text-xl font-display font-black uppercase tracking-widest text-white border-b border-white/10 pb-3 mb-4">
+          Your Votes
+        </h2>
+        {Object.keys(votesByEpisode).length === 0 ? (
+          <div className="text-white/30 font-mono text-sm">No votes cast yet.</div>
+        ) : (
+          <div className="space-y-4">
+            {Object.values(votesByEpisode).map(({ episode, votes: epVotes }) => (
+              <div key={episode?.id || "unknown"} className="bg-[#050505] border border-brand-border rounded-sm p-4">
+                <div className="text-xs font-display font-bold uppercase tracking-widest text-latent-gold/70 mb-2">
+                  S{episode?.season_number}E{episode?.episode_number} — {episode?.title}
+                </div>
+                <div className="space-y-1">
+                  {epVotes.map((v) => (
+                    <div key={v.id} className="flex justify-between items-center font-mono text-sm text-white/70">
+                      <span>{v.Contestant?.name}</span>
+                      <span className="text-latent-gold font-bold">{v.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Your Comments */}
+      <div className="bg-[#111111] border border-brand-border p-6 rounded-md shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+        <h2 className="text-xl font-display font-black uppercase tracking-widest text-white border-b border-white/10 pb-3 mb-4">
+          Your Comments
+        </h2>
+        <ProfileCommentsPanel initialComments={comments || []} />
+      </div>
+
     </div>
   );
 }

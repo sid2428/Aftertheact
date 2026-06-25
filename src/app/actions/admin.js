@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
 import { setPanelMembers, MAX_PANEL } from "@/lib/panel";
+import { saveUploadedImage } from "@/lib/uploadImage";
 import { revalidatePath } from "next/cache";
 
 export async function createEpisode(data) {
@@ -31,7 +32,7 @@ export async function createEpisode(data) {
 }
 
 // Helper to verify admin status
-async function verifyAdmin() {
+export async function verifyAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
     throw new Error("Unauthorized: Admin access required.");
@@ -97,15 +98,24 @@ export async function updateEpisode(formData) {
   await verifyAdmin();
   const supabase = getServiceSupabase();
   const id = formData.get("episode_id");
-  await supabase.from("Episode").update({
+
+  const update = {
     season_number: parseInt(formData.get("season_number")),
     episode_number: parseInt(formData.get("episode_number")),
     title: formData.get("title"),
     air_date: new Date(formData.get("air_date")).toISOString(),
     admin_note: formData.get("admin_note") || null,
-  }).eq("id", id);
+  };
+
+  const thumbnailFile = formData.get("thumbnail_file");
+  if (thumbnailFile && thumbnailFile.size > 0) {
+    update.thumbnail_url = await saveUploadedImage(thumbnailFile, "episodes");
+  }
+
+  await supabase.from("Episode").update(update).eq("id", id);
   revalidatePath(`/admin/episodes/${id}`);
   revalidatePath(`/episode/${id}`);
+  revalidatePath("/episodes");
 }
 
 export async function removeAppearance(formData) {
@@ -138,17 +148,20 @@ export async function savePanelMembers(formData) {
   await verifyAdmin();
   const members = [];
   for (let i = 0; i < MAX_PANEL; i++) {
-    const image = (formData.get(`image_${i}`) || "").trim();
     const name = (formData.get(`name_${i}`) || "").trim();
     const descriptor = (formData.get(`descriptor_${i}`) || "").trim();
     const instagram_handle = (formData.get(`instagram_${i}`) || "").trim();
     const bio = (formData.get(`bio_${i}`) || "").trim();
     const id = (formData.get(`id_${i}`) || "").trim() || undefined;
+    const existingImage = (formData.get(`existing_image_${i}`) || "").trim();
+    const imageFile = formData.get(`image_${i}`);
+    const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, "judges") : existingImage;
     if (image || name) members.push({ id, name, image, descriptor, instagram_handle, bio });
   }
   await setPanelMembers(members);
   revalidatePath("/admin/panel");
   revalidatePath("/panel");
+  revalidatePath("/");
   revalidatePath("/");
 }
 

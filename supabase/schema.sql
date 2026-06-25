@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "Episode" (
     status VARCHAR(20) DEFAULT 'UPCOMING' CHECK (status IN ('UPCOMING', 'LIVE', 'REVEALED', 'ARCHIVED')),
     is_revelation_triggered BOOLEAN DEFAULT false,
     admin_note TEXT,
+    thumbnail_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE (season_number, episode_number)
 );

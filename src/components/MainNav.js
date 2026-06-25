@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [confirmSignout, setConfirmSignout] = useState(false);
 
   const links = [
     { href: "/scoreboard", label: "Verdict Board" },
@@ -54,7 +56,7 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
                   <Link href="/admin" className="text-latent-crimson font-display font-bold uppercase text-sm hover:text-white transition-colors">Showrunner</Link>
                 )}
                 <Link href="/my-profile" className="text-white/70 font-display font-bold uppercase text-sm hover:text-white transition-colors">Profile</Link>
-                <Link href="/api/auth/signout?callbackUrl=/" className="text-white/70 font-display font-bold uppercase text-sm hover:text-latent-crimson transition-colors">Logout</Link>
+                <button onClick={() => setConfirmSignout(true)} className="text-white/70 font-display font-bold uppercase text-sm hover:text-latent-crimson transition-colors">Logout</button>
               </>
             ) : (
               <Link href="/api/auth/signin" className="bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] font-display font-black uppercase text-sm tracking-widest px-6 py-2.5 rounded-sm hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all">
@@ -112,11 +114,31 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
                     <Link href="/admin" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-latent-crimson">Showrunner</Link>
                   )}
                   <Link href="/my-profile" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-white/80">Profile</Link>
-                  <Link href="/api/auth/signout?callbackUrl=/" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-white/80">Logout</Link>
+                  <button onClick={() => { setOpen(false); setConfirmSignout(true); }} className="text-left font-display font-black uppercase tracking-widest text-2xl text-white/80">Logout</button>
                 </>
               ) : (
                 <Link href="/api/auth/signin" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-latent-gold">Join the Jury</Link>
               )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Signout confirm modal */}
+      <AnimatePresence>
+        {confirmSignout && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6"
+            onClick={() => setConfirmSignout(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()} className="bg-[#111111] border border-latent-crimson/30 rounded-md p-6 max-w-sm w-full text-center">
+              <div className="font-display font-black uppercase tracking-widest text-white mb-2">Sign out?</div>
+              <p className="text-white/50 text-sm mb-6">You&apos;ll need to sign back in to vote and post.</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => signOut({ callbackUrl: "/" })} className="bg-latent-crimson text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Sign Out</button>
+                <button onClick={() => setConfirmSignout(false)} className="glass-panel text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Cancel</button>
+              </div>
             </div>
           </motion.div>
         )}
