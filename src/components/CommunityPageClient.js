@@ -3,11 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Heart, MessageCircle, Flag, Trash2 } from "lucide-react";
+import { MessageCircle, Flag, Trash2, Trophy, PenLine } from "lucide-react";
 
-// The compose box's only animated flourish (spec P2.1): the placeholder types
-// and deletes through a few prompts. The single typing effect on this page.
 const COMPOSE_PROMPTS = ["Drop your take…", "Was that score actually fair?…", "Who got robbed tonight?…"];
+
+// ponytail: all 5 reactions map to one like_count — no schema change; add reaction_type col when you need per-emoji analytics
+const REACTIONS = [
+  { emoji: "💀", label: "Dead" },
+  { emoji: "🔥", label: "Slay" },
+  { emoji: "😬", label: "Yikes" },
+  { emoji: "👏", label: "Clap" },
+  { emoji: "🗿", label: "Respectfully" },
+];
 
 function useCyclingPlaceholder(reduced) {
   const [placeholder, setPlaceholder] = useState(COMPOSE_PROMPTS[0]);
@@ -84,7 +91,16 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
   const [replies, setReplies] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [replyCount, setReplyCount] = useState(post.reply_count || 0);
+  const [replyError, setReplyError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [myReaction, setMyReaction] = useState(null);
+  // Optimistic like count so UI updates instantly before API returns.
+  const [optimisticCount, setOptimisticCount] = useState(post.like_count || 0);
+  const [optimisticLiked, setOptimisticLiked] = useState(liked);
+
+  // Keep optimistic state in sync when parent updates (e.g. another post update).
+  useEffect(() => { setOptimisticCount(post.like_count || 0); }, [post.like_count]);
+  useEffect(() => { setOptimisticLiked(liked); }, [liked]);
 
   const loadReplies = async () => {
     const next = !expanded;
@@ -100,18 +116,42 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
     const text = replyText.trim();
     if (!text || busy) return;
     setBusy(true);
-    const res = await fetch(`/api/community/posts/${post.id}/replies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const json = await res.json();
-    if (json.success) {
-      setReplies((r) => [...(r || []), json.data]);
-      setReplyCount((c) => c + 1);
-      setReplyText("");
+    setReplyError(null);
+    try {
+      const res = await fetch(`/api/community/posts/${post.id}/replies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setReplies((r) => [...(r || []), json.data]);
+        setReplyCount((c) => c + 1);
+        setReplyText("");
+      } else {
+        setReplyError(json.error || "Failed to reply.");
+      }
+    } catch {
+      setReplyError("Network error. Try again.");
     }
     setBusy(false);
+  };
+
+  const handleReact = (emoji) => {
+    if (!currentUser) return;
+    // Optimistic update — feels instant.
+    if (optimisticLiked) {
+      // Already liked: any emoji click un-likes.
+      setOptimisticLiked(false);
+      setOptimisticCount((c) => Math.max(0, c - 1));
+      setMyReaction(null);
+    } else {
+      // Not liked: like it with this emoji.
+      setOptimisticLiked(true);
+      setOptimisticCount((c) => c + 1);
+      setMyReaction(emoji);
+    }
+    onToggleLike(post.id);
   };
 
   const isAuthor = currentUser && post.User?.id === currentUser.id;
@@ -129,32 +169,49 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
 
       <p className="text-[15px] text-white/90 leading-relaxed font-sans break-words">{post.text}</p>
 
-      <div className="flex items-center gap-6 mt-4 text-white/50">
-        <button
-          onClick={() => onToggleLike(post.id)}
-          className="flex items-center gap-1.5 text-sm hover:text-latent-crimson transition-colors"
-          aria-label="Like"
-        >
-          <motion.span whileTap={{ scale: 1.4 }}>
-            <Heart size={18} className={liked ? "fill-latent-crimson text-latent-crimson" : ""} />
-          </motion.span>
-          <span className="font-mono">{post.like_count || 0}</span>
-        </button>
+      <div className="flex items-center gap-1 mt-4 flex-wrap">
+        {REACTIONS.map(({ emoji, label }) => {
+          const active = myReaction === emoji && optimisticLiked;
+          return (
+            <motion.button
+              key={emoji}
+              onClick={() => handleReact(emoji)}
+              whileTap={{ scale: 1.35 }}
+              title={label}
+              aria-label={label}
+              className={`rounded-full px-2.5 py-1 text-sm border transition-all duration-200 ${
+                active
+                  ? "border-latent-gold/50 bg-latent-gold/15 shadow-[0_0_10px_rgba(212,175,55,0.25)]"
+                  : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:scale-105"
+              }`}
+            >
+              {emoji}
+            </motion.button>
+          );
+        })}
 
-        <button onClick={loadReplies} className="flex items-center gap-1.5 text-sm hover:text-white transition-colors" aria-label="Replies">
-          <MessageCircle size={18} />
-          <span className="font-mono">{replyCount}</span>
-        </button>
-
-        <button onClick={() => onReport(post.id)} className="flex items-center gap-1.5 text-sm hover:text-latent-gold transition-colors ml-auto" aria-label="Report">
-          <Flag size={16} />
-        </button>
-
-        {isAuthor && (
-          <button onClick={() => onDelete(post.id)} className="flex items-center gap-1.5 text-sm hover:text-latent-crimson transition-colors" aria-label="Delete">
-            <Trash2 size={16} />
-          </button>
+        {optimisticCount > 0 && (
+          <span className={`ml-1 font-mono text-xs transition-colors ${optimisticLiked ? "text-latent-gold" : "text-white/40"}`}>
+            {optimisticCount}
+          </span>
         )}
+
+        <div className="flex items-center gap-4 ml-auto text-white/50">
+          <button onClick={loadReplies} className="flex items-center gap-1.5 text-sm hover:text-white transition-colors" aria-label="Replies">
+            <MessageCircle size={16} />
+            <span className="font-mono text-xs">{replyCount}</span>
+          </button>
+
+          <button onClick={() => onReport(post.id)} className="flex items-center gap-1.5 text-sm hover:text-latent-gold transition-colors" aria-label="Report">
+            <Flag size={14} />
+          </button>
+
+          {isAuthor && (
+            <button onClick={() => onDelete(post.id)} className="flex items-center gap-1.5 text-sm hover:text-latent-crimson transition-colors" aria-label="Delete">
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       <AnimatePresence>
@@ -186,18 +243,21 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
               )}
 
               {currentUser && (
-                <div className="flex gap-2 pt-2">
-                  <input
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendReply()}
-                    maxLength={200}
-                    placeholder="Reply…"
-                    className="flex-1 bg-[#0A0A0A] border border-white/10 rounded-sm px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-latent-gold/50 outline-none"
-                  />
-                  <button onClick={sendReply} disabled={busy} className="bg-white/10 hover:bg-white/20 text-white font-display font-bold uppercase text-xs tracking-widest px-4 rounded-sm transition-colors disabled:opacity-50">
-                    Reply
-                  </button>
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex gap-2">
+                    <input
+                      value={replyText}
+                      onChange={(e) => { setReplyText(e.target.value); setReplyError(null); }}
+                      onKeyDown={(e) => e.key === "Enter" && sendReply()}
+                      maxLength={200}
+                      placeholder="Reply…"
+                      className="flex-1 bg-[#0A0A0A] border border-white/10 rounded-sm px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-latent-gold/50 outline-none"
+                    />
+                    <button onClick={sendReply} disabled={busy || !replyText.trim()} className="bg-white/10 hover:bg-white/20 text-white font-display font-bold uppercase text-xs tracking-widest px-4 rounded-sm transition-colors disabled:opacity-50">
+                      {busy ? "…" : "Reply"}
+                    </button>
+                  </div>
+                  {replyError && <div className="text-latent-crimson font-mono text-xs">{replyError}</div>}
                 </div>
               )}
             </div>
@@ -209,39 +269,52 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
 }
 
 export default function CommunityPageClient({
-  initialPosts, hotTakes, likedPostIds, stats, dbReady, contestants, episodes, currentUser,
+  initialPosts, hotTakes, likedPostIds, stats, dbReady, contestants, episodes, episodeContestants = {}, currentUser,
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [liked, setLiked] = useState(new Set(likedPostIds));
   const [text, setText] = useState("");
-  const [tag, setTag] = useState("");
+  const [contestantTagId, setContestantTagId] = useState(""); // UUID or ""
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState(null);
+  const [justPosted, setJustPosted] = useState(false);
   const [reportId, setReportId] = useState(null);
+  const [activeEpisode, setActiveEpisode] = useState(null); // null = all episodes
   const reduced = useReducedMotion();
   const composePlaceholder = useCyclingPlaceholder(reduced);
 
+  // Reset contestant tag when switching episodes
+  useEffect(() => {
+    setContestantTagId("");
+  }, [activeEpisode]);
+
+  const visiblePosts = activeEpisode
+    ? posts.filter((p) => p.episode_tag === activeEpisode.id)
+    : posts;
+
+  // Episode tab sets the episode tag; dropdown only controls contestant tag.
   const submitPost = async () => {
     const body = text.trim();
     if (!body || posting) return;
     setPosting(true);
     setError(null);
 
-    let contestantTag = null;
-    let episodeTag = null;
-    if (tag.startsWith("c:")) contestantTag = tag.slice(2);
-    if (tag.startsWith("e:")) episodeTag = tag.slice(2);
-
     const res = await fetch("/api/community/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: body, contestantTag, episodeTag }),
+      body: JSON.stringify({
+        text: body,
+        contestantTag: contestantTagId || null,
+        episodeTag: activeEpisode?.id || null,
+      }),
     });
     const json = await res.json();
     if (json.success) {
       setPosts((p) => [json.data, ...p]);
       setText("");
-      setTag("");
+      setContestantTagId("");
+      setJustPosted(true);
+      setTimeout(() => setJustPosted(false), 2000);
     } else {
       setError(json.error || "Failed to post.");
     }
@@ -305,13 +378,13 @@ export default function CommunityPageClient({
             ].map(([t, cls], i) => (
               <motion.div
                 key={i}
-                animate={{ 
+                animate={{
                   y: [0, -15, 0],
                   rotate: [[-3, 2, -2, 3][i] - 3, [-3, 2, -2, 3][i] + 3, [-3, 2, -2, 3][i] - 3]
                 }}
-                transition={{ 
-                  repeat: Infinity, 
-                  duration: 4 + i * 0.5, 
+                transition={{
+                  repeat: Infinity,
+                  duration: 4 + i * 0.5,
                   ease: "easeInOut",
                   delay: i * 0.3
                 }}
@@ -324,7 +397,43 @@ export default function CommunityPageClient({
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-12 pb-32 grid lg:grid-cols-[1fr_320px] gap-10">
+      {/* Episode tabs */}
+      {episodes.length > 0 && (
+        <div className="border-b border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-6 sm:px-12 py-3 overflow-x-auto">
+            <div className="flex gap-1.5 w-max">
+              <button
+                onClick={() => setActiveEpisode(null)}
+                className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
+                  !activeEpisode
+                    ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
+                    : "text-white/50 hover:text-white border border-white/10"
+                }`}
+              >
+                All Episodes
+              </button>
+              {episodes.map((ep) => {
+                const active = activeEpisode?.id === ep.id;
+                return (
+                  <button
+                    key={ep.id}
+                    onClick={() => setActiveEpisode(active ? null : ep)}
+                    className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
+                      active
+                        ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
+                        : "text-white/50 hover:text-white border border-white/10"
+                    }`}
+                  >
+                    S{ep.season_number}E{ep.episode_number} — {ep.title}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-6 sm:px-12 pb-32 grid lg:grid-cols-[1fr_320px] gap-10 mt-8">
         {/* Feed */}
         <div className="space-y-6">
           {!dbReady && (
@@ -333,10 +442,34 @@ export default function CommunityPageClient({
             </div>
           )}
 
+          {/* Episode context header + create prompt */}
+          {activeEpisode && (
+            <div className="flex items-center justify-between gap-4 bg-white/[0.03] border border-latent-gold/20 rounded-md px-5 py-3">
+              <div>
+                <div className="font-display font-black uppercase tracking-widest text-latent-gold text-sm">
+                  S{activeEpisode.season_number}E{activeEpisode.episode_number} — {activeEpisode.title}
+                </div>
+                <div className="font-mono text-xs text-white/40 mt-0.5">
+                  {visiblePosts.length} take{visiblePosts.length !== 1 ? "s" : ""} on this episode
+                </div>
+              </div>
+              {currentUser && (
+                <button
+                  onClick={() => document.getElementById("composer-textarea")?.focus()}
+                  className="flex items-center gap-2 bg-latent-gold/15 hover:bg-latent-gold/25 border border-latent-gold/40 text-latent-gold font-display font-black uppercase text-xs tracking-widest px-4 py-2 rounded-full transition-all duration-200 shrink-0"
+                >
+                  <PenLine size={14} strokeWidth={2.5} />
+                  Drop a Take
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Composer */}
           {currentUser ? (
             <div className="bg-[#111111] border border-white/10 rounded-md p-5">
               <textarea
+                id="composer-textarea"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={280}
@@ -347,21 +480,27 @@ export default function CommunityPageClient({
               />
               <div className="flex flex-wrap items-center gap-3 mt-3">
                 <span className="font-mono text-xs text-white/40">{text.length} / 280</span>
-                <select
-                  value={tag}
-                  onChange={(e) => setTag(e.target.value)}
-                  className="bg-[#0A0A0A] border border-latent-gold/30 rounded-sm px-3 py-1.5 font-display text-xs uppercase tracking-widest text-white/70 outline-none focus:border-latent-gold"
-                >
-                  <option value="">No tag</option>
-                  <optgroup label="Contestants">
-                    {contestants.map((c) => <option key={c.id} value={`c:${c.id}`}>{c.name}</option>)}
-                  </optgroup>
-                  <optgroup label="Episodes">
-                    {episodes.map((e) => <option key={e.id} value={`e:${e.id}`}>S{e.season_number}E{e.episode_number} — {e.title}</option>)}
-                  </optgroup>
-                </select>
-                <button onClick={submitPost} disabled={posting || !text.trim()} className="btn-primary ml-auto">
-                  {posting ? "Posting…" : "Drop the Mic 🎤"}
+                {(() => {
+                  // When episode tab is active, show only that episode's contestants.
+                  // When "All", show every contestant.
+                  const options = activeEpisode
+                    ? (episodeContestants[activeEpisode.id] || [])
+                    : contestants;
+                  return options.length > 0 ? (
+                    <select
+                      value={contestantTagId}
+                      onChange={(e) => setContestantTagId(e.target.value)}
+                      className="bg-[#0A0A0A] border border-latent-gold/30 rounded-sm px-3 py-1.5 font-display text-xs uppercase tracking-widest text-white/70 outline-none focus:border-latent-gold"
+                    >
+                      <option value="">About…</option>
+                      {options.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : null;
+                })()}
+                <button onClick={submitPost} disabled={posting || !text.trim()} className={`btn-primary ml-auto transition-all ${justPosted ? "!bg-green-700 !border-green-600" : ""}`}>
+                  {posting ? "Posting…" : justPosted ? "Posted ✓" : "Drop the Mic 🎤"}
                 </button>
               </div>
               {error && <div className="mt-2 text-latent-crimson font-mono text-xs">{error}</div>}
@@ -374,7 +513,7 @@ export default function CommunityPageClient({
           )}
 
           {/* Posts */}
-          {posts.map((post, i) => {
+          {visiblePosts.map((post, i) => {
             const gated = !currentUser && i >= 3;
             return (
               <div key={post.id} className="relative">
@@ -392,7 +531,7 @@ export default function CommunityPageClient({
             );
           })}
 
-          {/* Logged-out CTA over gated posts */}
+          {/* Logged-out CTA */}
           {!currentUser && posts.length > 3 && (
             <div className="bg-gradient-to-r from-latent-crimson/20 to-latent-gold/10 border border-white/10 rounded-md p-6 text-center">
               <div className="font-display font-black uppercase tracking-widest text-white mb-3">Join the Jury to see more — and add your own take</div>
@@ -400,32 +539,34 @@ export default function CommunityPageClient({
             </div>
           )}
 
-          {posts.length === 0 && dbReady && (
-            <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">No takes yet. Be the first.</div>
+          {visiblePosts.length === 0 && dbReady && (
+            <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">
+              {activeEpisode ? "No takes on this episode yet. Be the first." : "No takes yet. Be the first."}
+            </div>
           )}
         </div>
 
-        {/* Hot Takes sidebar */}
+        {/* Leaderboard sidebar */}
         <aside className="hidden lg:block space-y-4">
           <div className="flex items-center gap-2">
-            <motion.div
-              animate={{ scale: [1, 1.25, 1], rotate: [-10, 10, -10] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              className="text-2xl drop-shadow-[0_0_15px_rgba(255,69,0,0.8)]"
-            >
-              🔥
-            </motion.div>
-            <h2 className="font-display font-black uppercase tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">Hot Takes</h2>
+            <Trophy size={18} className="text-latent-gold" strokeWidth={2.5} />
+            <h2 className="font-display font-black uppercase tracking-widest text-white">Leaderboard</h2>
           </div>
+          <p className="font-mono text-[11px] text-white/30">Most reacted takes</p>
           {hotTakes.length === 0 ? (
             <div className="text-white/30 font-mono text-sm">Nothing trending yet.</div>
           ) : (
-            hotTakes.map((p) => (
+            hotTakes.map((p, i) => (
               <div key={p.id} className="bg-[#111111] border border-white/[0.08] rounded-md p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-display font-black text-latent-gold text-lg leading-none">#{i + 1}</span>
+                  <span className="font-display font-bold uppercase text-xs text-white/60 truncate">{p.User?.username || "Unknown"}</span>
+                  <TagBadge post={p} />
+                </div>
                 <p className="text-sm text-white/80 break-words line-clamp-3">{p.text}</p>
-                <div className="flex items-center justify-between mt-3 text-xs text-white/40 font-mono">
-                  <span>{p.User?.username || "Unknown"}</span>
-                  <span className="flex items-center gap-1"><Heart size={12} /> {p.like_count || 0}</span>
+                <div className="flex items-center gap-1 mt-3 text-xs text-white/40 font-mono">
+                  <span className="text-base">🔥</span>
+                  <span>{p.like_count || 0} reactions</span>
                 </div>
               </div>
             ))

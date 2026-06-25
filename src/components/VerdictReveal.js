@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -21,8 +22,14 @@ function useCountUp(target, duration = 0.8) {
   return value;
 }
 
-export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
+export default function VerdictReveal({ userScore, crowdAverage, episodeId, onClose }) {
   const [remaining, setRemaining] = useState(AUTO_DISMISS_MS);
+  const router = useRouter();
+
+  const handleClose = () => {
+    onClose();
+    if (episodeId) router.push(`/episode/${episodeId}`);
+  };
 
   const animatedUser = useCountUp(userScore, 0.8);
   const animatedCrowd = useCountUp(crowdAverage, 0.8);
@@ -67,7 +74,7 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
       setRemaining(left);
       if (left <= 0) {
         clearInterval(tick);
-        onClose();
+        handleClose();
       }
     }, 50);
     return () => clearInterval(tick);
@@ -75,7 +82,7 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
 
   // Escape closes too.
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
+    const onKey = (e) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -92,7 +99,7 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
@@ -141,7 +148,7 @@ export default function VerdictReveal({ userScore, crowdAverage, onClose }) {
               }}
             >
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="rounded-full bg-[#111111] px-8 py-3 font-display font-black uppercase tracking-widest text-sm text-white/70 hover:text-white transition-colors"
               >
                 Close

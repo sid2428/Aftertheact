@@ -81,7 +81,7 @@ export default function ScrollDigit({ options, value, onChange, disabled, size =
 
   const totalH = ITEM_H * visible;
   const fadeH = ITEM_H * 0.9;
-  const selectedIdx = options.indexOf(value);
+  const selectedIdx = value === null ? -1 : options.indexOf(value);
 
   return (
     <div

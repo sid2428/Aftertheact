@@ -30,6 +30,10 @@ export async function POST(req, { params }) {
     return NextResponse.json({ success: false, error: "Sign in to reply." }, { status: 401 });
   }
   const { id: postId } = await params;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(session.user.id)) {
+    return NextResponse.json({ success: false, error: "Admin accounts cannot reply." }, { status: 403 });
+  }
 
   let body;
   try {

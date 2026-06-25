@@ -88,7 +88,7 @@ const LiveVoting = forwardRef(function LiveVoting(
   const [connectionLost, setConnectionLost] = useState(false);
   const [revealData, setRevealData] = useState(null); // { userScore, crowdAverage } | null
 
-  const touched = intPart !== null || decPart !== null;
+  const touched = intPart !== null && decPart !== null;
   const score = touched ? normalizeScore((intPart ?? 1) + (decPart ?? 0) / 10) : null;
 
   const msRemaining = useCountdown(revealAt);
@@ -124,7 +124,7 @@ const LiveVoting = forwardRef(function LiveVoting(
     return () => eventSource.close();
   }, [episodeId, contestantId, isEpisodeClosed]);
 
-  const lockVote = async () => {
+  const lockVote = async (silent = false) => {
     if (hasVoted || isSubmitting || score === null) return false;
     playLockSound();
     setIsSubmitting(true);
@@ -142,8 +142,7 @@ const LiveVoting = forwardRef(function LiveVoting(
     }
     setHasVoted(true);
     setIsSubmitting(false);
-    // Show the reveal pop-up with the locked score and the live crowd average.
-    setRevealData({ userScore: score, crowdAverage: result.newRawAverage ?? score });
+    if (!silent) setRevealData({ userScore: score, crowdAverage: result.newRawAverage ?? score });
     return true;
   };
 
@@ -156,7 +155,7 @@ const LiveVoting = forwardRef(function LiveVoting(
   // if the user actually changed the value — never lock an untouched "-" card.
   useImperativeHandle(ref, () => ({
     canLock: () => touched && !hasVoted && score !== null,
-    lockIfReady: lockVote,
+    lockIfReady: (silent) => lockVote(silent),
   }));
 
   const handleIntChange = (v) => {
@@ -272,7 +271,13 @@ const LiveVoting = forwardRef(function LiveVoting(
           </div>
 
           <div className="my-6 text-center font-display text-xs uppercase tracking-widest text-white/40 sm:text-sm">
-            {touched ? "Scroll to fine-tune your verdict" : "Scroll either wheel to set your score"}
+            {touched
+              ? "Scroll to fine-tune your verdict"
+              : intPart === null && decPart === null
+              ? "Scroll both wheels to set your score"
+              : intPart === null
+              ? "Now scroll the left wheel to complete your score"
+              : "Now scroll the right wheel to complete your score"}
           </div>
 
           {error && (
@@ -299,7 +304,7 @@ const LiveVoting = forwardRef(function LiveVoting(
       )}
 
       {revealData && (
-        <VerdictReveal userScore={revealData.userScore} crowdAverage={revealData.crowdAverage} onClose={closeReveal} />
+        <VerdictReveal userScore={revealData.userScore} crowdAverage={revealData.crowdAverage} episodeId={episodeId} onClose={closeReveal} />
       )}
     </div>
   );
@@ -323,12 +328,12 @@ function LockButton({ status, onClick }) {
       onClick={onClick}
       disabled={status !== "ready"}
       whileTap={status === "ready" ? { scale: 0.97 } : undefined}
-      animate={confirmed ? { backgroundColor: "#15803d", borderColor: "rgba(34,197,94,0.9)" } : {}}
+      animate={confirmed ? { backgroundColor: "rgba(212,175,55,0.15)", borderColor: "rgba(212,175,55,0.6)" } : {}}
       style={{ minHeight: 48 }}
       className={[
         "flex w-full items-center justify-center rounded-sm border px-6 py-3 font-display text-sm sm:text-base uppercase tracking-widest transition-all",
         confirmed
-          ? "cursor-default border-green-500/80 bg-green-700 text-white shadow-[0_0_24px_rgba(34,197,94,0.4)]"
+          ? "cursor-default border-latent-gold/60 bg-latent-gold/15 text-latent-gold shadow-[0_0_24px_rgba(212,175,55,0.3)]"
           : status === "submitting"
           ? "cursor-wait border-latent-crimson/80 bg-latent-crimson text-white shadow-[0_0_24px_rgba(139,30,45,0.5)]"
           : status === "dormant"

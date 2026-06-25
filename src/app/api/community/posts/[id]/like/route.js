@@ -11,6 +11,10 @@ export async function POST(req, { params }) {
   }
   const { id: postId } = await params;
   const userId = session.user.id;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(userId)) {
+    return NextResponse.json({ success: false, error: "Admin accounts cannot react to posts." }, { status: 403 });
+  }
 
   try {
     const supabase = getServiceSupabase();
