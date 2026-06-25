@@ -17,7 +17,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
         <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Crowd Verdict</div>
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100 }}
-          className="text-2xl sm:text-4xl font-mono font-black text-white"
+          className="text-2xl sm:text-4xl font-number font-bold text-white"
         >
           {appearance?.peoples_verdict_weighted?.toFixed(1) || "0.0"}
         </motion.div>
@@ -26,7 +26,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
         <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Panel Score</div>
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-          className="text-2xl sm:text-4xl font-mono font-black text-white"
+          className="text-2xl sm:text-4xl font-number font-bold text-white"
         >
           {appearance?.judge_average?.toFixed(1) || "0.0"}
         </motion.div>
@@ -37,7 +37,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
           <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-latent-crimson mb-1">Latent Score</div>
           <motion.div 
             initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
-            className="text-3xl sm:text-5xl font-mono font-black text-latent-crimson drop-shadow-[0_0_10px_rgba(139,30,45,0.4)]"
+            className="text-3xl sm:text-5xl font-number font-bold text-latent-crimson drop-shadow-[0_0_10px_rgba(139,30,45,0.4)]"
           >
             {appearance?.latent_score?.toFixed(1) || "0.0"}
           </motion.div>

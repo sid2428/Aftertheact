@@ -66,11 +66,24 @@ export default async function EpisodePage({ params }) {
     : null;
   const totalVotes = sortedAppearances.reduce((sum, a) => sum + (a.total_votes_raw || 0), 0);
 
+  // Fetch the current user's existing votes for this episode so the UI locks them instantly.
+  let userVotesMap = {};
+  if (session?.user?.id) {
+    const { data: existingVotes } = await supabase
+      .from("UserVote")
+      .select("contestant_id, score")
+      .eq("episode_id", episode.id)
+      .eq("user_id", session.user.id);
+    if (existingVotes) {
+      userVotesMap = existingVotes.reduce((acc, v) => ({ ...acc, [v.contestant_id]: v.score }), {});
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-latent-crimson/30">
       
-      {/* Sticky Brutalist Header */}
-      <div className="sticky top-16 z-40 bg-[#111111]/90 backdrop-blur-md border-b border-brand-border p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+      {/* Episode header — static so it doesn't trail the page while voting */}
+      <div className="relative z-30 bg-[#111111]/90 backdrop-blur-md border-b border-brand-border p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -176,6 +189,7 @@ export default async function EpisodePage({ params }) {
                     talent_type: app.Contestant.talent_type,
                     image_url: app.Contestant.image_url,
                     initialRawScore: app.peoples_verdict_raw,
+                    userVoteScore: userVotesMap[app.Contestant.id] ?? null,
                   }))}
                 />
               </div>

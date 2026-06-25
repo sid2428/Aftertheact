@@ -1,24 +1,18 @@
-// Aggregate a set of JudgeRating rows into display stats.
+// Aggregate a set of JudgeRating rows into display stats. Each row carries a
+// single 1–10 `score`; we surface its mean plus the spread (std dev) used to
+// flag the most divisive judge.
 export function aggregateRatings(rows = []) {
   const count = rows.length;
   if (count === 0) {
-    return { count: 0, avgOverall: 0, overallStdDev: 0, topTag: null, tagCounts: {} };
+    return { count: 0, avgScore: 0, stdDev: 0 };
   }
-  const avgOverall = rows.reduce((s, r) => s + (r.overall_score || 0), 0) / count;
-  const variance = rows.reduce((s, r) => s + Math.pow((r.overall_score || 0) - avgOverall, 2), 0) / count;
-
-  const tagCounts = {};
-  for (const r of rows) {
-    if (r.tag) tagCounts[r.tag] = (tagCounts[r.tag] || 0) + 1;
-  }
-  const topTag = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a])[0] || null;
+  const avgScore = rows.reduce((s, r) => s + (r.score || 0), 0) / count;
+  const variance = rows.reduce((s, r) => s + Math.pow((r.score || 0) - avgScore, 2), 0) / count;
 
   return {
     count,
-    avgOverall,
-    overallStdDev: Math.sqrt(variance),
-    topTag,
-    tagCounts,
+    avgScore,
+    stdDev: Math.sqrt(variance),
   };
 }
 

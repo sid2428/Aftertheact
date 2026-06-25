@@ -15,39 +15,45 @@ export default function JudgePanel({ members = [] }) {
         </Link>
       </div>
 
-      <div className="flex gap-6 overflow-x-auto pb-4 lg:grid lg:grid-cols-5 lg:overflow-visible">
+      <div className="flex gap-6 sm:gap-8 overflow-x-auto pb-8 pt-4 px-4 -mx-4 no-scrollbar snap-x snap-mandatory">
         {members.map((m, i) => (
           <motion.div
             key={m.id || i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: i * 0.08, duration: 0.5 }}
-            className="group shrink-0 w-44 lg:w-auto"
+            transition={{ delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="group shrink-0 w-52 sm:w-64 snap-center perspective-1000"
           >
-            <div className="relative pt-10 transition-transform duration-300 group-hover:-translate-y-2">
-              {/* Cutout image overflowing upward */}
-              <div className="relative z-10 h-44 flex items-end justify-center -mb-6">
+            <div className="relative transform-gpu transition-all duration-500 ease-out group-hover:scale-[1.03] group-hover:-translate-y-3">
+              {/* Glow Behind Card */}
+              <div className="absolute inset-0 bg-latent-gold/20 blur-xl rounded-xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              
+              {/* Framed portrait */}
+              <div className="relative z-10 aspect-[4/5] w-full overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0A] shadow-[0_15px_35px_rgba(0,0,0,0.6)] transition-all duration-500 group-hover:border-latent-gold/50 group-hover:shadow-[0_20px_40px_rgba(212,175,55,0.2)]">
                 {m.image ? (
-                  <img src={m.image} alt={m.name} className="h-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-all group-hover:brightness-110" />
+                  <img src={m.image} alt={m.name} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110 group-hover:brightness-110" />
                 ) : (
-                  <div className="w-28 h-40 bg-[#0A0A0A] rounded-md flex items-center justify-center font-display font-black text-4xl text-white/10">{m.name?.[0] || "?"}</div>
+                  <div className="flex h-full w-full items-center justify-center font-display font-black text-6xl text-white/5">{m.name?.[0] || "?"}</div>
                 )}
-              </div>
-              <div className="bg-[#111111] border border-white/10 rounded-md pt-10 pb-4 px-4 text-center transition-colors group-hover:border-latent-gold/50">
-                <div className="font-display font-black uppercase tracking-tight text-white truncate">{m.name}</div>
-                {m.descriptor && <div className="font-display font-bold uppercase tracking-widest text-[10px] text-latent-gold mt-0.5">{m.descriptor}</div>}
-                {m.instagram_handle && (
-                  <a
-                    href={`https://instagram.com/${m.instagram_handle.replace(/^@/, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-block font-mono text-[10px] text-white/40 hover:text-latent-gold transition-colors mt-1"
-                  >
-                    {m.instagram_handle}
-                  </a>
-                )}
+                {/* Vignette bottom gradient */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
+                
+                {/* Text inside the card instead of below it for a sleeker look */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 translate-y-2 transition-transform duration-500 group-hover:translate-y-0">
+                  <div className="font-display font-black uppercase tracking-tighter text-2xl text-white truncate drop-shadow-md">{m.name}</div>
+                  {m.instagram_handle && (
+                    <a
+                      href={`https://instagram.com/${m.instagram_handle.replace(/^@/, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-block font-mono text-[11px] text-latent-gold/70 hover:text-latent-gold transition-colors mt-1 opacity-0 group-hover:opacity-100 delay-100"
+                    >
+                      {m.instagram_handle}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>

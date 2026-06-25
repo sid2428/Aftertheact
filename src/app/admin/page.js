@@ -20,17 +20,24 @@ export default async function AdminPage() {
     .eq("moderation_status", "HELD")
     .order("created_at", { ascending: false });
 
-  // Fetch reported community posts (table may not be migrated yet).
+  // Fetch reported community posts (derived dynamically from PostReport).
   let reportedPosts = [];
   try {
     const { data, error } = await supabase
       .from("CommunityPost")
-      .select("id, text, report_count, created_at, User(username)")
-      .gt("report_count", 0)
-      .eq("moderation_status", "VISIBLE")
-      .order("report_count", { ascending: false });
+      .select("id, text, created_at, User(username), PostReport(id)")
+      .eq("moderation_status", "VISIBLE");
     if (error) throw error;
-    reportedPosts = data || [];
+    
+    if (data) {
+      reportedPosts = data
+        .filter((p) => p.PostReport && p.PostReport.length > 0)
+        .map((p) => ({
+          ...p,
+          report_count: p.PostReport.length,
+        }))
+        .sort((a, b) => b.report_count - a.report_count);
+    }
   } catch (err) {
     console.error("admin reported posts:", err.message);
   }

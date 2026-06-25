@@ -27,7 +27,6 @@ export async function POST(req, { params }) {
     if (action === "approve") {
       // Clear the reports and reset the counter; the post stays visible.
       await supabase.from("PostReport").delete().eq("post_id", postId);
-      await supabase.from("CommunityPost").update({ report_count: 0 }).eq("id", postId);
     } else {
       // Hide the post from the public feed.
       await supabase.from("CommunityPost").update({ moderation_status: "REMOVED" }).eq("id", postId);

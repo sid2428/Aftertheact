@@ -2,20 +2,55 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { submitVote } from "@/app/actions/vote";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { normalizeScore } from "@/lib/utils";
 import ScrollDigit from "./ScrollDigit";
+import RollingNumber from "./RollingNumber";
 import VerdictReveal from "./VerdictReveal";
 
 const INT_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10
 const DEC_OPTIONS = Array.from({ length: 10 }, (_, i) => i); // 0..9
 
-const LiveVoting = forwardRef(function LiveVoting({ episodeId, contestantId, initialRawScore = 0, isEpisodeClosed = false, onRevealClose }, ref) {
+let audioCtx;
+function playLockSound() {
+  if (typeof window === "undefined") return;
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    // Deep, heavy "chunk" sound for locking in the vote
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+    
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  } catch (e) {
+    // Ignore if audio not supported/blocked
+  }
+}
+
+const LiveVoting = forwardRef(function LiveVoting(
+  { episodeId, contestantId, initialRawScore = 0, userVoteScore = null, isEpisodeClosed = false, onRevealClose },
+  ref
+) {
   const [liveScore, setLiveScore] = useState(initialRawScore || 0);
   const [voterCount, setVoterCount] = useState(0);
-  const [intPart, setIntPart] = useState(null); // null = untouched, shows "-"
-  const [decPart, setDecPart] = useState(null);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [intPart, setIntPart] = useState(userVoteScore != null ? Math.floor(userVoteScore) : null); // null = untouched, shows "-"
+  const [decPart, setDecPart] = useState(userVoteScore != null ? Math.round((userVoteScore % 1) * 10) : null);
+  const [hasVoted, setHasVoted] = useState(userVoteScore != null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [connectionLost, setConnectionLost] = useState(false);
@@ -54,19 +89,25 @@ const LiveVoting = forwardRef(function LiveVoting({ episodeId, contestantId, ini
 
   const lockVote = async () => {
     if (hasVoted || isSubmitting || score === null) return false;
+    playLockSound();
     setIsSubmitting(true);
     setError(null);
-    setHasVoted(true); // optimistic lock
     const result = await submitVote(episodeId, contestantId, score);
     if (!result.success) {
-      setError(result.error || "Something went wrong. Try again.");
-      setHasVoted(false);
-    } else {
-      // Show the reveal pop-up with the locked score and the live crowd average.
-      setRevealData({ userScore: score, crowdAverage: result.newRawAverage ?? score });
+      if (result.error === "You have already voted for this contestant.") {
+        // Fallback lock if they somehow bypass the UI state
+        setHasVoted(true);
+      } else {
+        setError(result.error || "Something went wrong. Try again.");
+      }
+      setIsSubmitting(false);
+      return false;
     }
+    setHasVoted(true);
     setIsSubmitting(false);
-    return result.success;
+    // Show the reveal pop-up with the locked score and the live crowd average.
+    setRevealData({ userScore: score, crowdAverage: result.newRawAverage ?? score });
+    return true;
   };
 
   const closeReveal = () => {
@@ -93,99 +134,187 @@ const LiveVoting = forwardRef(function LiveVoting({ episodeId, contestantId, ini
     if (intPart === null) setIntPart(1);
   };
 
+  // ── Crowd average strip — prominent, live community average + voter count ──
+  const crowdStrip = (
+    <div className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-brand-border bg-[#0A0A0A] px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-latent-crimson animate-pulse-fast shadow-[0_0_8px_rgba(139,30,45,0.8)]" />
+        <span className="font-display text-xs uppercase tracking-widest text-latent-crimson">Crowd Verdict</span>
+      </div>
+      <div className="flex items-baseline gap-3">
+        <RollingNumber value={liveScore || 0} decimals={1} height={34} className="font-bold text-white" />
+        <span className="font-number text-sm font-semibold text-white/30">/10</span>
+        {voterCount > 0 && (
+          <span className="font-number text-[11px] uppercase tracking-widest text-white/30">
+            · {voterCount} {voterCount === 1 ? "vote" : "votes"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
   // Voting has closed — show the final crowd score and any locked verdict.
   if (isEpisodeClosed) {
     return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center text-center gap-3 py-10">
-        <span className="font-display font-black text-sm uppercase tracking-widest text-white/40">
-          Voting has closed
-        </span>
+      <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 py-10 text-center">
+        <span className="font-display text-sm uppercase tracking-widest text-white/40">Voting has closed</span>
         {hasVoted && score !== null ? (
-          <span className="font-display font-black uppercase tracking-widest text-latent-gold">
+          <span className="font-display uppercase tracking-widest text-latent-gold">
             Your verdict was locked at {score.toFixed(1)}.
           </span>
         ) : (
-          <span className="font-mono font-bold text-white/50 text-sm">
-            Crowd: <span className="text-white">{(liveScore || 0).toFixed(1)}</span>/10
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-sm uppercase tracking-widest text-white/40">Crowd</span>
+            <RollingNumber value={liveScore || 0} decimals={1} height={28} className="font-bold text-white" />
+            <span className="font-number text-sm font-semibold text-white/30">/10</span>
+          </div>
         )}
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <span className="font-display font-black text-sm uppercase tracking-widest text-latent-crimson flex items-center gap-2">
-          <span className="w-3 h-3 bg-latent-crimson rounded-full animate-pulse-fast shadow-[0_0_8px_rgba(139,30,45,0.8)]"></span>
+    <div className="relative flex h-full w-full flex-col">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="flex items-center gap-2 font-display text-sm uppercase tracking-widest text-latent-crimson">
+          <span className="h-3 w-3 animate-pulse-fast rounded-full bg-latent-crimson shadow-[0_0_8px_rgba(139,30,45,0.8)]" />
           Live Verdict
         </span>
-        <div className="flex flex-col items-end">
-          <span className="font-mono font-bold text-white/50 text-sm">
-            Crowd: <span className="text-white">{(liveScore || 0).toFixed(1)}</span>/10
+        {connectionLost && (
+          <span className="flex items-center gap-1 font-display text-[10px] uppercase tracking-widest text-latent-gold">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-latent-gold" />
+            Reconnecting…
           </span>
-          {voterCount > 0 && (
-            <span className="font-mono text-[10px] uppercase tracking-widest text-white/30">
-              {voterCount} {voterCount === 1 ? "person has" : "people have"} voted
-            </span>
-          )}
-          {connectionLost && (
-            <span className="mt-1 font-display font-black text-[10px] uppercase tracking-widest text-latent-gold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-latent-gold rounded-full animate-pulse"></span>
-              Reconnecting…
-            </span>
-          )}
-        </div>
+        )}
       </div>
+
+      {crowdStrip}
 
       {!hasVoted ? (
         <>
-          <div className="relative flex items-center justify-center gap-2 sm:gap-4 flex-1">
-            <ScrollDigit options={INT_OPTIONS} value={intPart ?? 1} onChange={handleIntChange} size="lg" />
-            <span className="font-mono font-black text-6xl sm:text-8xl text-white/40">.</span>
-            <ScrollDigit options={DEC_OPTIONS} value={decPart ?? 0} onChange={handleDecChange} disabled={intPart === 10} size="lg" />
+          <div className="relative flex flex-1 items-center justify-center gap-2 sm:gap-4">
+            {/* Ghost preview — assembled score behind the columns, updates live */}
+            <AnimatePresence>
+              {touched && (
+                <motion.div
+                  key="ghost"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.12 }}
+                  exit={{ opacity: 0 }}
+                  className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+                  aria-hidden
+                >
+                  <span className="font-number text-[10rem] font-bold leading-none text-latent-gold sm:text-[14rem]">
+                    {score?.toFixed(1)}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Default state: "-" overlay, fades out on first touch; scroll passes through underneath */}
+            <div className="relative z-10">
+              <ScrollDigit options={INT_OPTIONS} value={intPart ?? 1} onChange={handleIntChange} disabled={hasVoted} size="lg" />
+            </div>
+            <span className="relative z-10 font-number text-6xl font-bold text-white/40 sm:text-8xl">.</span>
+            <div className="relative z-10">
+              <ScrollDigit
+                options={DEC_OPTIONS}
+                value={decPart ?? 0}
+                onChange={handleDecChange}
+                disabled={hasVoted || intPart === 10}
+                size="lg"
+              />
+            </div>
+
+            {/* Default state: "-" overlay, fades out on first touch */}
             {!touched && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="font-mono font-black text-9xl sm:text-[12rem] leading-none text-white/20">—</span>
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <span className="font-number text-9xl font-bold leading-none text-white/20 sm:text-[12rem]">—</span>
               </div>
             )}
           </div>
-          <div className="text-xs sm:text-sm font-display font-black uppercase tracking-widest text-white/40 text-center my-6">
+
+          <div className="my-6 text-center font-display text-xs uppercase tracking-widest text-white/40 sm:text-sm">
             {touched ? "Scroll to fine-tune your verdict" : "Scroll either wheel to set your score"}
           </div>
 
           {error && (
-            <div className="mb-4 rounded-sm border border-latent-crimson/40 bg-latent-crimson/10 px-4 py-3 text-center font-display font-bold uppercase tracking-widest text-xs text-latent-crimson">
+            <div className="mb-4 rounded-sm border border-latent-crimson/40 bg-latent-crimson/10 px-4 py-3 text-center font-display text-xs uppercase tracking-widest text-latent-crimson">
               {error}
             </div>
           )}
 
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={lockVote}
-            disabled={isSubmitting || score === null}
-            className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-5 text-lg rounded-sm hover:shadow-[0_0_20px_rgba(139,30,45,0.6)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            {isSubmitting ? "Locking..." : "Lock My Verdict"}
-          </motion.button>
+          {/* Sticky on mobile within the page's scroll container (spec P0.4). */}
+          <div className="sticky bottom-3 z-30 sm:static">
+            <LockButton
+              status={isSubmitting ? "submitting" : score === null ? "dormant" : "ready"}
+              onClick={lockVote}
+            />
+          </div>
         </>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-center text-latent-gold font-display font-black uppercase tracking-widest text-lg">
-          Verdict Locked at {score.toFixed(1)}. Wait for the reveal.
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
+          <span className="font-display text-xs uppercase tracking-widest text-white/40">
+            Your verdict is locked at {score?.toFixed(1)}
+          </span>
+          <LockButton status="confirmed" />
         </div>
       )}
 
       {revealData && (
-        <VerdictReveal
-          userScore={revealData.userScore}
-          crowdAverage={revealData.crowdAverage}
-          onClose={closeReveal}
-        />
+        <VerdictReveal userScore={revealData.userScore} crowdAverage={revealData.crowdAverage} onClose={closeReveal} />
       )}
     </div>
   );
 });
+
+// Lock button state machine: dormant → ready (hover glow) → submitting → confirmed.
+// AnimatePresence mode="wait" lets each label exit before the next enters so the
+// swap never jumps (spec P0.4).
+function LockButton({ status, onClick }) {
+  const confirmed = status === "confirmed";
+  const labels = {
+    dormant: "Set Your Score",
+    ready: "Lock My Verdict",
+    submitting: "Locking…",
+    confirmed: "Verdict Locked ✓",
+  };
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={status !== "ready"}
+      whileTap={status === "ready" ? { scale: 0.97 } : undefined}
+      animate={confirmed ? { backgroundColor: "#15803d", borderColor: "rgba(34,197,94,0.9)" } : {}}
+      style={{ minHeight: 48 }}
+      className={[
+        "flex w-full items-center justify-center rounded-sm border px-6 py-3 font-display text-sm sm:text-base uppercase tracking-widest transition-all",
+        confirmed
+          ? "cursor-default border-green-500/80 bg-green-700 text-white shadow-[0_0_24px_rgba(34,197,94,0.4)]"
+          : status === "submitting"
+          ? "cursor-wait border-latent-crimson/80 bg-latent-crimson text-white shadow-[0_0_24px_rgba(139,30,45,0.5)]"
+          : status === "dormant"
+          ? "cursor-not-allowed border-white/10 bg-latent-crimson/40 text-white/50"
+          : "border-latent-crimson/60 bg-latent-crimson text-white hover:shadow-[0_0_28px_rgba(139,30,45,0.65)] active:shadow-[inset_0_0_18px_rgba(0,0,0,0.55)]",
+      ].join(" ")}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={status}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="flex items-center gap-2"
+        >
+          {status === "submitting" && (
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          )}
+          {labels[status]}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
+  );
+}
 
 export default LiveVoting;

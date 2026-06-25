@@ -59,6 +59,7 @@ export default function VotingSection({ episodeId, contestants, isEpisodeClosed 
                   episodeId={episodeId}
                   contestantId={c.id}
                   initialRawScore={c.initialRawScore}
+                  userVoteScore={c.userVoteScore}
                   isEpisodeClosed={isEpisodeClosed}
                   onRevealClose={() => scrollToNext(i)}
                 />

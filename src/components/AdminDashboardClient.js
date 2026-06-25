@@ -111,31 +111,31 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
               </div>
 
               <div className="flex flex-wrap gap-4 mt-6 pt-6 border-t border-white/10 border-dashed">
-                <button 
+                <button
                   onClick={() => handleStatusChange(ep.id, 'UPCOMING')}
                   disabled={loadingAction || ep.status === 'UPCOMING'}
-                  className="px-4 py-2 bg-[#050505] border border-brand-border font-display font-black uppercase text-sm hover:bg-white/10 text-white disabled:opacity-50 transition-colors rounded-sm"
+                  className="btn-ghost"
                 >
                   Set Upcoming
                 </button>
-                <button 
+                <button
                   onClick={() => handleStatusChange(ep.id, 'LIVE')}
                   disabled={loadingAction || ep.status === 'LIVE'}
-                  className="px-4 py-2 bg-[#050505] border border-brand-border font-display font-black uppercase text-sm hover:bg-latent-crimson/20 hover:text-latent-crimson hover:border-latent-crimson/50 text-white disabled:opacity-50 transition-colors rounded-sm"
+                  className="btn-danger"
                 >
                   Go Live
                 </button>
-                <button 
+                <button
                   onClick={() => handleReveal(ep.id)}
                   disabled={loadingAction || ep.status === 'REVEALED'}
-                  className="px-4 py-2 bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] border border-transparent font-display font-black uppercase text-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] disabled:opacity-50 transition-all rounded-sm"
+                  className="btn-primary"
                 >
                   Trigger Reveal
                 </button>
-                <button 
+                <button
                   onClick={() => handleStatusChange(ep.id, 'ARCHIVED')}
                   disabled={loadingAction || ep.status === 'ARCHIVED'}
-                  className="px-4 py-2 bg-[#050505] border border-brand-border font-display font-black uppercase text-sm hover:bg-white/10 text-white disabled:opacity-50 transition-colors rounded-sm"
+                  className="btn-ghost"
                 >
                   Archive
                 </button>
@@ -169,7 +169,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
               <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Title</label>
               <input type="text" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" required placeholder="e.g. The Qualifiers" />
             </div>
-            <button disabled={loadingAction === 'create-episode'} className="w-full bg-white text-[#0A0A0A] py-3 font-display font-black uppercase tracking-widest mt-4 hover:bg-latent-gold transition-colors border border-transparent rounded-sm">
+            <button disabled={loadingAction === 'create-episode'} className="btn-primary mt-4 w-full">
               {loadingAction === 'create-episode' ? 'Initializing...' : 'Initialize Episode'}
             </button>
           </form>
@@ -218,7 +218,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
               </div>
             </div>
 
-            <button disabled={loadingAction === 'add-contestant'} className="w-full bg-white/10 text-white py-3 font-display font-black uppercase tracking-widest mt-4 hover:bg-white hover:text-[#0A0A0A] transition-colors border border-transparent rounded-sm">
+            <button disabled={loadingAction === 'add-contestant'} className="btn-ghost mt-4 w-full">
               {loadingAction === 'add-contestant' ? 'Adding...' : 'Add to Lineup'}
             </button>
           </form>

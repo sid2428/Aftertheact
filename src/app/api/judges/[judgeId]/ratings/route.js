@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
     const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from("JudgeRating")
-      .select("overall_score, tag")
+      .select("score")
       .eq("judge_id", judgeId);
     if (error) throw error;
     return NextResponse.json({ success: true, data: aggregateRatings(data || []) });
