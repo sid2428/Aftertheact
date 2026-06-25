@@ -236,13 +236,13 @@ function LockButton({ status, onClick }) {
   const confirmed = status === "confirmed";
   
   const content = {
-    dormant: { text: "Set Your Score", icon: Target, glow: "rgba(255,255,255,0.0)" },
-    ready: { text: "Lock My Verdict", icon: Lock, glow: "rgba(139,30,45,0.8)" },
-    submitting: { text: "Locking...", icon: Loader2, glow: "rgba(139,30,45,0.4)" },
-    confirmed: { text: "Verdict Locked", icon: CheckCircle2, glow: "rgba(34,197,94,0.6)" },
+    dormant:    { text: "Set Your Score",   icon: Target       },
+    ready:      { text: "Lock My Verdict",  icon: Lock         },
+    submitting: { text: "Locking...",       icon: Loader2      },
+    confirmed:  { text: "Verdict Locked",   icon: CheckCircle2 },
   };
 
-  const { text, icon: Icon, glow } = content[status] || content.dormant;
+  const { text, icon: Icon } = content[status] || content.dormant;
 
   return (
     <motion.button
@@ -251,18 +251,13 @@ function LockButton({ status, onClick }) {
       disabled={status !== "ready"}
       whileHover={status === "ready" ? { scale: 1.02 } : {}}
       whileTap={status === "ready" ? { scale: 0.98 } : {}}
-      animate={{
-        boxShadow: status === "ready" || confirmed 
-          ? `0 0 40px ${glow}, inset 0 1px 1px rgba(255,255,255,0.2)` 
-          : `0 0 0px ${glow}`,
-      }}
-      className={`relative w-full overflow-hidden rounded-2xl border-2 px-8 py-5 font-display text-xl uppercase tracking-[0.2em] transition-colors duration-500 ${
+      className={`relative w-full overflow-hidden rounded-2xl border-2 px-8 py-5 font-display text-xl uppercase tracking-[0.2em] transition-all duration-300 ${
         confirmed
-          ? "cursor-default border-green-500 bg-gradient-to-b from-green-600 to-green-800 text-white"
+          ? "cursor-default border-latent-gold bg-gradient-to-b from-latent-gold to-[#B8860B] text-[#0A0A0A] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)]"
           : status === "submitting"
           ? "cursor-wait border-latent-crimson/80 bg-latent-crimson/80 text-white"
           : status === "ready"
-          ? "cursor-pointer border-latent-crimson bg-gradient-to-b from-latent-crimson to-[#5c131d] text-white"
+          ? "cursor-pointer border-latent-crimson bg-gradient-to-b from-latent-crimson to-[#5c131d] text-white hover:shadow-[0_0_20px_rgba(139,30,45,0.6)]"
           : "cursor-not-allowed border-white/10 bg-white/5 text-white/30"
       }`}
     >

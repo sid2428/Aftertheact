@@ -199,7 +199,8 @@ export async function addContestantToEpisode(episodeId, data) {
         contestant_id: newContestant.id,
         episode_id: episodeId,
         judge_average: parseFloat(data.judge_average || 0),
-        latent_score: parseFloat(data.latent_score || 0),
+        self_score: parseFloat(data.self_score || 0),
+        // latent_score is derived from the crowd verdict at reveal (score_episode_predictions); not admin-set.
         peoples_verdict_weighted: parseFloat(data.peoples_verdict_weighted || 0)
       });
 

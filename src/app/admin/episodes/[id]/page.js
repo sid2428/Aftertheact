@@ -65,7 +65,7 @@ export default async function ManageEpisode({ params }) {
           <div key={a.id} className="flex justify-between items-center bg-[#050505] border border-brand-border p-3 rounded-sm">
             <div>
               <div className="font-display font-black uppercase text-white">{a.Contestant?.name}</div>
-              <div className="text-xs font-mono text-white/40">{a.Contestant?.talent_type} • Self Score: {a.latent_score ?? "—"}</div>
+              <div className="text-xs font-mono text-white/40">{a.Contestant?.talent_type} • Latent Score: {a.latent_score ?? "—"}</div>
             </div>
           </div>
         ))}

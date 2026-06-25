@@ -6,14 +6,20 @@ import RollingNumber from "./RollingNumber";
 export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-0 border border-brand-border divide-x divide-brand-border text-center bg-[#050505] animate-pulse h-24 rounded-md">
-        <div className="p-3"></div><div className="p-3"></div>
+      <div className="grid grid-cols-3 gap-0 border border-brand-border divide-x divide-brand-border text-center bg-[#050505] animate-pulse h-24 rounded-md">
+        <div className="p-3"></div><div className="p-3"></div><div className="p-3"></div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-0 border border-brand-border divide-x divide-brand-border text-center bg-[#111111] rounded-md overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+    <div className="grid grid-cols-3 gap-0 border border-brand-border divide-x divide-brand-border text-center bg-[#111111] rounded-md overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      <div className="p-3 sm:p-5">
+        <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Self Score</div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.15 }}>
+          <RollingNumber value={appearance?.self_score || 0} decimals={1} height={34} className="justify-center font-bold text-white/70" />
+        </motion.div>
+      </div>
       <div className="p-3 sm:p-5">
         <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-white/40 mb-1">Panel Score</div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 100, delay: 0.2 }}>

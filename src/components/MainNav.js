@@ -24,7 +24,7 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
 
   return (
     <>
-    <nav className="glass-panel sticky top-0 z-50 border-b border-brand-border">
+    <nav className="glass-panel glass-panel--opaque sticky top-0 z-50 border-b border-brand-border">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Brand */}
         <Link href="/" className="flex items-center group shrink-0">

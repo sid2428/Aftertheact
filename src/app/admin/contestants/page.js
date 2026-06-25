@@ -50,7 +50,8 @@ export default async function AdminContestants({ searchParams }) {
       contestant_id: c.id,
       episode_id: epId,
       judge_average: parseFloat(formData.get("judge_average") || 0),
-      latent_score: parseFloat(formData.get("latent_score") || 0),
+      self_score: parseFloat(formData.get("self_score") || 0),
+      // latent_score is derived from the crowd verdict at reveal (score_episode_predictions); left null pre-reveal so it stays off the scoreboard.
     });
 
     revalidatePath("/admin/contestants");
@@ -171,7 +172,7 @@ export default async function AdminContestants({ searchParams }) {
                   </div>
                   <div>
                     <label className={labelClass}>Self Score</label>
-                    <input type="number" step="0.1" name="latent_score" defaultValue={0} className={inputClass} />
+                    <input type="number" step="0.1" name="self_score" defaultValue={0} className={inputClass} />
                   </div>
                 </div>
                 <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded transition-colors">

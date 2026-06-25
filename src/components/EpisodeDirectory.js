@@ -41,6 +41,9 @@ function EpisodeActions({ ep }) {
   const isLive = ep.status === "LIVE";
   const isRevealed = ep.status === "REVEALED";
   const resultPendingLabel = ep.status === "UPCOMING" ? "Soon" : "Pending";
+  const showVote = true;
+  const showResult = true;
+  const singleButton = false;
 
   return (
     <div className={`mt-4 grid gap-3 ${singleButton ? "grid-cols-1" : "grid-cols-2"}`}>

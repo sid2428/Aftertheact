@@ -27,7 +27,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
   };
   
   const [selectedEpisode, setSelectedEpisode] = useState(null);
-  const [contestantForm, setContestantForm] = useState({ name: '', talent_type: '', bio: '', judge_average: 0, latent_score: 0, peoples_verdict_weighted: 0 });
+  const [contestantForm, setContestantForm] = useState({ name: '', talent_type: '', bio: '', judge_average: 0, self_score: 0, peoples_verdict_weighted: 0 });
   const [episodeForm, setEpisodeForm] = useState({ season_number: 1, episode_number: 1, title: '' });
 
   const handleStatusChange = async (episodeId, newStatus) => {
@@ -80,7 +80,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
     const res = await addContestantToEpisode(selectedEpisode, contestantForm);
     if (res.success) {
       alert("Contestant Added!");
-      setContestantForm({ name: '', talent_type: '', bio: '', judge_average: 0, latent_score: 0, peoples_verdict_weighted: 0 });
+      setContestantForm({ name: '', talent_type: '', bio: '', judge_average: 0, self_score: 0, peoples_verdict_weighted: 0 });
       // In a real app we'd fetch the new count, but for now we just increment locally
       setEpisodes(eps => eps.map(e => e.id === selectedEpisode ? { ...e, ContestantEpisodeAppearance: [...e.ContestantEpisodeAppearance, { id: 'new' }] } : e));
     } else {
@@ -229,14 +229,15 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
               <input type="text" value={contestantForm.talent_type} onChange={e => setContestantForm({...contestantForm, talent_type: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" required />
             </div>
 
+            {/* Latent Score (crowd verdict) is derived at reveal, not admin-set. */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Judge Avg</label>
                 <input type="number" step="0.1" value={contestantForm.judge_average} onChange={e => setContestantForm({...contestantForm, judge_average: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold text-center rounded-sm focus:border-latent-gold outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-display font-black uppercase text-latent-crimson/80 mb-1">Self Score</label>
-                <input type="number" step="0.1" value={contestantForm.latent_score} onChange={e => setContestantForm({...contestantForm, latent_score: e.target.value})} className="w-full bg-[#050505] text-latent-crimson border border-latent-crimson/30 p-2 font-mono font-bold text-center rounded-sm focus:border-latent-crimson outline-none" />
+                <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Self Score</label>
+                <input type="number" step="0.1" value={contestantForm.self_score} onChange={e => setContestantForm({...contestantForm, self_score: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold text-center rounded-sm focus:border-latent-gold outline-none" />
               </div>
             </div>
 

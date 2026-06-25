@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS "ContestantEpisodeAppearance" (
     episode_id UUID REFERENCES "Episode"(id) ON DELETE CASCADE,
     judge_scores JSONB DEFAULT '[]',
     judge_average FLOAT,
+    self_score FLOAT,
     peoples_verdict_raw FLOAT,
     peoples_verdict_weighted FLOAT,
     latent_score FLOAT,
