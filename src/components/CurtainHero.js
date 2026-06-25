@@ -1,106 +1,50 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import TypeOnce from "./TypeOnce";
 
-// Lightweight golden-particle field drifting up the stage.
-function ParticleField() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    let width = 0;
-    let height = 0;
-    let particles = [];
-    let raf;
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      width = canvas.width = rect.width;
-      height = canvas.height = rect.height;
-      const count = Math.min(80, Math.max(40, Math.floor(width / 18)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        r: 3 + Math.random() * 3,
-        speed: 1 + Math.random() * 2,
-        baseAlpha: 0.3 + Math.random() * 0.3,
-        twinkle: Math.random() * Math.PI * 2,
-      }));
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-      for (const p of particles) {
-        p.y -= p.speed;
-        p.twinkle += 0.03;
-        if (p.y + p.r < 0) {
-          p.y = height + p.r;
-          p.x = Math.random() * width;
-        }
-        const alpha = p.baseAlpha + Math.sin(p.twinkle) * 0.15;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${Math.max(0, alpha)})`;
-        ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    if (reduce) {
-      // Draw a single static frame for reduced-motion users.
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${p.baseAlpha})`;
-        ctx.fill();
-      }
-    } else {
-      draw();
-    }
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
-}
-
-function Face({ member, delay, tilt }) {
+function Face({ member, delay, tilt, idx = 0 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8, rotate: tilt }}
-      animate={{ opacity: 1, scale: 1, rotate: tilt }}
-      whileHover={{ rotate: 0, scale: 1.08 }}
-      transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative"
-    >
-      {/* Tooltip on hover */}
-      <div className="pointer-events-none absolute -top-2 left-1/2 z-30 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-sm border border-latent-gold/30 bg-[#111111] px-3 py-1.5 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-        <div className="font-display font-black uppercase text-xs text-white tracking-widest">{member.name}</div>
-        {member.descriptor && (
-          <div className="font-mono text-[10px] uppercase tracking-widest text-latent-gold">{member.descriptor}</div>
-        )}
-      </div>
-
-      <div className="relative w-24 h-24 lg:w-32 lg:h-32 overflow-hidden rounded-md border-2 border-white/10 bg-[#111111] shadow-[0_8px_32px_rgba(0,0,0,0.6)] transition-colors duration-300 group-hover:border-latent-gold group-hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] flex items-center justify-center">
-        {member.image ? (
-          <Image src={member.image} alt={member.name || ""} fill sizes="128px" className="object-cover" unoptimized />
-        ) : (
-          <span className="font-display font-black text-3xl text-white/20">{member.name?.[0] || "?"}</span>
-        )}
-      </div>
-    </motion.div>
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, rotate: tilt }}
+          animate={{ opacity: 1, scale: 1, rotate: tilt }}
+          whileHover={{ rotate: 0, scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          tabIndex={0}
+          className="group relative cursor-pointer rounded-md outline-none"
+        >
+          <div
+            className="judge-float relative w-24 h-24 lg:w-32 lg:h-32 overflow-hidden rounded-md border-2 border-white/10 bg-[#111111] shadow-[0_8px_32px_rgba(0,0,0,0.6)] transition-colors duration-300 group-hover:border-latent-gold group-hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] flex items-center justify-center"
+            style={{ "--float-dur": `${3.5 + (idx % 4) * 0.5}s`, "--float-delay": `${(idx % 5) * 0.4}s` }}
+          >
+            {member.image ? (
+              <Image src={member.image} alt={member.name || ""} fill sizes="128px" className="object-cover" unoptimized />
+            ) : (
+              <span className="font-display text-3xl text-white/20">{member.name?.[0] || "?"}</span>
+            )}
+          </div>
+        </motion.div>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          side="top"
+          sideOffset={8}
+          className="z-[70] whitespace-nowrap rounded-sm border border-latent-gold/30 bg-[#111111] px-3 py-1.5 text-center shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
+        >
+          <div className="font-display uppercase text-xs text-white tracking-widest">{member.name}</div>
+          {member.descriptor && (
+            <div className="font-number text-[10px] uppercase tracking-widest text-latent-gold">{member.descriptor}</div>
+          )}
+          <Tooltip.Arrow className="fill-latent-gold/30" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
 
@@ -110,23 +54,19 @@ export default function CurtainHero({ members = [] }) {
   const right = members.slice(half);
 
   return (
-    <div
-      className="relative min-h-[90vh] flex items-center justify-center overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% 80%, rgba(139,30,45,0.15) 0%, transparent 60%), radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 50%), url('/bluecurtains-bg.png') center/cover",
-      }}
-    >
-      {/* Stage: faces flank the logo (desktop) */}
-      <div className="spotlight-cone spot-a" style={{ left: "12%" }} />
-      <div className="spotlight-cone spot-b" style={{ right: "12%" }} />
+    <Tooltip.Provider delayDuration={150}>
+    <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-[#05060a]">
+      {/* Blue curtain backdrop — the stage behind the velvet drapes */}
+      <img src="/bluecurtains-bg.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      {/* Soft vignette so the logo + faces read against the curtain */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,_transparent_0%,_rgba(5,6,10,0.55)_75%)] pointer-events-none" />
 
       {/* Stage: faces flank the logo (desktop) */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6">
         <div className="flex items-center justify-center gap-6 lg:gap-16">
           <div className="hidden md:flex items-center gap-6 lg:gap-10">
             {left.map((m, i) => (
-              <Face key={`l${i}`} member={m} delay={1.6 + i * 0.15} tilt={i % 2 === 0 ? -3 : 3} />
+              <Face key={`l${i}`} member={m} delay={1.6 + i * 0.15} tilt={i % 2 === 0 ? -3 : 3} idx={i} />
             ))}
           </div>
 
@@ -153,16 +93,22 @@ export default function CurtainHero({ members = [] }) {
 
           <div className="hidden md:flex items-center gap-6 lg:gap-10">
             {right.map((m, i) => (
-              <Face key={`r${i}`} member={m} delay={1.6 + i * 0.15} tilt={i % 2 === 0 ? 3 : -3} />
+              <Face key={`r${i}`} member={m} delay={1.6 + i * 0.15} tilt={i % 2 === 0 ? 3 : -3} idx={i + half} />
             ))}
           </div>
         </div>
 
-        {/* Tagline removed to prevent overlap with CTAs on small screens */}
+        {/* Typed tagline (desktop only to avoid overlapping the CTAs on small screens) */}
+        <TypeOnce
+          text="The show ends. The receipts begin."
+          sessionKey="hero-tagline-seen"
+          delay={2100}
+          className="hidden sm:block text-center font-display text-xl lg:text-2xl uppercase tracking-[0.25em] text-white/80"
+        />
 
         {/* Mobile judge strip — all judges in a scrollable row */}
         {members.length > 0 && (
-          <div className="md:hidden flex gap-4 overflow-x-auto p-2 max-w-full">
+          <div className="md:hidden flex gap-4 overflow-x-auto p-2 max-w-full no-scrollbar">
             {members.map((m, i) => (
               <div key={`m${i}`} className="flex shrink-0 flex-col items-center gap-1">
                 <div className="relative w-16 h-16 overflow-hidden rounded-md border border-white/10 bg-[#111111] shadow-[0_4px_16px_rgba(0,0,0,0.6)] flex items-center justify-center">
@@ -199,7 +145,7 @@ export default function CurtainHero({ members = [] }) {
       </motion.div>
 
       {/* Reflective stage floor */}
-      <div className="absolute bottom-0 left-0 w-full h-[15%] bg-gradient-to-t from-latent-gold/5 to-transparent pointer-events-none z-[5]" />
+      <div className="absolute bottom-0 left-0 w-full h-[18%] bg-gradient-to-t from-[#05060a] to-transparent pointer-events-none z-[5]" />
 
       {/* Scroll indicator */}
       <motion.div
@@ -232,5 +178,6 @@ export default function CurtainHero({ members = [] }) {
         className="absolute top-0 right-0 h-full w-[52%] object-cover z-20 pointer-events-none"
       />
     </div>
+    </Tooltip.Provider>
   );
 }

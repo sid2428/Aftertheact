@@ -1,9 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, MessageCircle, Flag, Trash2 } from "lucide-react";
+
+// The compose box's only animated flourish (spec P2.1): the placeholder types
+// and deletes through a few prompts. The single typing effect on this page.
+const COMPOSE_PROMPTS = ["Drop your take…", "Was that score actually fair?…", "Who got robbed tonight?…"];
+
+function useCyclingPlaceholder(reduced) {
+  const [placeholder, setPlaceholder] = useState(COMPOSE_PROMPTS[0]);
+  useEffect(() => {
+    if (reduced) return;
+    let promptIdx = 0;
+    let charIdx = 0;
+    let deleting = false;
+    let timer;
+    const tick = () => {
+      const full = COMPOSE_PROMPTS[promptIdx];
+      if (!deleting) {
+        charIdx += 1;
+        setPlaceholder(full.slice(0, charIdx));
+        if (charIdx >= full.length) {
+          deleting = true;
+          timer = setTimeout(tick, 1800);
+          return;
+        }
+        timer = setTimeout(tick, 55);
+      } else {
+        charIdx -= 1;
+        setPlaceholder(full.slice(0, charIdx));
+        if (charIdx <= 0) {
+          deleting = false;
+          promptIdx = (promptIdx + 1) % COMPOSE_PROMPTS.length;
+          timer = setTimeout(tick, 350);
+          return;
+        }
+        timer = setTimeout(tick, 30);
+      }
+    };
+    timer = setTimeout(tick, 1800);
+    return () => clearTimeout(timer);
+  }, [reduced]);
+  return placeholder;
+}
 
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -177,6 +218,8 @@ export default function CommunityPageClient({
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState(null);
   const [reportId, setReportId] = useState(null);
+  const reduced = useReducedMotion();
+  const composePlaceholder = useCyclingPlaceholder(reduced);
 
   const submitPost = async () => {
     const body = text.trim();
@@ -253,14 +296,29 @@ export default function CommunityPageClient({
           </div>
 
           {/* Decorative speech bubbles */}
-          <div className="hidden lg:flex flex-wrap gap-3 justify-end opacity-80">
+          <div className="hidden lg:flex flex-wrap gap-4 justify-end opacity-90 relative top-10">
             {[
-              ["Talent is relative 🔪", "bg-latent-gold/15 text-latent-gold border-latent-gold/30"],
-              ["Judges were sus tbh", "bg-latent-crimson/15 text-latent-crimson border-latent-crimson/30"],
-              ["Who approved that act?", "bg-white/5 text-white/60 border-white/10"],
-              ["That was a 2/10 at best", "bg-latent-gold/15 text-latent-gold border-latent-gold/30"],
+              ["Talent is relative 🔪", "bg-latent-gold/20 text-latent-gold border-latent-gold/50 shadow-[0_0_20px_rgba(212,175,55,0.25)]"],
+              ["Judges were sus tbh", "bg-latent-crimson/20 text-latent-crimson border-latent-crimson/50 shadow-[0_0_20px_rgba(139,30,45,0.25)]"],
+              ["Who approved that act?", "bg-white/10 text-white/80 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.15)]"],
+              ["That was a 2/10 at best", "bg-latent-gold/20 text-latent-gold border-latent-gold/50 shadow-[0_0_20px_rgba(212,175,55,0.25)]"],
             ].map(([t, cls], i) => (
-              <div key={i} className={`rounded-2xl border px-4 py-2 font-mono text-sm ${cls}`} style={{ transform: `rotate(${[-3, 2, -2, 3][i]}deg)` }}>{t}</div>
+              <motion.div
+                key={i}
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [[-3, 2, -2, 3][i] - 3, [-3, 2, -2, 3][i] + 3, [-3, 2, -2, 3][i] - 3]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 4 + i * 0.5, 
+                  ease: "easeInOut",
+                  delay: i * 0.3
+                }}
+                className={`rounded-3xl border px-5 py-3 font-mono text-sm backdrop-blur-sm ${cls}`}
+              >
+                {t}
+              </motion.div>
             ))}
           </div>
         </div>
@@ -283,7 +341,7 @@ export default function CommunityPageClient({
                 onChange={(e) => setText(e.target.value)}
                 maxLength={280}
                 rows={3}
-                placeholder="Drop your take…"
+                placeholder={composePlaceholder}
                 className="w-full bg-[#0A0A0A] border border-white/10 rounded-sm p-3 font-mono text-sm text-white placeholder:text-white/30 focus:border-latent-gold/50 outline-none resize-none"
                 style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 27px, rgba(255,255,255,0.04) 28px)" }}
               />
@@ -302,11 +360,7 @@ export default function CommunityPageClient({
                     {episodes.map((e) => <option key={e.id} value={`e:${e.id}`}>S{e.season_number}E{e.episode_number} — {e.title}</option>)}
                   </optgroup>
                 </select>
-                <button
-                  onClick={submitPost}
-                  disabled={posting || !text.trim()}
-                  className="ml-auto bg-latent-crimson text-white font-display font-black uppercase tracking-widest px-6 py-2.5 rounded-sm hover:shadow-[0_0_20px_rgba(139,30,45,0.6)] transition-all disabled:opacity-40"
-                >
+                <button onClick={submitPost} disabled={posting || !text.trim()} className="btn-primary ml-auto">
                   {posting ? "Posting…" : "Drop the Mic 🎤"}
                 </button>
               </div>
@@ -353,7 +407,16 @@ export default function CommunityPageClient({
 
         {/* Hot Takes sidebar */}
         <aside className="hidden lg:block space-y-4">
-          <h2 className="font-display font-black uppercase tracking-widest text-white">🔥 Hot Takes</h2>
+          <div className="flex items-center gap-2">
+            <motion.div
+              animate={{ scale: [1, 1.25, 1], rotate: [-10, 10, -10] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="text-2xl drop-shadow-[0_0_15px_rgba(255,69,0,0.8)]"
+            >
+              🔥
+            </motion.div>
+            <h2 className="font-display font-black uppercase tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">Hot Takes</h2>
+          </div>
           {hotTakes.length === 0 ? (
             <div className="text-white/30 font-mono text-sm">Nothing trending yet.</div>
           ) : (
@@ -382,8 +445,8 @@ export default function CommunityPageClient({
               <div className="font-display font-black uppercase tracking-widest text-white mb-2">Report this post?</div>
               <p className="text-white/50 text-sm mb-6">Our showrunners will review it.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={confirmReport} className="bg-latent-crimson text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Report</button>
-                <button onClick={() => setReportId(null)} className="glass-panel text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Cancel</button>
+                <button onClick={confirmReport} className="btn-danger">Report</button>
+                <button onClick={() => setReportId(null)} className="btn-ghost">Cancel</button>
               </div>
             </div>
           </motion.div>

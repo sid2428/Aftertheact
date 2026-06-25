@@ -1,10 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-oswald);
-  --font-mono: var(--font-jetbrains-mono);
-  
+  /* Three fonts only — see UI_ENHANCEMENT_V2 P0.1.
+     font-display → Bebas Neue, font-sans → DM Sans, font-mono/font-number → Rajdhani. */
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-bebas);
+  --font-mono: var(--font-rajdhani);
+  --font-number: var(--font-rajdhani);
+
   /* Brand Accents */
   --color-latent-gold: #D4AF37;
   --color-latent-gold-light: #F5D97B;
@@ -14,7 +17,7 @@
   --color-brand-bg: #0A0A0A;
   --color-brand-panel: #111111;
   --color-brand-elevated: #161616;
-  --color-brand-border: rgba(255, 255, 255, 0.08);
+  --color-brand-border: rgba(255, 255, 255, 0.07);
 
   /* Legacy aliases to prevent breaking immediately, but redefining them dark */
   --color-brand-black: #0A0A0A; 
@@ -35,27 +38,34 @@
   --background-end-rgb: 10, 10, 10;
 }
 
+/* Base page colour lives on <html> so the grain layer can sit behind body
+   content with a negative z-index — see body::after below. */
+html {
+  background-color: #080808;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
-  background: #080808;
+  background: transparent;
   position: relative;
 }
 
-/* Organic film-grain layer over the whole page. Sits above the base colour
-   but below all content via a body::after pseudo, so it never establishes a
-   stacking context that children could fall behind. */
+/* Organic film-grain texture behind every page. It sits at z-index -1 (above
+   the html base colour, below all in-flow content) so it NEVER needs the
+   children of <body> to be lifted above it. The previous approach lifted every
+   direct child with `body > * { position: relative; z-index: 1 }`, but because
+   that rule is unlayered it overrode Tailwind's layered `fixed`/`z-[100]`
+   utilities — collapsing portaled modals (e.g. the verdict reveal) to
+   `position: relative` and dropping them to the bottom of the page, beneath the
+   footer. Keeping the grain behind content removes the need for that hack. */
 body::after {
   content: "";
   position: fixed;
   inset: -50%;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-body > * {
-  position: relative;
-  z-index: 1;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -101,6 +111,13 @@ body > * {
   100% { transform: scale(1.45); opacity: 0; }
 }
 
+/* Gentle asynchronous float for judge photos (P2.3). Duration/delay are set
+   per-photo via --float-dur / --float-delay so they drift out of sync. */
+@keyframes judgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
 /* Slow spotlight cones sweeping across the hero stage. */
 @keyframes spotSweepA {
   0%, 100% { transform: translateX(-12%) rotate(-6deg); }
@@ -115,6 +132,17 @@ body > * {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
   .text-gradient-gold {
     background: var(--background-image-gold-gradient);
     -webkit-background-clip: text;
@@ -142,6 +170,37 @@ body > * {
     .glass-panel {
       animation: shimmer-spin 60s linear infinite;
     }
+  }
+
+  /* ── Frosted-glass surfaces ────────────────────────────────────────────
+     A soft, single-pane look used to unify clusters of content (the
+     scoreboard slab, cards) so they read as one cohesive element rather than
+     stacked boxes: translucent fill, blur, a hairline border, a top inner
+     highlight and a deep ambient drop shadow. No sharp edges — pair with a
+     generous radius (rounded-3xl / rounded-[2rem]). */
+  .glass-surface {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
+      rgba(14, 14, 14, 0.55);
+    backdrop-filter: blur(18px) saturate(125%);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 24px 70px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Lighter glass for items living inside a .glass-surface (e.g. rows). Brightens
+     smoothly on hover so the whole slab feels alive without hard state jumps. */
+  .glass-row {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  }
+  .glass-row:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
   }
 
   /* Faint red-carpet grid behind scoreboard rows. */
@@ -222,5 +281,130 @@ body > * {
   @media (prefers-reduced-motion: no-preference) {
     .spotlight-cone.spot-a { animation: spotSweepA 18s ease-in-out infinite; }
     .spotlight-cone.spot-b { animation: spotSweepB 20s ease-in-out infinite; }
+  }
+
+  /* ── P0.2 Interactive border & glow states ─────────────────────────────
+     One source of truth so panels/rows share the same rest/hover/live feel. */
+  .border-interactive {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .border-interactive:hover {
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.18);
+  }
+  /* Active/live: crimson border + crimson glow (LIVE badges, active vote card). */
+  .border-live {
+    border: 1px solid rgba(139, 30, 45, 0.5);
+    box-shadow: 0 0 24px rgba(139, 30, 45, 0.25);
+  }
+
+  .judge-float { will-change: transform; }
+  @media (prefers-reduced-motion: no-preference) {
+    .judge-float {
+      animation: judgeFloat var(--float-dur, 4.5s) ease-in-out infinite;
+      animation-delay: var(--float-delay, 0s);
+    }
+  }
+
+  /* 3D utilities for the P1 episode flip cards. */
+  .perspective-1000 { perspective: 1000px; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* ── P2.4 Site-wide button system ──────────────────────────────────────────
+   Three classes only. Glow, font, padding and transition are inherited here so
+   no component carries one-off inline shadow values. */
+@layer components {
+  .btn-primary,
+  .btn-ghost,
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    line-height: 1;
+    font-size: 0.875rem;
+    padding: 0.9rem 1.75rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: box-shadow 150ms ease-out, border-color 150ms ease-out,
+      background-color 150ms ease-out, color 150ms ease-out,
+      transform 100ms ease-out, opacity 150ms ease-out;
+  }
+
+  /* Primary action (Lock Vote, Submit): crimson at rest, glow on hover,
+     glow collapses inward on press. */
+  .btn-primary {
+    background-color: var(--color-latent-crimson);
+    color: #fff;
+    border-color: rgba(139, 30, 45, 0.6);
+  }
+  .btn-primary:hover {
+    border-color: rgba(139, 30, 45, 0.95);
+    box-shadow: 0 0 24px rgba(139, 30, 45, 0.6);
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Secondary / ghost: faint frosted glass at rest, gold border glow on hover. */
+  .btn-ghost {
+    background-color: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: var(--color-latent-gold-light);
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+  }
+  .btn-ghost:active {
+    transform: scale(0.97);
+  }
+
+  /* Destructive: crimson outline that fills on hover. */
+  .btn-danger {
+    background-color: transparent;
+    color: var(--color-latent-crimson);
+    border-color: rgba(139, 30, 45, 0.5);
+  }
+  .btn-danger:hover {
+    background-color: var(--color-latent-crimson);
+    color: #fff;
+    box-shadow: 0 0 22px rgba(139, 30, 45, 0.55);
+  }
+  .btn-danger:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary:disabled,
+  .btn-ghost:disabled,
+  .btn-danger:disabled {
+    opacity: 0.35;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-primary,
+    .btn-ghost,
+    .btn-danger {
+      transition-duration: 150ms;
+      transition-property: opacity, color, background-color, border-color;
+    }
   }
 }

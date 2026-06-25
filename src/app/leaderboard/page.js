@@ -19,11 +19,12 @@ export default async function LeaderboardPage() {
     .order("latent_points_season", { ascending: false })
     .limit(50);
 
-  // Fetch Oracle Board (top prediction accuracy)
+  // Fetch Oracle Board (top prediction accuracy). Show anyone with at least one
+  // qualifying prediction so the board isn't empty early in a season.
   const { data: oracles } = await supabase
     .from("User")
     .select("id, username, oracle_score, oracle_qualifying_episodes, avatar_url")
-    .gte("oracle_qualifying_episodes", 5) // Minimum 5 qualifying episodes
+    .gte("oracle_qualifying_episodes", 1)
     .order("oracle_score", { ascending: false })
     .limit(50);
 
@@ -128,7 +129,7 @@ export default async function LeaderboardPage() {
               
               {(!oracles || oracles.length === 0) && (
                 <div className="text-center py-16 bg-[#111111] text-white/30 font-display font-black uppercase tracking-widest text-xl">
-                  Board requires 5+ qualifying predictions. Empty.
+                  No predictions scored yet. Lock your calls before air time.
                 </div>
               )}
             </div>

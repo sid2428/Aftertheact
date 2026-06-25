@@ -1,5 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import EpisodeDirectory from "@/components/EpisodeDirectory";
+import LineupPosters from "@/components/LineupPosters";
 
 export const metadata = {
   title: "The Lineup",
@@ -12,7 +13,7 @@ export default async function EpisodesPage() {
   const supabase = getServiceSupabase();
   const { data: episodes } = await supabase
     .from("Episode")
-    .select("*")
+    .select("*, ContestantEpisodeAppearance(count)")
     .order("episode_number", { ascending: false });
 
   const recent = (episodes || []).slice(0, 3);
@@ -27,29 +28,8 @@ export default async function EpisodesPage() {
             THE<br />LINEUP
           </h1>
 
-          {/* Recent episode posters */}
-          {recent.length > 0 && (
-            <div className="hidden md:flex gap-4">
-              {recent.map((ep, i) => (
-                <div
-                  key={ep.id}
-                  className="relative w-32 h-44 lg:w-40 lg:h-56 rounded-md overflow-hidden border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] shrink-0"
-                  style={{ transform: `rotate(${[-4, 0, 4][i]}deg)` }}
-                >
-                  {ep.thumbnail_url ? (
-                    <img src={ep.thumbnail_url} alt={ep.title} className="object-cover w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-b from-[#1a1a1a] to-[#050505] flex items-center justify-center">
-                      <span className="font-display font-black text-5xl text-white/10">E{ep.episode_number}</span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <div className="font-display font-black uppercase text-[10px] text-white/80 truncate tracking-widest">{ep.title}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Morphing recent-episode posters */}
+          {recent.length > 0 && <LineupPosters episodes={episodes || []} />}
         </div>
       </section>
 

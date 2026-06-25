@@ -136,8 +136,8 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
               <div className="font-display font-black uppercase tracking-widest text-white mb-2">Sign out?</div>
               <p className="text-white/50 text-sm mb-6">You&apos;ll need to sign back in to vote and post.</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => signOut({ callbackUrl: "/" })} className="bg-latent-crimson text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Sign Out</button>
-                <button onClick={() => setConfirmSignout(false)} className="glass-panel text-white font-display font-black uppercase text-xs tracking-widest px-5 py-2.5 rounded-sm">Cancel</button>
+                <button onClick={() => signOut({ callbackUrl: "/" })} className="btn-primary">Sign Out</button>
+                <button onClick={() => setConfirmSignout(false)} className="btn-ghost">Cancel</button>
               </div>
             </div>
           </motion.div>

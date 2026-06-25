@@ -1,13 +1,17 @@
-import { Inter, Oswald, JetBrains_Mono } from "next/font/google";
+import { Bebas_Neue, DM_Sans, Rajdhani } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import MainNav from "@/components/MainNav";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
+// Three fonts only (UI_ENHANCEMENT_V2 P0.1):
+//   Display  — Bebas Neue (headings ≥ 2rem, episode numbers, brand)
+//   Body     — DM Sans (prose, labels, inputs)
+//   Numbers  — Rajdhani (scores, ranks, vote counts, timestamps)
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-dm-sans" });
+const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
+const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], variable: "--font-rajdhani" });
 
 export const metadata = {
   title: "AfterTheAct - IGL Community Platform",
@@ -22,7 +26,7 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${oswald.variable} ${jetbrainsMono.variable} font-sans bg-[#0A0A0A] text-white min-h-screen flex flex-col selection:bg-latent-crimson/40`}>
+      <body className={`${dmSans.variable} ${bebasNeue.variable} ${rajdhani.variable} font-sans bg-[#0A0A0A] text-white min-h-screen flex flex-col selection:bg-latent-crimson/40`}>
 
         {/* Global Navigation - Dark Luxury Glassmorphic */}
         <MainNav isLoggedIn={!!session?.user} isAdmin={!!session?.user?.isAdmin} />

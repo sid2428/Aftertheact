@@ -27,13 +27,18 @@ export default async function PanelPage() {
       .select("judge_id, user_id, harshness_score, accuracy_score, entertainment_score, comment");
     if (error) throw error;
     for (const row of data || []) {
-      (byJudge[row.judge_id] ||= []).push(row);
-      if (session?.user && row.user_id === session.user.id) {
-        myRatings[row.judge_id] = {
-          harshness: row.harshness_score,
-          accuracy: row.accuracy_score,
-          entertainment: row.entertainment_score,
-          comment: row.comment || "",
+      const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;
+      const mappedRow = {
+        judge_id: row.judge_id,
+        user_id: row.user_id,
+        score: avgScore,
+        comment: row.comment
+      };
+      (byJudge[mappedRow.judge_id] ||= []).push(mappedRow);
+      if (session?.user && mappedRow.user_id === session.user.id) {
+        myRatings[mappedRow.judge_id] = {
+          score: Math.round(mappedRow.score),
+          comment: mappedRow.comment || "",
         };
       }
     }
@@ -48,14 +53,14 @@ export default async function PanelPage() {
   let mostControversialId = null;
   let fanFavouriteId = null;
   let maxStdDev = -1;
-  let maxEnt = -1;
+  let maxScore = -1;
   for (const j of enriched) {
-    if (j.agg.count > 0 && j.agg.harshnessStdDev > maxStdDev) {
-      maxStdDev = j.agg.harshnessStdDev;
+    if (j.agg.count > 0 && j.agg.stdDev > maxStdDev) {
+      maxStdDev = j.agg.stdDev;
       mostControversialId = j.id;
     }
-    if (j.agg.count > 0 && j.agg.avgEntertainment > maxEnt) {
-      maxEnt = j.agg.avgEntertainment;
+    if (j.agg.count > 0 && j.agg.avgScore > maxScore) {
+      maxScore = j.agg.avgScore;
       fanFavouriteId = j.id;
     }
   }
