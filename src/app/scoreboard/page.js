@@ -2,6 +2,7 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { ScoreboardHero } from "@/components/ScoreboardHero";
 import LiveScoreboard from "@/components/LiveScoreboard";
 import ScoreboardPodium from "@/components/ScoreboardPodium";
+import FloatingRevealCountdown from "@/components/FloatingRevealCountdown";
 
 export const metadata = {
   title: "The Verdict Board",
@@ -18,17 +19,31 @@ export default async function CommunityScoreboard() {
     .select(`
       id,
       latent_score,
+      judge_average,
+      peoples_verdict_weighted,
       total_votes_raw,
       controversy_flag,
       Contestant (
         id, name, slug, talent_type, image_url, is_removed_by_request
       ),
       Episode (
-        id, season_number, episode_number
+        id, season_number, episode_number, voting_window_close
       )
     `)
     .not("latent_score", "is", null)
     .order("latent_score", { ascending: false });
+
+  // Live episode whose reveal countdown floats beside the board.
+  // maybeSingle + limit(1): .single() throws when no episode is live.
+  const { data: liveEpisode } = await supabase
+    .from("Episode")
+    .select("id, season_number, episode_number, title, voting_window_close")
+    .in("status", ["LIVE", "VOTING_CLOSED"])
+    .not("voting_window_close", "is", null)
+    .order("season_number", { ascending: false })
+    .order("episode_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const valid = (rankings || []).filter((r) => r.Contestant && !r.Contestant.is_removed_by_request);
   const podium = valid.slice(0, 3).map((r) => ({
@@ -47,7 +62,10 @@ export default async function CommunityScoreboard() {
       {/* The animated FLIP leaderboard */}
       <div className="max-w-6xl mx-auto p-6 sm:p-12 mt-12 sm:mt-16 mb-16 relative z-20">
         {valid.length > 0 ? (
-          <div className="glass-surface rounded-[2rem] p-3 sm:p-5">
+          <div className="glass-surface rounded-[2rem] p-3 sm:p-5 relative">
+            {liveEpisode?.voting_window_close && (
+              <FloatingRevealCountdown key={liveEpisode.voting_window_close} revealAt={liveEpisode.voting_window_close} />
+            )}
             <LiveScoreboard
               rows={valid.map((r) => ({
                 id: r.id,
@@ -55,6 +73,7 @@ export default async function CommunityScoreboard() {
                 talentType: r.Contestant.talent_type,
                 imageUrl: r.Contestant.image_url,
                 score: r.latent_score,
+                judgeScore: r.judge_average,
                 votes: r.total_votes_raw,
                 controversy: r.controversy_flag,
                 episodeLabel: `S${r.Episode?.season_number || "?"}E${r.Episode?.episode_number || "?"}`,

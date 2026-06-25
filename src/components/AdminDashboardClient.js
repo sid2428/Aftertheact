@@ -8,6 +8,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
   const [roasts, setRoasts] = useState(initialRoasts);
   const [reportedPosts, setReportedPosts] = useState(initialReportedPosts);
   const [loadingAction, setLoadingAction] = useState(null);
+  const [confirmingArchive, setConfirmingArchive] = useState(null);
 
   const moderatePost = async (postId, action) => {
     setLoadingAction(`moderate-${postId}`);
@@ -33,11 +34,30 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
     setLoadingAction(`status-${episodeId}`);
     const res = await updateEpisodeStatus(episodeId, newStatus);
     if (res.success) {
-      setEpisodes(eps => eps.map(e => e.id === episodeId ? { ...e, status: newStatus } : e));
+      setEpisodes(eps => eps.map(e => {
+        if (e.id !== episodeId) return e;
+        const fallbackRevealAt = newStatus === "LIVE" && !e.voting_window_close
+          ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+          : e.voting_window_close;
+        return { ...e, status: newStatus, voting_window_close: fallbackRevealAt };
+      }));
     } else {
       alert("Error: " + res.error);
     }
     setLoadingAction(null);
+  };
+
+  const handleArchiveToggle = async (episodeId, currentStatus) => {
+    const nextStatus = currentStatus === "ARCHIVED" ? "REVEALED" : "ARCHIVED";
+    const confirmKey = `${episodeId}:${nextStatus}`;
+
+    if (confirmingArchive !== confirmKey) {
+      setConfirmingArchive(confirmKey);
+      return;
+    }
+
+    await handleStatusChange(episodeId, nextStatus);
+    setConfirmingArchive(null);
   };
 
   const handleReveal = async (episodeId) => {
@@ -133,11 +153,13 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
                   Trigger Reveal
                 </button>
                 <button
-                  onClick={() => handleStatusChange(ep.id, 'ARCHIVED')}
-                  disabled={loadingAction || ep.status === 'ARCHIVED'}
+                  onClick={() => handleArchiveToggle(ep.id, ep.status)}
+                  disabled={loadingAction || (ep.status !== 'REVEALED' && ep.status !== 'ARCHIVED')}
                   className="btn-ghost"
                 >
-                  Archive
+                  {confirmingArchive === `${ep.id}:${ep.status === 'ARCHIVED' ? 'REVEALED' : 'ARCHIVED'}`
+                    ? ep.status === 'ARCHIVED' ? 'Confirm Unarchive' : 'Confirm Archive'
+                    : ep.status === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
                 </button>
               </div>
             </div>

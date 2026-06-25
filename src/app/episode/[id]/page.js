@@ -2,10 +2,13 @@ import { getServiceSupabase } from "@/lib/supabase";
 import ContestantCard from "@/components/ContestantCard";
 import VotingSection from "@/components/VotingSection";
 import RevelationSequence, { RevelationItem } from "@/components/RevelationSequence";
+import RevealCountdown from "@/components/RevealCountdown";
+import { triggerExpiredRevelation } from "@/app/actions/revelation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { notFound } from "next/navigation";
 
-export const revalidate = 60; // ISR cache 60 seconds
+export const revalidate = 0;
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -28,7 +31,7 @@ export default async function EpisodePage({ params }) {
   const session = await getServerSession(authOptions);
   const supabase = getServiceSupabase();
   
-  const { data: episode, error } = await supabase
+  let { data: episode, error } = await supabase
     .from("Episode")
     .select("*")
     .eq("id", id)
@@ -42,6 +45,20 @@ export default async function EpisodePage({ params }) {
         </div>
       </div>
     );
+  }
+
+  if (episode.status === "LIVE" && episode.voting_window_close) {
+    await triggerExpiredRevelation(episode.id);
+    const { data: refreshedEpisode } = await supabase
+      .from("Episode")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (refreshedEpisode) episode = refreshedEpisode;
+  }
+
+  if (episode.status === "ARCHIVED") {
+    notFound();
   }
 
   const { data: appearances } = await supabase
@@ -121,9 +138,15 @@ export default async function EpisodePage({ params }) {
         <div className="relative bg-gradient-to-r from-[#0A0A0A] via-[#111111]/60 to-[#0A0A0A]">
           <div className="max-w-7xl mx-auto min-h-[90px] px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-between gap-4">
             <div className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-white/50 shrink-0 w-[30%]">
-              <div>Season {episode.season_number}</div>
-              <div>Episode {episode.episode_number}</div>
-              <div className="text-white/30">{new Date(episode.air_date).toLocaleDateString()}</div>
+              {episode.status === "LIVE" && episode.voting_window_close ? (
+                <RevealCountdown key={episode.voting_window_close} revealAt={episode.voting_window_close} />
+              ) : (
+                <>
+                  <div>Season {episode.season_number}</div>
+                  <div>Episode {episode.episode_number}</div>
+                  <div className="text-white/30">{new Date(episode.air_date).toLocaleDateString()}</div>
+                </>
+              )}
             </div>
 
             <div className="flex-1 text-center font-display font-black uppercase tracking-tight text-white text-lg sm:text-2xl lg:text-3xl truncate">
@@ -188,7 +211,6 @@ export default async function EpisodePage({ params }) {
                     name: app.Contestant.name,
                     talent_type: app.Contestant.talent_type,
                     image_url: app.Contestant.image_url,
-                    initialRawScore: app.peoples_verdict_raw,
                     userVoteScore: userVotesMap[app.Contestant.id] ?? null,
                   }))}
                 />

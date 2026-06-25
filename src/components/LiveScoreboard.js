@@ -30,8 +30,11 @@ export default function LiveScoreboard({
 
   const [scores, setScores] = useState(() => (doReveal ? zeroScores : baseScores));
   const [flashes, setFlashes] = useState({});
+  const [leaderBeatId, setLeaderBeatId] = useState(null);
   const prevRanks = useRef({});
+  const prevLeaderId = useRef(null);
   const flashTimers = useRef({});
+  const leaderBeatTimer = useRef(null);
 
   // Mirror current scores into a ref so the SSE handler can diff against them
   // without re-subscribing.
@@ -46,14 +49,31 @@ export default function LiveScoreboard({
   if (rowsKey !== trackedKey) {
     setTrackedKey(rowsKey);
     setScores(doReveal ? zeroScores : baseScores);
+    setLeaderBeatId(null);
   }
+
+  useEffect(() => {
+    prevLeaderId.current = null;
+  }, [rowsKey]);
 
   // Dramatic reveal — ramp each score 0 → target, earliest rows first. The
   // setState calls live inside timer callbacks, not the effect body.
   useEffect(() => {
     if (!doReveal) return;
-    const timers = rows.map((r, i) =>
-      setTimeout(() => setScores((prev) => ({ ...prev, [r.id]: baseScores[r.id] })), 150 + i * 90)
+    const revealOrder = [...rows].sort((a, b) => (baseScores[a.id] ?? 0) - (baseScores[b.id] ?? 0));
+    const leaderId = revealOrder.at(-1)?.id ?? null;
+    const totalDuration = 4000;
+    const interval = revealOrder.length > 1 ? totalDuration / (revealOrder.length - 1) : 0;
+    
+    const timers = revealOrder.map((r, i) =>
+      setTimeout(() => {
+        setScores((prev) => ({ ...prev, [r.id]: baseScores[r.id] }));
+        if (r.id === leaderId) {
+          setLeaderBeatId(r.id);
+          clearTimeout(leaderBeatTimer.current);
+          leaderBeatTimer.current = setTimeout(() => setLeaderBeatId(null), 1400);
+        }
+      }, i * interval)
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,6 +98,7 @@ export default function LiveScoreboard({
 
       // Detect rank changes against the previous order.
       const order = [...rows].sort((a, b) => (nextScores[b.id] ?? 0) - (nextScores[a.id] ?? 0));
+      const nextLeaderId = order[0]?.id ?? null;
       const nextRanks = {};
       order.forEach((r, i) => {
         nextRanks[r.id] = i;
@@ -93,7 +114,14 @@ export default function LiveScoreboard({
 
       setScores(nextScores);
 
-      if (Object.keys(newFlashes).length) {
+      if (nextLeaderId && prevLeaderId.current && prevLeaderId.current !== nextLeaderId && !reduced) {
+        setLeaderBeatId(nextLeaderId);
+        clearTimeout(leaderBeatTimer.current);
+        leaderBeatTimer.current = setTimeout(() => setLeaderBeatId(null), 1400);
+      }
+      prevLeaderId.current = nextLeaderId;
+
+      if (!reduced && Object.keys(newFlashes).length) {
         setFlashes((f) => ({ ...f, ...newFlashes }));
         for (const id in newFlashes) {
           clearTimeout(flashTimers.current[id]);
@@ -111,7 +139,10 @@ export default function LiveScoreboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveEpisodeId, rowsKey]);
 
-  useEffect(() => () => Object.values(flashTimers.current).forEach(clearTimeout), []);
+  useEffect(() => () => {
+    Object.values(flashTimers.current).forEach(clearTimeout);
+    clearTimeout(leaderBeatTimer.current);
+  }, []);
 
   const sorted = useMemo(() => {
     const arr = [...rows].sort((a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
@@ -143,8 +174,8 @@ export default function LiveScoreboard({
               rank={startRank + i}
               score={scores[row.id] ?? 0}
               scorePct={(scores[row.id] ?? 0) / maxScore}
-              isLeader={startRank + i === 1}
               flash={flashes[row.id] || null}
+              leaderBeat={leaderBeatId === row.id}
               compact={compact}
               reduced={reduced}
             />

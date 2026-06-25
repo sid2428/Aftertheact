@@ -2,10 +2,81 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(0); // 0: enter email, 1: enter otp, 2: admin login
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setStep(1);
+      }
+    } catch (err) {
+      setError("Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp) return;
+    setIsLoading(true);
+    setError("");
+    
+    const result = await signIn("email-otp", {
+      email,
+      otp,
+      callbackUrl,
+      redirect: true,
+    });
+    
+    if (result?.error) {
+      setError(result.error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    if (!adminUsername || !adminPassword) return;
+    setIsLoading(true);
+    setError("");
+
+    const result = await signIn("admin-login", {
+      username: adminUsername,
+      password: adminPassword,
+      callbackUrl: "/admin",
+      redirect: true,
+    });
+
+    if (result?.error) {
+      setError("Invalid admin credentials");
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6 selection:bg-latent-crimson/30">
@@ -26,13 +97,104 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="pt-4 relative z-10">
+          <div className="pt-4 relative z-10 space-y-4">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-md">
+                {error}
+              </div>
+            )}
+            
+            {step === 0 ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-latent-gold text-[#0A0A0A] hover:bg-white p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:opacity-50"
+                >
+                  {isLoading ? "Sending..." : "Send OTP"}
+                </button>
+              </form>
+            ) : step === 1 ? (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <p className="text-sm text-white/60">Sent to {email}</p>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors text-center tracking-[0.5em] text-xl"
+                  required
+                  maxLength={6}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-latent-gold text-[#0A0A0A] hover:bg-white p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:opacity-50"
+                >
+                  {isLoading ? "Verifying..." : "Verify & Login"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(0)}
+                  className="text-xs text-white/40 hover:text-white uppercase tracking-wider mt-2"
+                >
+                  Use a different email
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors"
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-latent-crimson text-white hover:bg-red-700 p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:opacity-50"
+                >
+                  {isLoading ? "Authenticating..." : "Enter Switchboard"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(0)}
+                  className="text-xs text-white/40 hover:text-white uppercase tracking-wider mt-2 w-full text-center"
+                >
+                  Back to User Login
+                </button>
+              </form>
+            )}
+
+            <div className="relative flex items-center py-2">
+              <div className="flex-grow border-t border-brand-border"></div>
+              <span className="flex-shrink-0 mx-4 text-white/40 text-xs font-display uppercase tracking-widest">or</span>
+              <div className="flex-grow border-t border-brand-border"></div>
+            </div>
+
             <button
               onClick={() => signIn("google", { callbackUrl })}
-              className="w-full flex items-center justify-center gap-4 bg-[#050505] text-white hover:bg-latent-gold hover:text-[#0A0A0A] border border-brand-border hover:border-latent-gold p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 group rounded-sm shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+              className="w-full flex items-center justify-center gap-4 bg-[#050505] text-white hover:bg-[#111] border border-brand-border hover:border-white/20 p-4 font-display font-black uppercase tracking-widest text-sm transition-all duration-300 group rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)]"
             >
-              {/* Simple Google SVG Icon */}
-              <svg className="w-6 h-6 shrink-0 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -40,12 +202,15 @@ export default function LoginPage() {
               </svg>
               Sign In with Google
             </button>
-          </div>
-          
-          <div className="pt-6 border-t border-brand-border">
-            <p className="text-xs font-display font-bold uppercase tracking-widest text-white/40">
-              Only Google login is supported for V1.
-            </p>
+            
+            {step !== 2 && (
+              <button
+                onClick={() => setStep(2)}
+                className="w-full text-center text-[10px] uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors mt-8"
+              >
+                Admin Access
+              </button>
+            )}
           </div>
         </div>
 

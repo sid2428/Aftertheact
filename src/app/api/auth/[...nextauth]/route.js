@@ -3,6 +3,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getServiceSupabase } from '@/lib/supabase';
 import crypto from 'crypto';
+import { redis } from '@/lib/upstash';
 
 export const authOptions = {
   providers: [
@@ -12,6 +13,7 @@ export const authOptions = {
     }),
     CredentialsProvider({
       name: 'Admin Panel',
+      id: 'admin-login',
       credentials: {
         username: { label: "Username", type: "text", placeholder: "admin" },
         password: { label: "Password", type: "password" }
@@ -26,10 +28,30 @@ export const authOptions = {
         return null;
       }
     }),
+    CredentialsProvider({
+      name: 'Email OTP',
+      id: 'email-otp',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        otp: { label: "OTP", type: "text" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.otp) return null;
+        
+        const storedOtp = await redis.get(`otp:${credentials.email}`);
+        if (!storedOtp || storedOtp.toString() !== credentials.otp) {
+           throw new Error("Invalid or expired OTP");
+        }
+        
+        await redis.del(`otp:${credentials.email}`);
+        
+        return { id: credentials.email, email: credentials.email, isEmailOtp: true };
+      }
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === 'credentials') {
+      if (account?.provider === 'admin-login' || (account?.provider === 'credentials' && user.id === 'admin-master')) {
         // Admin credentials bypass DB entirely
         user.dbId = user.id;
         user.username = user.name;
@@ -91,6 +113,7 @@ export const authOptions = {
         token.dbId = user.dbId;
         token.username = user.username;
         token.isAdmin = user.isAdmin;
+        if (user.email) token.email = user.email;
       }
       // Handle username updates from client
       if (trigger === "update" && session?.username) {
@@ -103,6 +126,7 @@ export const authOptions = {
         session.user.id = token.dbId;
         session.user.username = token.username;
         session.user.isAdmin = token.isAdmin;
+        session.user.email = token.email || session.user.email;
       }
       return session;
     },

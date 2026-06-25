@@ -114,7 +114,6 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
   return (
     <motion.div
       ref={cardRef}
-      style={{ rotateX: springX, rotateY: springY, transformPerspective: 1000 }}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}

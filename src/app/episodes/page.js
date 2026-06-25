@@ -14,6 +14,7 @@ export default async function EpisodesPage() {
   const { data: episodes } = await supabase
     .from("Episode")
     .select("*, ContestantEpisodeAppearance(count)")
+    .neq("status", "ARCHIVED")
     .order("episode_number", { ascending: false });
 
   const recent = (episodes || []).slice(0, 3);

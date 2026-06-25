@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Episode3DPoster from "./Episode3DPoster";
 import {
   motion,
   AnimatePresence,
@@ -20,7 +20,7 @@ const FILTERS = [
   { id: "ALL", label: "All", match: () => true },
   { id: "LIVE", label: "Live", match: (s) => s === "LIVE" },
   { id: "UPCOMING", label: "Upcoming", match: (s) => s === "UPCOMING" },
-  { id: "RESULTS", label: "Results", match: (s) => s === "REVEALED" || s === "ARCHIVED" },
+  { id: "RESULTS", label: "Results", match: (s) => s === "REVEALED" },
 ];
 
 function statusPill(status) {
@@ -39,7 +39,7 @@ const ACTION_BASE =
 function EpisodeActions({ ep }) {
   const href = `/episode/${ep.id}`;
   const isLive = ep.status === "LIVE";
-  const isRevealed = ep.status === "REVEALED" || ep.status === "ARCHIVED";
+  const isRevealed = ep.status === "REVEALED";
   const resultPendingLabel = ep.status === "UPCOMING" ? "Soon" : "Pending";
 
   return (
@@ -121,29 +121,16 @@ function EpisodeCard({ ep, index, reduced }) {
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className={`group/card flex h-full flex-col overflow-hidden rounded-3xl border backdrop-blur-md transition-all duration-300 ${
+        className={`glass-surface group/card flex h-full flex-col overflow-hidden rounded-[2rem] border transition-all duration-300 ${
           isLive
-            ? "border-latent-crimson/45 bg-latent-crimson/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_30px_rgba(139,30,45,0.22)]"
-            : "border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_50px_rgba(0,0,0,0.4)] hover:border-latent-gold/30 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_30px_rgba(212,175,55,0.18)]"
+            ? "border-latent-crimson/45 bg-latent-crimson/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_30px_rgba(139,30,45,0.22)]"
+            : "border-white/10 hover:border-latent-gold/30 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_30px_rgba(212,175,55,0.18)]"
         }`}
       >
         {/* Poster */}
-        <div className="relative h-44 w-full overflow-hidden" style={{ transform: "translateZ(20px)" }}>
-          {ep.thumbnail_url ? (
-            <Image
-              src={ep.thumbnail_url}
-              alt={ep.title}
-              fill
-              sizes="(max-width:1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
-              unoptimized
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#161616] to-[#0A0A0A]">
-              <span className="font-display text-[5rem] leading-none text-white/[0.06]">E{ep.episode_number}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/20 to-transparent" />
+        <div className="relative h-64 w-full overflow-hidden" style={{ transform: "translateZ(20px)" }}>
+          <Episode3DPoster imageUrl={ep.thumbnail_url} className="absolute inset-0 z-0" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/30 to-transparent pointer-events-none" />
 
           <span className={`absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-display text-[10px] uppercase tracking-widest backdrop-blur-md ${statusPill(ep.status)}`}>
             {isLive && (
@@ -160,19 +147,11 @@ function EpisodeCard({ ep, index, reduced }) {
         <div className="flex flex-1 flex-col justify-between p-5" style={{ transform: "translateZ(30px)" }}>
           <div>
             <div className="flex items-center gap-2 font-display text-xs uppercase tracking-widest text-white/40">
-              <span>S{ep.season_number} · E{ep.episode_number}</span>
-              {count != null && (
-                <span className="inline-flex items-center gap-1 text-white/35">
-                  <span className="text-white/20">·</span>
-                  <Users className="h-3 w-3" strokeWidth={2.5} />
-                  {count} {count === 1 ? "act" : "acts"}
-                </span>
-              )}
+              <span>S{ep.season_number}E{ep.episode_number}</span>
             </div>
             <h3 className="mt-1.5 font-display text-xl uppercase leading-tight text-white transition-colors group-hover/card:text-latent-gold">
               {ep.title}
             </h3>
-            <div className="mt-1 font-number text-xs font-semibold text-white/40">Air: {airDate}</div>
           </div>
           <EpisodeActions ep={ep} />
         </div>
@@ -192,7 +171,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
     for (const ep of episodes) {
       if (ep.status === "LIVE") c.LIVE++;
       else if (ep.status === "UPCOMING") c.UPCOMING++;
-      else if (ep.status === "REVEALED" || ep.status === "ARCHIVED") c.RESULTS++;
+      else if (ep.status === "REVEALED") c.RESULTS++;
     }
     return c;
   }, [episodes]);
@@ -211,7 +190,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
     <div className="space-y-8">
       {/* Control bar: glassy segmented status filter + sort toggle. */}
       <div className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1.5 rounded-full border border-white/10 bg-white/[0.03] p-1.5 backdrop-blur-md">
+        <div className="glass-row flex flex-wrap gap-1.5 rounded-full border border-white/10 p-1.5">
           {FILTERS.map((f) => {
             const active = filter === f.id;
             return (
@@ -236,7 +215,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
 
         <button
           onClick={() => setDescending((d) => !d)}
-          className="flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 font-display text-xs uppercase tracking-widest text-white/60 backdrop-blur-md transition-all duration-300 hover:border-latent-gold/30 hover:text-latent-gold sm:self-auto"
+          className="glass-row flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 px-4 py-2.5 font-display text-xs uppercase tracking-widest text-white/60 transition-all duration-300 hover:border-latent-gold/30 hover:text-latent-gold sm:self-auto"
         >
           <ArrowDownUp className="h-3.5 w-3.5" strokeWidth={2.5} />
           {descending ? "Newest first" : "Oldest first"}
@@ -244,7 +223,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
       </div>
 
       {visible.length > 0 ? (
-        <motion.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {visible.map((ep, i) => (
               <EpisodeCard key={ep.id} ep={ep} index={i} reduced={reduced} />
@@ -252,7 +231,7 @@ export default function EpisodeDirectory({ episodes = [] }) {
           </AnimatePresence>
         </motion.div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] py-16 text-center font-display uppercase tracking-widest text-white/30 backdrop-blur-md">
+        <div className="glass-surface rounded-[2rem] border border-dashed border-white/10 py-16 text-center font-display uppercase tracking-widest text-white/30">
           {filter === "ALL"
             ? "No episodes logged. The acts are still preparing their sob stories. 🎻😭"
             : `No ${filter.toLowerCase()} episodes right now.`}

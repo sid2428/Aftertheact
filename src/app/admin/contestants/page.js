@@ -95,7 +95,7 @@ export default async function AdminContestants({ searchParams }) {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-black">Contestants</h1>
-        <p className="text-neutral-400 mt-2">Pick an episode, then manage who's in it.</p>
+        <p className="text-neutral-400 mt-2">Pick an episode, then manage who&apos;s in it.</p>
       </div>
 
       <form className="flex items-end gap-3">

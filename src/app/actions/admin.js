@@ -6,6 +6,7 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { setPanelMembers, MAX_PANEL } from "@/lib/panel";
 import { saveUploadedImage } from "@/lib/uploadImage";
 import { revalidatePath } from "next/cache";
+import { triggerRevelation as runRevelation } from "@/app/actions/revelation";
 
 export async function createEpisode(data) {
   try {
@@ -44,6 +45,7 @@ export async function updateEpisodeStatus(episodeId, status) {
   try {
     await verifyAdmin();
     const supabase = getServiceSupabase();
+    const update = { status };
 
     if (status === "LIVE") {
       const { count } = await supabase
@@ -51,11 +53,25 @@ export async function updateEpisodeStatus(episodeId, status) {
         .select("id", { count: "exact", head: true })
         .eq("episode_id", episodeId);
       if (!count) throw new Error("Add at least one contestant before going live.");
+
+      const { data: episode } = await supabase
+        .from("Episode")
+        .select("voting_window_close")
+        .eq("id", episodeId)
+        .single();
+      const revealDeadline = episode?.voting_window_close ? new Date(episode.voting_window_close).getTime() : null;
+      if (!revealDeadline || revealDeadline <= Date.now()) {
+        update.voting_window_close = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      }
+    }
+
+    if (status === "UPCOMING") {
+      update.is_revelation_triggered = false;
     }
 
     const { error } = await supabase
       .from("Episode")
-      .update({ status })
+      .update(update)
       .eq("id", episodeId);
 
     if (error) throw new Error(error.message);
@@ -73,20 +89,7 @@ export async function updateEpisodeStatus(episodeId, status) {
 export async function triggerRevelation(episodeId) {
   try {
     await verifyAdmin();
-    const supabase = getServiceSupabase();
-
-    // In a real app, this would recalculate scores. For now, just mark status as REVEALED
-    const { error } = await supabase
-      .from("Episode")
-      .update({ status: "REVEALED", is_revelation_triggered: true })
-      .eq("id", episodeId);
-
-    if (error) throw new Error(error.message);
-
-    revalidatePath(`/episode/${episodeId}`);
-    revalidatePath(`/admin`);
-
-    return { success: true };
+    return await runRevelation(episodeId);
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -105,6 +108,7 @@ export async function updateEpisode(formData) {
     title: formData.get("title"),
     air_date: new Date(formData.get("air_date")).toISOString(),
     admin_note: formData.get("admin_note") || null,
+    voting_window_close: formData.get("voting_window_close") ? new Date(formData.get("voting_window_close")).toISOString() : null,
   };
 
   const thumbnailFile = formData.get("thumbnail_file");

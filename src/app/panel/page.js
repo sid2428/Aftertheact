@@ -21,7 +21,7 @@ export default async function PanelPage({ searchParams }) {
   const { data: episodes } = await supabase
     .from("Episode")
     .select("id, season_number, episode_number, title, status")
-    .in("status", ["LIVE", "REVEALED", "ARCHIVED"])
+    .in("status", ["LIVE", "REVEALED"])
     .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
