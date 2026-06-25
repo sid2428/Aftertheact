@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 
 // Each digit rolls upward/downward through intermediate values independently;
 // digits that don't change don't move. Used by the leaderboard scores and the
-// voting crowd-average strip so both share one motion language (spec P0.3/P0.4).
+// verdict reveal so both share one motion language (spec P0.3/P0.4).
 
 const DIGIT_SPRING = { type: "spring", stiffness: 260, damping: 30, mass: 0.6 };
 

@@ -14,7 +14,7 @@ export default async function AdminPanel() {
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-3xl font-display font-black uppercase text-white">Hero Panel</h1>
-        <p className="text-white/50 mt-1">Up to {MAX_PANEL} member faces flank the logo in the homepage hero and are rated on the Judge the Judges page. Clear a slot's name to delete that judge.</p>
+        <p className="text-white/50 mt-1">Up to {MAX_PANEL} member faces flank the logo in the homepage hero and are rated on the Judge the Judges page. Clear a slot&apos;s name to delete that judge.</p>
       </div>
 
       <form action={savePanelMembers} className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-6">

@@ -32,7 +32,7 @@ export default async function RootLayout({ children }) {
         <MainNav isLoggedIn={!!session?.user} isAdmin={!!session?.user?.isAdmin} />
 
         {/* Main Content */}
-        <main className="flex-1 relative">
+        <main className="flex-1 relative overflow-x-hidden">
           {children}
         </main>
 

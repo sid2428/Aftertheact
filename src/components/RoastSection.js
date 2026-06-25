@@ -43,7 +43,7 @@ export default function RoastSection({ episodeId, contestantId, roasts, isArchiv
       <div className="mb-4 border-t border-brand-border pt-6">
         <h3 className="text-3xl font-display font-black uppercase tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">The Roast</h3>
         <p className="text-white/60 text-sm font-medium mt-1">
-          Roast the act. The talent. The decision to walk on stage. Not the person's identity, religion, body, or caste. The internet is watching and so are we.
+          Roast the act. The talent. The decision to walk on stage. Not the person&apos;s identity, religion, body, or caste. The internet is watching and so are we.
         </p>
       </div>
 

@@ -58,10 +58,9 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
         )}
 
         {isVotingLive && (
-          <LiveVoting 
-            episodeId={appearance.episode_id} 
-            contestantId={contestant.id} 
-            initialRawScore={appearance.peoples_verdict_raw} 
+          <LiveVoting
+            episodeId={appearance.episode_id}
+            contestantId={contestant.id}
           />
         )}
 

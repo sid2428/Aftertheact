@@ -37,7 +37,7 @@ export default async function Home() {
       ? supabase
           .from("ContestantEpisodeAppearance")
           .select(
-            "id, latent_score, peoples_verdict_weighted, total_votes_raw, controversy_flag, Contestant ( id, name, talent_type, image_url, is_removed_by_request )"
+            "id, latent_score, judge_average, peoples_verdict_weighted, total_votes_raw, controversy_flag, Contestant ( id, name, talent_type, image_url, is_removed_by_request )"
           )
           .eq("episode_id", featuredEpisode.id)
       : Promise.resolve({ data: [] }),
@@ -56,7 +56,8 @@ export default async function Home() {
       name: a.Contestant.name,
       talentType: a.Contestant.talent_type,
       imageUrl: a.Contestant.image_url,
-      score: a.latent_score ?? a.peoples_verdict_weighted ?? 0,
+      score: a.latent_score ?? 0,
+      judgeScore: a.judge_average,
       votes: a.total_votes_raw,
       controversy: a.controversy_flag,
     }))

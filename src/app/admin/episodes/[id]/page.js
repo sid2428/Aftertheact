@@ -40,6 +40,16 @@ export default async function ManageEpisode({ params }) {
         </div>
         <div><label className={labelClass}>Title</label><input type="text" name="title" defaultValue={episode.title} required className={inputClass} /></div>
         <div><label className={labelClass}>Air Date</label><input type="datetime-local" name="air_date" defaultValue={new Date(episode.air_date).toISOString().slice(0, 16)} required className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>Reveal At</label>
+          <input
+            type="datetime-local"
+            name="voting_window_close"
+            defaultValue={episode.voting_window_close ? new Date(episode.voting_window_close).toISOString().slice(0, 16) : ""}
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs font-mono text-white/35">Leave empty and Go Live will start a 48 hour auto-reveal countdown.</p>
+        </div>
         <div><label className={labelClass}>Admin Note</label><textarea name="admin_note" defaultValue={episode.admin_note || ""} rows={2} className={inputClass} /></div>
         <ImageUploadField name="thumbnail_file" label="Episode Thumbnail (shown on /episodes)" defaultImage={episode.thumbnail_url || ""} />
         <button className="bg-latent-gold text-[#0A0A0A] px-6 py-2 font-display font-black uppercase rounded-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all">Save Changes</button>

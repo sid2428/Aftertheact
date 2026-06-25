@@ -94,7 +94,8 @@ CREATE TABLE IF NOT EXISTS "UserPrediction" (
     episode_id UUID REFERENCES "Episode"(id) ON DELETE CASCADE,
     predicted_top_contestant_id UUID REFERENCES "Contestant"(id) ON DELETE CASCADE,
     predicted_bottom_contestant_id UUID REFERENCES "Contestant"(id) ON DELETE CASCADE,
-    predicted_alignment BOOLEAN,
+    predicted_alignment VARCHAR(20) CHECK (predicted_alignment IN ('HARSH', 'ALIGNED', 'GENEROUS')),
+    actual_alignment VARCHAR(20) CHECK (actual_alignment IN ('HARSH', 'ALIGNED', 'GENEROUS')),
     top_correct BOOLEAN,
     bottom_correct BOOLEAN,
     alignment_correct BOOLEAN,
@@ -133,7 +134,8 @@ CREATE TABLE IF NOT EXISTS "LatentPointsLedger" (
     episode_id UUID REFERENCES "Episode"(id) ON DELETE CASCADE,
     action_type VARCHAR(50) NOT NULL,
     points INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (user_id, episode_id, action_type)
 );
 
 -- Table: ModerationLog
@@ -189,3 +191,16 @@ CREATE TABLE IF NOT EXISTS "JudgeRating" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(judge_id, user_id)
 );
+
+-- Table: PostReport
+CREATE TABLE IF NOT EXISTS "PostReport" (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID REFERENCES "CommunityPost"(id) ON DELETE CASCADE,
+    reporter_user_id UUID REFERENCES "User"(id) ON DELETE SET NULL,
+    reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (post_id, reporter_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_postreport_post ON "PostReport"(post_id);
+ALTER TABLE "PostReport" ENABLE ROW LEVEL SECURITY;

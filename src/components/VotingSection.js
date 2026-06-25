@@ -86,7 +86,6 @@ export default function VotingSection({ episodeId, contestants, isEpisodeClosed 
                   ref={(el) => (cardRefs.current[i] = el)}
                   episodeId={episodeId}
                   contestantId={c.id}
-                  initialRawScore={c.initialRawScore}
                   userVoteScore={c.userVoteScore}
                   isEpisodeClosed={isEpisodeClosed}
                   revealAt={revealAt}

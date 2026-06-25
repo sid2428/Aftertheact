@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitPredictions } from "@/app/actions/predictions";
+import { ORACLE_SCORING } from "@/lib/scoring";
 
 export default function PredictionGame({ episodeId, contestants, existingPrediction }) {
   const [topId, setTopId] = useState(existingPrediction?.predicted_top_contestant_id || "");
@@ -88,30 +89,41 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
 
         <div>
           <label className="block text-sm font-display font-black uppercase tracking-widest text-white/70 mb-3">
-            3. Will Judges & Audience Agree? (Divergence &lt; 1.5)
+            3. Will Judges & Audience Agree? (Divergence &lt; {ORACLE_SCORING.ALIGNMENT_MARGIN})
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button 
               disabled={isLocked}
-              onClick={() => setAlignment(true)}
+              onClick={() => setAlignment("HARSH")}
               className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
-                alignment === true 
-                  ? "bg-latent-gold/20 text-latent-gold border-latent-gold shadow-[0_0_15px_rgba(212,175,55,0.3)]" 
-                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
-              }`}
-            >
-              YES (Agree)
-            </button>
-            <button 
-              disabled={isLocked}
-              onClick={() => setAlignment(false)}
-              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
-                alignment === false 
+                alignment === "HARSH" 
                   ? "bg-latent-crimson/20 text-latent-crimson border-latent-crimson shadow-[0_0_15px_rgba(139,30,45,0.3)]" 
                   : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
               }`}
             >
-              NO (Diverge)
+              Judges Harsher
+            </button>
+            <button 
+              disabled={isLocked}
+              onClick={() => setAlignment("ALIGNED")}
+              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
+                alignment === "ALIGNED" 
+                  ? "bg-latent-gold/20 text-latent-gold border-latent-gold shadow-[0_0_15px_rgba(212,175,55,0.3)]" 
+                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
+              }`}
+            >
+              Aligned
+            </button>
+            <button 
+              disabled={isLocked}
+              onClick={() => setAlignment("GENEROUS")}
+              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
+                alignment === "GENEROUS" 
+                  ? "bg-blue-500/20 text-blue-500 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]" 
+                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
+              }`}
+            >
+              Judges Generous
             </button>
           </div>
         </div>

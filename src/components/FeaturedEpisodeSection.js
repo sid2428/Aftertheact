@@ -1,10 +1,15 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import LiveScoreboard from "./LiveScoreboard";
+import TypeOnce from "./TypeOnce";
+import ScrambleText from "./ScrambleText";
+import FloatingRevealCountdown from "./FloatingRevealCountdown";
 
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -62,9 +67,13 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
           </Link>
         </div>
 
-        <div className="relative glass-panel rounded-2xl grid grid-cols-1 lg:grid-cols-[55%_45%] shadow-[0_30px_60px_rgba(0,0,0,0.6)] overflow-hidden">
-          {/* Subtle background glow effect inside the panel */}
-          <div className="absolute inset-0 bg-gradient-to-br from-latent-gold/5 via-transparent to-latent-crimson/5 pointer-events-none" />
+        <div className="relative">
+          {isLive && episode?.voting_window_close && (
+            <FloatingRevealCountdown key={episode.voting_window_close} revealAt={episode.voting_window_close} />
+          )}
+          <div className="relative glass-panel grid grid-cols-1 overflow-hidden rounded-[2rem] shadow-[0_34px_90px_rgba(0,0,0,0.62)] lg:grid-cols-[55%_45%]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(245,217,123,0.12),transparent_34%),radial-gradient(circle_at_100%_72%,rgba(139,30,45,0.16),transparent_38%)]" />
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
           {/* Left — Scoreboard */}
           <div className="p-6 sm:p-10 relative z-10">
@@ -77,21 +86,22 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
                 topN={5}
                 compact
                 liveEpisodeId={isLive ? episode.id : null}
+                revealOnMount={true}
                 ariaLabel="Featured episode scoreboard"
               />
             ) : (
-              <div className="rounded-xl border border-dashed border-white/10 py-16 text-center bg-white/[0.02]">
+              <div className="glass-row rounded-2xl border border-dashed border-white/10 py-16 text-center">
                 <p className="font-display uppercase tracking-widest text-white/30">Voting opens at air time</p>
               </div>
             )}
           </div>
 
           {/* Divider */}
-          <div className="relative border-t border-white/10 lg:border-t-0 lg:border-l z-10">
-            <div className="pointer-events-none absolute inset-y-0 left-[-1px] hidden w-[2px] bg-gradient-to-b from-transparent via-latent-gold/40 to-transparent lg:block" />
+          <div className="relative z-10 border-t border-white/10 lg:border-l lg:border-t-0">
+            <div className="pointer-events-none absolute inset-y-0 left-[-1px] hidden w-[2px] bg-gradient-to-b from-transparent via-latent-gold/70 via-[50%] to-latent-crimson/30 lg:block" />
 
             {/* Right — Community feed */}
-            <div className="p-6 sm:p-10 flex flex-col h-full bg-[#050505]/30">
+            <div className="flex h-full flex-col bg-[#070707]/55 p-6 shadow-[inset_18px_0_40px_rgba(0,0,0,0.16)] sm:p-10">
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="font-display text-sm uppercase tracking-widest text-white/50 flex items-center gap-3">
                   <span className="w-4 h-px bg-white/20" /> The Green Room
@@ -104,7 +114,7 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
               {posts.length > 0 ? (
                 <ul className="flex flex-col gap-4 flex-1">
                   <AnimatePresence initial={false}>
-                    {posts.map((p) => (
+                    {posts.map((p, index) => (
                       <motion.li
                         key={p.id}
                         layout
@@ -112,26 +122,39 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="rounded-xl border border-white/10 bg-[#0A0A0A]/80 p-4 shadow-[0_8px_16px_rgba(0,0,0,0.4)] hover:border-latent-gold/30 transition-colors"
+                        className="glass-row rounded-2xl border border-white/10 p-5 shadow-[0_14px_28px_rgba(0,0,0,0.28)] transition-colors hover:border-latent-gold/30 sm:p-6"
                       >
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="font-display text-[11px] uppercase tracking-widest text-latent-gold/80 bg-latent-gold/10 px-2 py-0.5 rounded-sm">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <span className="rounded-full border border-latent-gold/20 bg-latent-gold/10 px-3 py-1 font-display text-xs uppercase tracking-widest text-latent-gold/90">
                             {p.username || "Anonymous"}
                           </span>
-                          <span className="font-number text-[11px] font-semibold text-white/30">{timeAgo(p.created_at)}</span>
+                          <span className="font-number text-xs font-semibold text-white/40">
+                            {p._new ? (
+                              <ScrambleText text={timeAgo(p.created_at)} delay={100} speed={30} />
+                            ) : (
+                              timeAgo(p.created_at)
+                            )}
+                          </span>
                         </div>
-                        <p className="line-clamp-2 font-sans text-sm leading-relaxed text-white/80">{p.text}</p>
+                        <p className="line-clamp-3 min-h-[3.2em] font-sans text-base leading-relaxed text-white/85">
+                          {p._new || index === 0 ? (
+                            <TypeOnce text={p.text} sessionKey={`green-room-post-${p.id}`} speed={24} />
+                          ) : (
+                            p.text
+                          )}
+                        </p>
                       </motion.li>
                     ))}
                   </AnimatePresence>
                 </ul>
               ) : (
-                <div className="rounded-xl border border-dashed border-white/10 flex-1 flex items-center justify-center text-center bg-white/[0.02]">
-                  <p className="font-display uppercase tracking-widest text-white/30 p-10">No posts yet. Start the conversation.</p>
+                <div className="glass-row flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 text-center">
+                  <p className="p-10 font-display uppercase tracking-widest text-white/40">No posts yet. Start the conversation.</p>
                 </div>
               )}
             </div>
           </div>
+        </div>
         </div>
       </motion.div>
     </section>
