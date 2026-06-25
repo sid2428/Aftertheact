@@ -49,10 +49,9 @@ function Face({ member, delay, tilt, idx = 0 }) {
 }
 
 export default function CurtainHero({ members = [] }) {
-  const idx = useCycle(members.length);
-  const half = Math.ceil(members.length / 2) || 1;
-  const leftMember = members[idx];
-  const rightMember = members[(idx + half) % members.length];
+  const half = Math.ceil(members.length / 2);
+  const left = members.slice(0, half);
+  const right = members.slice(half);
 
   return (
     <Tooltip.Provider delayDuration={150}>
