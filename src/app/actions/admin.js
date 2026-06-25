@@ -152,11 +152,12 @@ export async function savePanelMembers(formData) {
     const descriptor = (formData.get(`descriptor_${i}`) || "").trim();
     const instagram_handle = (formData.get(`instagram_${i}`) || "").trim();
     const bio = (formData.get(`bio_${i}`) || "").trim();
+    const tags = (formData.get(`tags_${i}`) || "").split(",").map((t) => t.trim()).filter(Boolean);
     const id = (formData.get(`id_${i}`) || "").trim() || undefined;
     const existingImage = (formData.get(`existing_image_${i}`) || "").trim();
     const imageFile = formData.get(`image_${i}`);
     const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, "judges") : existingImage;
-    if (image || name) members.push({ id, name, image, descriptor, instagram_handle, bio });
+    if (image || name) members.push({ id, name, image, descriptor, instagram_handle, bio, tags });
   }
   await setPanelMembers(members);
   revalidatePath("/admin/panel");

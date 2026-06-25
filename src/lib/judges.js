@@ -2,20 +2,23 @@
 export function aggregateRatings(rows = []) {
   const count = rows.length;
   if (count === 0) {
-    return { count: 0, avgHarshness: 0, avgAccuracy: 0, avgEntertainment: 0, harshnessStdDev: 0 };
+    return { count: 0, avgOverall: 0, overallStdDev: 0, topTag: null, tagCounts: {} };
   }
-  const mean = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0) / count;
-  const avgHarshness = mean("harshness_score");
-  const avgAccuracy = mean("accuracy_score");
-  const avgEntertainment = mean("entertainment_score");
-  const variance = rows.reduce((s, r) => s + Math.pow((r.harshness_score || 0) - avgHarshness, 2), 0) / count;
+  const avgOverall = rows.reduce((s, r) => s + (r.overall_score || 0), 0) / count;
+  const variance = rows.reduce((s, r) => s + Math.pow((r.overall_score || 0) - avgOverall, 2), 0) / count;
+
+  const tagCounts = {};
+  for (const r of rows) {
+    if (r.tag) tagCounts[r.tag] = (tagCounts[r.tag] || 0) + 1;
+  }
+  const topTag = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a])[0] || null;
 
   return {
     count,
-    avgHarshness,
-    avgAccuracy,
-    avgEntertainment,
-    harshnessStdDev: Math.sqrt(variance),
+    avgOverall,
+    overallStdDev: Math.sqrt(variance),
+    topTag,
+    tagCounts,
   };
 }
 

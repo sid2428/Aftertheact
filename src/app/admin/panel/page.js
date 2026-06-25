@@ -1,4 +1,4 @@
-import { getPanelMembers, MAX_PANEL } from "@/lib/panel";
+import { getPanelMembers, MAX_PANEL, DEFAULT_JUDGE_TAGS } from "@/lib/panel";
 import { savePanelMembers } from "@/app/actions/admin";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 
@@ -8,7 +8,7 @@ const inputClass = "w-full bg-[#050505] text-white border border-brand-border p-
 
 export default async function AdminPanel() {
   const members = await getPanelMembers();
-  const slots = Array.from({ length: MAX_PANEL }, (_, i) => members[i] || { id: "", name: "", image: "", descriptor: "", instagram_handle: "", bio: "" });
+  const slots = Array.from({ length: MAX_PANEL }, (_, i) => members[i] || { id: "", name: "", image: "", descriptor: "", instagram_handle: "", bio: "", tags: DEFAULT_JUDGE_TAGS });
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -32,6 +32,7 @@ export default async function AdminPanel() {
               <input name={`instagram_${i}`} defaultValue={m.instagram_handle} placeholder="@instagram_handle" className={inputClass} />
             </div>
             <textarea name={`bio_${i}`} defaultValue={m.bio} placeholder="Short bio (1–2 sentences)" rows={2} className={inputClass} />
+            <input name={`tags_${i}`} defaultValue={(m.tags || DEFAULT_JUDGE_TAGS).join(", ")} placeholder="Vibe tags, comma-separated (e.g. Savage Roaster, Visibly Bored)" className={inputClass} />
           </div>
         ))}
         <button className="bg-latent-gold text-[#0A0A0A] px-6 py-2 font-display font-black uppercase rounded-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all">Save Panel</button>

@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import ScrollDigit from "./ScrollDigit";
+
+const OVERALL_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10
 
 function RatingBar({ label, value, color }) {
   const pct = Math.max(0, Math.min(100, (value / 10) * 100));
@@ -19,45 +22,24 @@ function RatingBar({ label, value, color }) {
   );
 }
 
-function Slider({ label, value, onChange }) {
-  return (
-    <div>
-      <div className="flex justify-between font-display font-black uppercase tracking-widest text-xs text-white/60 mb-1">
-        <span>{label}</span>
-        <span className="font-mono text-latent-gold">{value}</span>
-      </div>
-      <input
-        type="range"
-        min={1}
-        max={10}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-latent-gold"
-      />
-    </div>
-  );
-}
-
-function JudgeCard({ judge, badge, mine, isLoggedIn }) {
+function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
   const [agg, setAgg] = useState(judge.agg);
   const [open, setOpen] = useState(false);
-  const [harshness, setHarshness] = useState(mine?.harshness ?? 5);
-  const [accuracy, setAccuracy] = useState(mine?.accuracy ?? 5);
-  const [entertainment, setEntertainment] = useState(mine?.entertainment ?? 5);
+  const [overall, setOverall] = useState(mine?.overall ?? 5);
+  const [tag, setTag] = useState(mine?.tag ?? null);
   const [comment, setComment] = useState(mine?.comment ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
 
   const submit = async () => {
-    if (busy) return;
+    if (busy || !tag || !episodeId) return;
     setBusy(true);
     setError(null);
     const res = await fetch(`/api/judges/${encodeURIComponent(judge.id)}/rate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ harshness, accuracy, entertainment, comment }),
+      body: JSON.stringify({ overall, tag, comment, episodeId }),
     });
     const json = await res.json();
     if (json.success) {
@@ -97,16 +79,21 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
       {judge.bio && <p className="text-sm text-white/60 mt-2 leading-relaxed">{judge.bio}</p>}
 
       <div className="space-y-3 mt-5">
-        <RatingBar label="Harshness" value={agg.avgHarshness} color="linear-gradient(to right, #8B1E2D, transparent)" />
-        <RatingBar label="Accuracy" value={agg.avgAccuracy} color="linear-gradient(to right, #D4AF37, transparent)" />
-        <RatingBar label="Entertainment" value={agg.avgEntertainment} color="linear-gradient(to right, #F5D97B, transparent)" />
+        <RatingBar label="Overall" value={agg.avgOverall} color="linear-gradient(to right, #D4AF37, transparent)" />
+        {agg.topTag && (
+          <span className="inline-block text-[10px] font-display font-black uppercase tracking-widest bg-latent-crimson/15 text-latent-crimson px-2 py-1 border border-latent-crimson/30 rounded-sm">
+            {agg.topTag}
+          </span>
+        )}
       </div>
 
-      <div className="font-mono text-[11px] text-white/40 mt-3">Rated by {agg.count} {agg.count === 1 ? "juror" : "jurors"}</div>
+      <div className="font-mono text-[11px] text-white/40 mt-3">Rated by {agg.count} {agg.count === 1 ? "juror" : "jurors"} this episode</div>
 
       {/* Rating form */}
       <div className="mt-4 pt-4 border-t border-white/5">
-        {!isLoggedIn ? (
+        {!episodeId ? (
+          <div className="text-center text-white/30 font-mono text-xs py-2.5">No episode to rate yet.</div>
+        ) : !isLoggedIn ? (
           <Link href="/api/auth/signin" className="block text-center bg-white/5 hover:bg-white/10 text-white/70 font-display font-black uppercase tracking-widest text-xs py-2.5 rounded-sm transition-colors">
             Sign in to rate the judges
           </Link>
@@ -131,9 +118,31 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
                     {mine && !saved && (
                       <div className="font-mono text-[11px] text-latent-gold">You&apos;ve already rated this judge. Submit to update your rating.</div>
                     )}
-                    <Slider label="Harshness" value={harshness} onChange={setHarshness} />
-                    <Slider label="Accuracy" value={accuracy} onChange={setAccuracy} />
-                    <Slider label="Entertainment" value={entertainment} onChange={setEntertainment} />
+
+                    <div className="flex flex-col items-center">
+                      <span className="font-display font-black uppercase tracking-widest text-xs text-white/60 mb-1">Overall</span>
+                      <ScrollDigit options={OVERALL_OPTIONS} value={overall} onChange={setOverall} size="md" />
+                    </div>
+
+                    <div>
+                      <span className="font-display font-black uppercase tracking-widest text-xs text-white/60 mb-2 block">Pick a vibe</span>
+                      <div className="flex flex-wrap gap-2">
+                        {judge.tags.map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setTag(t)}
+                            className={`text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm border transition-colors ${
+                              tag === t
+                                ? "bg-latent-gold/15 text-latent-gold border-latent-gold/50"
+                                : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
@@ -146,7 +155,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
                     {saved && <div className="text-latent-gold font-mono text-xs">Rating saved ✓</div>}
                     <button
                       onClick={submit}
-                      disabled={busy}
+                      disabled={busy || !tag}
                       className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-3 rounded-sm hover:shadow-[0_0_20px_rgba(139,30,45,0.6)] transition-all disabled:opacity-50"
                     >
                       {busy ? "Submitting…" : "Submit Rating"}
@@ -162,7 +171,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
   );
 }
 
-export default function JudgePageClient({ judges, myRatings, mostControversialId, fanFavouriteId, dbReady, isLoggedIn }) {
+export default function JudgePageClient({ judges, myRatings, mostControversialId, fanFavouriteId, dbReady, isLoggedIn, episodes, selectedEpisodeId }) {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Hero */}
@@ -189,6 +198,31 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
           </div>
         )}
 
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+          {episodes.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {episodes.map((ep) => (
+                <Link
+                  key={ep.id}
+                  href={`/panel?episode=${ep.id}`}
+                  className={`font-display font-bold uppercase tracking-widest text-xs px-3 py-1.5 rounded-sm border transition-colors ${
+                    ep.id === selectedEpisodeId
+                      ? "bg-latent-gold/15 text-latent-gold border-latent-gold/50"
+                      : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"
+                  }`}
+                >
+                  S{ep.season_number}E{ep.episode_number}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="font-mono text-sm text-white/30">No episodes to classify judges by yet.</div>
+          )}
+          <Link href="/judges-scoreboard" className="font-display font-bold uppercase tracking-widest text-xs text-white/50 hover:text-latent-gold transition-colors">
+            Judge Popularity →
+          </Link>
+        </div>
+
         {judges.length === 0 ? (
           <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">
             No judges on the panel yet.
@@ -202,6 +236,7 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
                 badge={j.id === mostControversialId ? "controversial" : j.id === fanFavouriteId ? "favourite" : null}
                 mine={myRatings[j.id] || null}
                 isLoggedIn={isLoggedIn}
+                episodeId={selectedEpisodeId}
               />
             ))}
           </div>
