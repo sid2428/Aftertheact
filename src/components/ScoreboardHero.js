@@ -4,11 +4,19 @@ import { motion } from "framer-motion";
 
 export function ScoreboardHero({ topThree = [] }) {
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center relative overflow-hidden bg-[#0A0A0A]">
+    <div className="flex flex-col items-center justify-start lg:justify-center relative overflow-hidden bg-[#0A0A0A] pt-6 lg:pt-0" style={{ height: '60svh', minHeight: '360px' }}>
 
       {/* Background Gradients & Glows */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-latent-crimson/5 blur-[120px] rounded-full pointer-events-none" />
+
+      {/* Faded diagonal grey lines */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[1]"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(-45deg, rgba(180,180,180,0.04) 0px, rgba(180,180,180,0.04) 1px, transparent 1px, transparent 28px)',
+        }}
+      />
 
       <div className="relative z-10 w-full max-w-7xl px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-0">
 
@@ -17,7 +25,7 @@ export function ScoreboardHero({ topThree = [] }) {
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex-1 text-center lg:text-left space-y-6"
+          className="flex-1 text-center lg:text-left space-y-4"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -28,7 +36,7 @@ export function ScoreboardHero({ topThree = [] }) {
             Every Score. Every Receipt.
           </motion.div>
 
-          <h1 className="text-6xl sm:text-8xl md:text-[8.5rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">
+          <h1 className="text-5xl sm:text-6xl lg:text-[8.5rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">
             THE PUBLIC<br/>
             <span className="text-latent-crimson relative inline-block drop-shadow-[0_0_15px_rgba(139,30,45,0.4)]">
               EXECUTION
@@ -65,7 +73,7 @@ export function ScoreboardHero({ topThree = [] }) {
         {/* Right: polaroids — mirrors the left side in width, centered within */}
         <div className="flex-1 flex items-center justify-center">
           {topThree.length > 0 ? (
-            <div className="relative h-[26rem] w-[32rem]">
+            <div className="relative h-[20rem] w-[28rem]">
               {topThree.slice(0, 3).map((c, i) => (
                 <motion.div
                   key={i}
@@ -74,10 +82,10 @@ export function ScoreboardHero({ topThree = [] }) {
                   whileHover={{ scale: 1.12, rotate: 0, zIndex: 20, transition: { duration: 0.3 } }}
                   transition={{ delay: 0.5 + i * 0.15, duration: 0.6, ease: "easeOut" }}
                   className="absolute top-4 origin-bottom cursor-pointer"
-                  style={{ left: `${40 + i * 145}px`, zIndex: i === 1 ? 12 : 10 - i }}
+                  style={{ left: `${24 + i * 120}px`, zIndex: i === 1 ? 12 : 10 - i }}
                 >
                   <div className="bg-white p-3 pb-8 shadow-[0_15px_50px_rgba(0,0,0,0.8)] border-4 border-white transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(212,175,55,0.4)]">
-                    <div className="w-44 h-44 sm:w-48 sm:h-48 bg-[#111111] overflow-hidden flex items-center justify-center">
+                    <div className="w-36 h-36 bg-[#111111] overflow-hidden flex items-center justify-center">
                       {c.image_url ? (
                         <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
                       ) : (
@@ -93,7 +101,7 @@ export function ScoreboardHero({ topThree = [] }) {
             </div>
           ) : (
             /* placeholder glow when no contestants yet */
-            <div className="w-[32rem] h-[26rem] flex items-center justify-center">
+            <div className="w-[28rem] h-[20rem] flex items-center justify-center">
               <div className="w-48 h-48 rounded-full bg-latent-gold/5 blur-[60px]" />
             </div>
           )}

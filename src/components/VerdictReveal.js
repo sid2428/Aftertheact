@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import RollingNumber from "./RollingNumber";
@@ -9,6 +10,12 @@ const AUTO_DISMISS_MS = 10000;
 
 export default function VerdictReveal({ userScore, onClose }) {
   const [remaining, setRemaining] = useState(AUTO_DISMISS_MS);
+  const router = useRouter();
+
+  const handleClose = () => {
+    onClose();
+    if (episodeId) router.push(`/episode/${episodeId}`);
+  };
 
   useEffect(() => {
     import("canvas-confetti").then(({ default: confetti }) => {
@@ -20,6 +27,27 @@ export default function VerdictReveal({ userScore, onClose }) {
         startVelocity: 30,
       });
     });
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Ascending C major arpeggio: C5 → E5 → G5 → C6
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      });
+    } catch (_) {
+      // audio unavailable — silently skip
+    }
   }, []);
 
   useEffect(() => {
@@ -29,14 +57,14 @@ export default function VerdictReveal({ userScore, onClose }) {
       setRemaining(left);
       if (left <= 0) {
         clearInterval(tick);
-        onClose();
+        handleClose();
       }
     }, 50);
     return () => clearInterval(tick);
   }, [onClose]);
 
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
+    const onKey = (e) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -52,7 +80,7 @@ export default function VerdictReveal({ userScore, onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}

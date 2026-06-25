@@ -43,43 +43,47 @@ function EpisodeActions({ ep }) {
   const resultPendingLabel = ep.status === "UPCOMING" ? "Soon" : "Pending";
 
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3">
-      {isLive ? (
-        <Link
-          href={href}
-          className={`${ACTION_BASE} border-latent-crimson/60 bg-latent-crimson/15 text-latent-crimson backdrop-blur-md hover:bg-latent-crimson hover:text-white hover:shadow-[0_0_22px_rgba(139,30,45,0.6)]`}
-        >
-          <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
-          Vote
-        </Link>
-      ) : (
-        <span
-          aria-disabled="true"
-          title={isRevealed ? "Voting has closed" : "Voting opens at air time"}
-          className={`${ACTION_BASE} cursor-not-allowed border-white/10 text-white/25`}
-        >
-          <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
-          Vote
-        </span>
+    <div className={`mt-4 grid gap-3 ${singleButton ? "grid-cols-1" : "grid-cols-2"}`}>
+      {showVote && (
+        isLive ? (
+          <Link
+            href={href}
+            className={`${ACTION_BASE} border-latent-crimson/60 bg-latent-crimson/15 text-latent-crimson backdrop-blur-md hover:bg-latent-crimson hover:text-white hover:shadow-[0_0_22px_rgba(139,30,45,0.6)]`}
+          >
+            <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
+            Vote
+          </Link>
+        ) : (
+          <span
+            aria-disabled="true"
+            title="Voting opens at air time"
+            className={`${ACTION_BASE} cursor-not-allowed border-white/10 text-white/25`}
+          >
+            <Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
+            Vote
+          </span>
+        )
       )}
 
-      {isRevealed ? (
-        <Link
-          href={href}
-          className={`${ACTION_BASE} border-latent-gold/50 bg-latent-gold/10 text-latent-gold backdrop-blur-md hover:bg-latent-gold hover:text-[#0A0A0A] hover:shadow-[0_0_22px_rgba(212,175,55,0.5)]`}
-        >
-          <Trophy className="h-3.5 w-3.5" strokeWidth={2.5} />
-          Result
-        </Link>
-      ) : (
-        <span
-          aria-disabled="true"
-          title="Results aren't out yet"
-          className={`${ACTION_BASE} cursor-not-allowed border-white/10 text-white/25`}
-        >
-          <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
-          {resultPendingLabel}
-        </span>
+      {showResult && (
+        isRevealed ? (
+          <Link
+            href={href}
+            className={`${ACTION_BASE} border-latent-gold/50 bg-latent-gold/10 text-latent-gold backdrop-blur-md hover:bg-latent-gold hover:text-[#0A0A0A] hover:shadow-[0_0_22px_rgba(212,175,55,0.5)]`}
+          >
+            <Trophy className="h-3.5 w-3.5" strokeWidth={2.5} />
+            Result
+          </Link>
+        ) : (
+          <span
+            aria-disabled="true"
+            title="Results aren't out yet"
+            className={`${ACTION_BASE} cursor-not-allowed border-white/10 text-white/25`}
+          >
+            <Clock className="h-3.5 w-3.5" strokeWidth={2.5} />
+            Soon
+          </span>
+        )
       )}
     </div>
   );

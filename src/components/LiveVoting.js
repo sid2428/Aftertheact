@@ -8,8 +8,8 @@ import { normalizeScore } from "@/lib/utils";
 import ScrollDigit from "./ScrollDigit";
 import VerdictReveal from "./VerdictReveal";
 
-const INT_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10
-const DEC_OPTIONS = Array.from({ length: 10 }, (_, i) => i); // 0..9
+const INT_OPTIONS = [null, ...Array.from({ length: 10 }, (_, i) => i + 1)]; // —,1..10
+const DEC_OPTIONS = [null, ...Array.from({ length: 10 }, (_, i) => i)]; // —,0..9
 
 let audioCtx;
 function playLockSound() {
@@ -42,6 +42,38 @@ function playLockSound() {
   }
 }
 
+function useCountdown(revealAt) {
+  const [remaining, setRemaining] = useState(() => {
+    if (!revealAt) return null;
+    const diff = new Date(revealAt).getTime() - Date.now();
+    return diff > 0 ? diff : 0;
+  });
+
+  useEffect(() => {
+    if (!revealAt) return;
+    const tick = () => {
+      const diff = new Date(revealAt).getTime() - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [revealAt]);
+
+  return remaining;
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return null;
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+
 const LiveVoting = forwardRef(function LiveVoting(
   { episodeId, contestantId, userVoteScore = null, isEpisodeClosed = false, onRevealClose },
   ref
@@ -53,7 +85,7 @@ const LiveVoting = forwardRef(function LiveVoting(
   const [error, setError] = useState(null);
   const [revealData, setRevealData] = useState(null); // { userScore } | null
 
-  const touched = intPart !== null || decPart !== null;
+  const touched = intPart !== null && decPart !== null;
   const score = touched ? normalizeScore((intPart ?? 1) + (decPart ?? 0) / 10) : null;
 
   const lockVote = async () => {
@@ -88,19 +120,17 @@ const LiveVoting = forwardRef(function LiveVoting(
   // if the user actually changed the value — never lock an untouched "-" card.
   useImperativeHandle(ref, () => ({
     canLock: () => touched && !hasVoted && score !== null,
-    lockIfReady: lockVote,
+    lockIfReady: (silent) => lockVote(silent),
   }));
 
   const handleIntChange = (v) => {
     setIntPart(v);
-    if (decPart === null) setDecPart(0);
-    if (v === 10) setDecPart(0); // cap at 10.0, no 10.1+
+    if (v === 10) setDecPart(0);
   };
 
   const handleDecChange = (v) => {
-    if (intPart === 10) return; // locked to .0 at the max
+    if (intPart === 10) return;
     setDecPart(v);
-    if (intPart === null) setIntPart(1);
   };
 
   // Voting has closed — show any locked verdict.
@@ -148,29 +178,28 @@ const LiveVoting = forwardRef(function LiveVoting(
             </AnimatePresence>
 
             <div className="relative z-10">
-              <ScrollDigit options={INT_OPTIONS} value={intPart ?? 1} onChange={handleIntChange} disabled={hasVoted} size="lg" />
+              <ScrollDigit options={INT_OPTIONS} value={intPart} onChange={handleIntChange} disabled={hasVoted} size="lg" />
             </div>
             <span className="relative z-10 font-number text-6xl font-bold text-white/40 sm:text-8xl">.</span>
             <div className="relative z-10">
               <ScrollDigit
                 options={DEC_OPTIONS}
-                value={decPart ?? 0}
+                value={decPart}
                 onChange={handleDecChange}
                 disabled={hasVoted || intPart === 10}
                 size="lg"
               />
             </div>
-
-            {/* Default state: "-" overlay, fades out on first touch */}
-            {!touched && (
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                <span className="font-number text-9xl font-bold leading-none text-white/20 sm:text-[12rem]">—</span>
-              </div>
-            )}
           </div>
 
           <div className="my-6 text-center font-display text-xs uppercase tracking-widest text-white/40 sm:text-sm">
-            {touched ? "Scroll to fine-tune your verdict" : "Scroll either wheel to set your score"}
+            {touched
+              ? "Scroll to fine-tune your verdict"
+              : intPart === null && decPart === null
+              ? "Scroll both wheels to set your score"
+              : intPart === null
+              ? "Now scroll the left wheel to complete your score"
+              : "Now scroll the right wheel to complete your score"}
           </div>
 
           {error && (

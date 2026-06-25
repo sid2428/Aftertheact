@@ -49,7 +49,6 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
   const [saved, setSaved] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  // 3D tilt effect
   const cardRef = useRef(null);
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
@@ -57,14 +56,14 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
   const springY = useSpring(rotateY, { stiffness: 300, damping: 30 });
 
   const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || open) return;
     const rect = cardRef.current.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const dx = (e.clientX - cx) / (rect.width / 2);
     const dy = (e.clientY - cy) / (rect.height / 2);
-    rotateX.set(-dy * 8);
-    rotateY.set(dx * 8);
+    rotateX.set(-dy * 4);
+    rotateY.set(dx * 4);
   };
 
   const handleMouseLeave = () => {
@@ -73,20 +72,21 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
     setHovered(false);
   };
 
-  // Determine glow color based on badge or default
+  const toggleOpen = () => {
+    rotateX.set(0);
+    rotateY.set(0);
+    setOpen((o) => !o);
+  };
+
   const glowColor =
-    badge === "controversial"
-      ? "rgba(139,30,45,0.7)"
-      : badge === "favourite"
-      ? "rgba(212,175,55,0.7)"
-      : "rgba(212,175,55,0.3)";
+    badge === "controversial" ? "rgba(139,30,45,0.4)" :
+    badge === "favourite"     ? "rgba(212,175,55,0.4)" :
+                                "rgba(212,175,55,0.1)";
 
   const borderColor =
-    badge === "controversial"
-      ? "#8B1E2D"
-      : badge === "favourite"
-      ? "#D4AF37"
-      : "rgba(255,255,255,0.1)";
+    badge === "controversial" ? "#8B1E2D" :
+    badge === "favourite"     ? "#D4AF37"  :
+                                "rgba(255,255,255,0.1)";
 
   const submit = async () => {
     if (busy || !tag || !episodeId) return;
@@ -99,52 +99,52 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
         body: JSON.stringify({ score, comment }),
       });
       const json = await res.json();
-      if (json.success) {
-        setAgg(json.data);
-        setSaved(true);
-      } else {
-        setError(json.error || "Failed to submit.");
-      }
+      if (json.success) { setAgg(json.data); setSaved(true); }
+      else setError(json.error || "Failed to submit.");
     } catch {
       setError("Network error — try again.");
     }
     setBusy(false);
   };
 
+  const igHandle = judge.instagram_handle;
+  const igUrl = igHandle ? `https://instagram.com/${igHandle.replace(/^@/, "")}` : null;
+
   return (
     <motion.div
+      layout
       ref={cardRef}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ layout: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={handleMouseLeave}
-      className="relative flex flex-col rounded-xl overflow-hidden"
+      className={`relative rounded-xl overflow-hidden${open ? " sm:col-span-2 lg:col-span-3" : ""}`}
       style={{
-        rotateX: springX,
-        rotateY: springY,
+        rotateX: open ? 0 : springX,
+        rotateY: open ? 0 : springY,
         transformPerspective: 1000,
-        boxShadow: hovered
-          ? `0 0 0 1px ${borderColor}, 0 0 40px ${glowColor}, 0 25px 50px rgba(0,0,0,0.6)`
+        boxShadow: hovered && !open
+          ? `0 0 0 1px ${borderColor}, 0 0 20px ${glowColor}, 0 20px 40px rgba(0,0,0,0.5)`
           : `0 0 0 1px rgba(255,255,255,0.07), 0 10px 30px rgba(0,0,0,0.4)`,
         transition: "box-shadow 0.4s ease",
         background: "linear-gradient(145deg, #161616 0%, #0e0e0e 100%)",
       }}
     >
-      {/* Animated top glow line */}
+      {/* Top glow line */}
       <motion.div
         className="absolute top-0 left-0 right-0 h-[1px] z-20"
         animate={{
-          background: hovered
+          background: hovered && !open
             ? `linear-gradient(90deg, transparent 0%, ${borderColor} 50%, transparent 100%)`
             : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)",
         }}
         transition={{ duration: 0.4 }}
       />
 
-      {/* Floating badge */}
+      {/* Badge */}
       {badge && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8, y: -5 }}
@@ -163,111 +163,188 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
         </motion.div>
       )}
 
-      {/* Judge photo */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden">
-        {judge.image ? (
-          <>
-            <motion.img
-              src={judge.image}
-              alt={judge.name}
-              className="absolute inset-0 h-full w-full object-cover object-top"
-              animate={{ scale: hovered ? 1.06 : 1 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            />
-            {/* Gradient overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/20 to-transparent" />
-            <div
-              className="absolute inset-0 opacity-0 transition-opacity duration-500"
-              style={{
-                opacity: hovered ? 0.15 : 0,
-                background: `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`,
-              }}
-            />
-          </>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center font-display font-black text-8xl text-white/5">
-            {judge.name?.[0] || "?"}
-          </div>
-        )}
-      </div>
+      <div className={`flex ${open ? "flex-row min-h-[460px]" : "flex-col"}`}>
 
-      {/* Card body */}
-      <div className="p-6 flex flex-col flex-1">
-        <h3 className="font-display font-black uppercase tracking-tight text-2xl text-white leading-tight">
-          {judge.name}
-        </h3>
-        {judge.descriptor && (
-          <div className="font-display font-bold uppercase tracking-widest text-xs text-latent-gold mt-1 mb-1">
-            {judge.descriptor}
-          </div>
-        )}
-        {judge.instagram_handle && (
-          <a
-            href={`https://instagram.com/${judge.instagram_handle.replace(/^@/, "")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono text-xs text-white/30 hover:text-latent-gold transition-colors"
-          >
-            {judge.instagram_handle}
-          </a>
-        )}
-        {judge.bio && (
-          <p className="text-sm text-white/50 mt-3 leading-relaxed line-clamp-3">{judge.bio}</p>
-        )}
-
-        {/* Rating bar */}
-        <div className="mt-5 space-y-2">
-          <RatingBar label="Community Rating" value={agg.avgScore} color="linear-gradient(to right, #D4AF37, #8B1E2D)" />
-        </div>
-
-        {/* Juror count */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className="flex -space-x-1">
-            {[...Array(Math.min(agg.count, 4))].map((_, i) => (
-              <div key={i} className="w-5 h-5 rounded-full bg-white/10 border border-white/5 flex items-center justify-center text-[8px] text-white/30 font-bold">
-                {i + 1}
-              </div>
-            ))}
-          </div>
-          <span className="font-mono text-[11px] text-white/30">
-            {agg.count} {agg.count === 1 ? "juror" : "jurors"} rated
-          </span>
-        </div>
-
-        {/* Rating form */}
-        <div className="mt-5 pt-4 border-t border-white/5">
-          {!isLoggedIn ? (
-            <Link
-              href="/api/auth/signin"
-              className="flex items-center justify-center gap-2 w-full text-center bg-white/5 hover:bg-latent-gold/10 border border-white/10 hover:border-latent-gold/30 text-white/50 hover:text-latent-gold font-display font-black uppercase tracking-widest text-xs py-3 rounded-lg transition-all duration-300"
-            >
-              <span>⚖</span> Sign in to rate
-            </Link>
-          ) : (
+        {/* ── LEFT: photo ── */}
+        <div className={open ? "relative w-64 flex-shrink-0 overflow-hidden" : "relative aspect-[3/4] w-full overflow-hidden"}>
+          {judge.image ? (
             <>
-              <motion.button
-                onClick={() => setOpen((o) => !o)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full text-center font-display font-black uppercase tracking-widest text-xs py-3 rounded-lg transition-all duration-300 ${
-                  open
-                    ? "bg-white/10 text-white/60 border border-white/10"
-                    : "bg-gradient-to-r from-latent-crimson/20 to-latent-gold/10 hover:from-latent-crimson/30 hover:to-latent-gold/20 text-white border border-latent-crimson/30 hover:border-latent-crimson/50 shadow-[0_0_15px_rgba(139,30,45,0.2)] hover:shadow-[0_0_25px_rgba(139,30,45,0.4)]"
-                }`}
-              >
-                {open ? "✕ Close" : "⚖ Rate This Judge"}
-              </motion.button>
+              <motion.img
+                src={judge.image}
+                alt={judge.name}
+                className="absolute inset-0 h-full w-full object-cover object-top"
+                animate={{ scale: hovered && !open ? 1.04 : 1 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/20 to-transparent" />
+              {!open && (
+                <div
+                  className="absolute inset-0 transition-opacity duration-500"
+                  style={{ opacity: hovered ? 0.15 : 0, background: `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)` }}
+                />
+              )}
+            </>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center font-display font-black text-8xl text-white/5">
+              {judge.name?.[0] || "?"}
+            </div>
+          )}
+        </div>
 
-              <AnimatePresence>
-                {open && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-4 pt-4">
+        {/* ── MIDDLE: Instagram-style profile (expanded only) ── */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="ig-panel"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, delay: 0.18 }}
+              className="flex-1 flex flex-col p-8 border-x border-white/5 overflow-y-auto"
+            >
+              {/* Profile row */}
+              <div className="flex items-center gap-5 mb-8">
+                <div className="relative flex-shrink-0">
+                  <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10 ring-offset-2 ring-offset-[#161616]">
+                    {judge.image
+                      ? <img src={judge.image} alt={judge.name} className="w-full h-full object-cover object-top" />
+                      : <div className="w-full h-full bg-white/5 flex items-center justify-center font-display font-black text-2xl text-white/20">{judge.name?.[0]}</div>
+                    }
+                  </div>
+                  {/* Instagram gradient ring on avatar */}
+                  <div className="absolute -inset-0.5 rounded-full -z-10 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] opacity-60" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-display font-black uppercase tracking-tight text-2xl text-white leading-tight">{judge.name}</h3>
+                  {judge.descriptor && (
+                    <div className="font-display font-bold uppercase tracking-widest text-xs text-latent-gold mt-0.5">{judge.descriptor}</div>
+                  )}
+                  {igHandle && (
+                    <a href={igUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-mono text-xs text-white/35 hover:text-[#ee2a7b] transition-colors mt-1">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+                      </svg>
+                      {igHandle}
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats row — Instagram three-stat style */}
+              <div className="flex rounded-xl border border-white/5 overflow-hidden mb-7">
+                {[
+                  { value: agg.count, label: "jurors" },
+                  { value: agg.count > 0 ? agg.avgScore.toFixed(1) : "—", label: "avg score", accent: true },
+                  { value: agg.count > 0 && agg.stdDev != null ? agg.stdDev.toFixed(1) : "—", label: "std dev" },
+                ].map((s, i) => (
+                  <div key={s.label} className={`flex-1 flex flex-col items-center py-4 ${i < 2 ? "border-r border-white/5" : ""}`}>
+                    <span className={`font-display font-black text-2xl ${s.accent ? "text-latent-gold" : "text-white"}`}>{s.value}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-white/30 mt-0.5">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bio — Instagram caption style */}
+              {judge.bio && (
+                <p className="text-sm text-white/60 leading-relaxed mb-6 font-sans">{judge.bio}</p>
+              )}
+
+              {/* Descriptor pill */}
+              {judge.descriptor && (
+                <div className="mb-6">
+                  <span className="inline-flex items-center gap-2 bg-latent-gold/8 border border-latent-gold/20 rounded-full px-4 py-1.5">
+                    <span className="w-1 h-1 rounded-full bg-latent-gold" />
+                    <span className="font-display font-bold uppercase tracking-widest text-xs text-latent-gold">{judge.descriptor}</span>
+                  </span>
+                </div>
+              )}
+
+              {/* Instagram-style grid divider */}
+              <div className="flex items-center gap-3 mt-auto mb-4">
+                <div className="h-px flex-1 bg-white/5" />
+                <svg className="text-white/20" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <div className="h-px flex-1 bg-white/5" />
+              </div>
+
+              {/* Community rating bar */}
+              {agg.count > 0 && (
+                <RatingBar label="Community Rating" value={agg.avgScore} color="linear-gradient(to right, #D4AF37, #8B1E2D)" />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── RIGHT / COLLAPSED BODY: card info + voting ── */}
+        <div className={open ? "w-72 flex-shrink-0 p-6 flex flex-col" : "p-6 flex flex-col flex-1"}>
+
+          {/* Collapsed-only: judge info */}
+          {!open && (
+            <>
+              <h3 className="font-display font-black uppercase tracking-tight text-2xl text-white leading-tight">{judge.name}</h3>
+              {judge.descriptor && (
+                <div className="font-display font-bold uppercase tracking-widest text-xs text-latent-gold mt-1 mb-1">{judge.descriptor}</div>
+              )}
+              {igHandle && (
+                <a href={igUrl} target="_blank" rel="noreferrer" className="font-mono text-xs text-white/30 hover:text-latent-gold transition-colors">{igHandle}</a>
+              )}
+              {judge.bio && (
+                <p className="text-sm text-white/50 mt-3 leading-relaxed line-clamp-3">{judge.bio}</p>
+              )}
+              <div className="mt-5 space-y-2">
+                <RatingBar label="Community Rating" value={agg.avgScore} color="linear-gradient(to right, #D4AF37, #8B1E2D)" />
+              </div>
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex -space-x-1">
+                  {[...Array(Math.min(agg.count, 4))].map((_, i) => (
+                    <div key={i} className="w-5 h-5 rounded-full bg-white/10 border border-white/5 flex items-center justify-center text-[8px] text-white/30 font-bold">{i + 1}</div>
+                  ))}
+                </div>
+                <span className="font-mono text-[11px] text-white/30">{agg.count} {agg.count === 1 ? "juror" : "jurors"} rated</span>
+              </div>
+            </>
+          )}
+
+          {/* Expanded-only: verdict header */}
+          {open && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="mb-5">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-white/30 mb-2">Your Verdict</p>
+              <div className="h-px bg-gradient-to-r from-latent-crimson/50 via-latent-crimson/20 to-transparent" />
+            </motion.div>
+          )}
+
+          {/* Rating form — shared */}
+          <div className={open ? "flex flex-col flex-1 gap-0" : "mt-5 pt-4 border-t border-white/5"}>
+            {!isLoggedIn ? (
+              <Link href="/api/auth/signin" className="flex items-center justify-center gap-2 w-full text-center bg-white/5 hover:bg-latent-gold/10 border border-white/10 hover:border-latent-gold/30 text-white/50 hover:text-latent-gold font-display font-black uppercase tracking-widest text-xs py-3 rounded-lg transition-all duration-300">
+                <span>⚖</span> Sign in to rate
+              </Link>
+            ) : (
+              <>
+                <motion.button
+                  onClick={toggleOpen}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-full text-center font-display font-black uppercase tracking-widest text-xs py-3 rounded-lg transition-all duration-300 ${
+                    open
+                      ? "bg-white/5 text-white/40 border border-white/8 mb-4"
+                      : "bg-gradient-to-r from-latent-crimson/20 to-latent-gold/10 hover:from-latent-crimson/30 hover:to-latent-gold/20 text-white border border-latent-crimson/30 hover:border-latent-crimson/50 shadow-[0_0_15px_rgba(139,30,45,0.2)] hover:shadow-[0_0_25px_rgba(139,30,45,0.4)]"
+                  }`}
+                >
+                  {open ? "✕ Close" : "⚖ Rate This Judge"}
+                </motion.button>
+
+                <AnimatePresence>
+                  {open && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, delay: 0.25 }}
+                      className="flex flex-col flex-1 gap-3"
+                    >
                       {mine && !saved && (
                         <div className="text-[11px] font-mono text-latent-gold bg-latent-gold/5 border border-latent-gold/20 rounded-md px-3 py-2">
                           You&apos;ve already rated. Submit to update.
@@ -280,36 +357,33 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         maxLength={200}
-                        rows={2}
+                        rows={3}
                         placeholder="Optional verdict comment…"
                         className="w-full bg-[#0A0A0A] border border-white/10 rounded-lg p-3 font-mono text-sm text-white placeholder:text-white/20 focus:border-latent-gold/40 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none resize-none transition-all"
                       />
                       {error && (
-                        <div className="text-latent-crimson font-mono text-xs bg-latent-crimson/5 border border-latent-crimson/20 rounded px-3 py-2">
-                          {error}
-                        </div>
+                        <div className="text-latent-crimson font-mono text-xs bg-latent-crimson/5 border border-latent-crimson/20 rounded px-3 py-2">{error}</div>
                       )}
                       {saved && (
-                        <div className="text-latent-gold font-mono text-xs bg-latent-gold/5 border border-latent-gold/20 rounded px-3 py-2">
-                          ✓ Rating saved — the jury has spoken.
-                        </div>
+                        <div className="text-latent-gold font-mono text-xs bg-latent-gold/5 border border-latent-gold/20 rounded px-3 py-2">✓ Rating saved — the jury has spoken.</div>
                       )}
                       <motion.button
                         onClick={submit}
                         disabled={busy}
                         whileHover={!busy ? { scale: 1.02, boxShadow: "0 0 25px rgba(139,30,45,0.7)" } : {}}
                         whileTap={!busy ? { scale: 0.98 } : {}}
-                        className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-3 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(139,30,45,0.3)]"
+                        className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-3 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(139,30,45,0.3)] mt-auto"
                       >
                         {busy ? "Submitting…" : "Lock In Verdict"}
                       </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+          </div>
         </div>
+
       </div>
     </motion.div>
   );

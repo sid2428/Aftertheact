@@ -43,6 +43,10 @@ export async function POST(req) {
     return NextResponse.json({ success: false, error: "Sign in to post." }, { status: 401 });
   }
   const userId = session.user.id;
+  // Admin accounts use a non-UUID id ("admin-master"). The DB column is UUID,
+  // so treat non-UUID ids as anonymous (null) to avoid a cast error.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const dbUserId = UUID_RE.test(userId) ? userId : null;
 
   let body;
   try {
@@ -62,12 +66,12 @@ export async function POST(req) {
   const episodeTag = body.episodeTag || null;
 
   try {
-    // Sliding-window rate limit: max 10 posts/user/hour.
-    const rlKey = `community:post:ratelimit:${userId}`;
+    // Rate limit: max 10 posts/user/hour.
+    // SET NX EX sets the key with TTL only if it doesn't exist — ensures the
+    // TTL is always set even if expire() failed in a prior call.
+    const rlKey = `community:post:ratelimit:${userId || "anon"}`;
+    await redis.set(rlKey, 0, { nx: true, ex: 3600 });
     const count = await redis.incr(rlKey);
-    if (count === 1) {
-      await redis.expire(rlKey, 3600);
-    }
     if (count > 10) {
       return NextResponse.json(
         { success: false, error: "You're posting too fast. Try again later." },
@@ -79,7 +83,7 @@ export async function POST(req) {
     const { data, error } = await supabase
       .from("CommunityPost")
       .insert({
-        user_id: userId,
+        user_id: dbUserId,
         text,
         contestant_tag: contestantTag,
         episode_tag: episodeTag,
@@ -92,6 +96,6 @@ export async function POST(req) {
     return NextResponse.json({ success: true, data });
   } catch (err) {
     console.error("community posts POST error:", err.message);
-    return NextResponse.json({ success: false, error: "Failed to post." }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message || "Failed to post." }, { status: 500 });
   }
 }

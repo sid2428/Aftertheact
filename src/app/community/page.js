@@ -43,9 +43,8 @@ export default async function CommunityPage() {
       .from("CommunityPost")
       .select(POST_SELECT)
       .eq("moderation_status", "VISIBLE")
-      .gte("created_at", since)
       .order("like_count", { ascending: false })
-      .limit(3);
+      .limit(5);
     hotTakes = hot || [];
 
     // Today's activity for the stat pills.
@@ -84,10 +83,20 @@ export default async function CommunityPage() {
   }
 
   // Tag options for the composer.
-  const [{ data: contestants }, { data: episodes }] = await Promise.all([
+  const [{ data: contestants }, { data: episodes }, { data: appearances }] = await Promise.all([
     supabase.from("Contestant").select("id, name").order("name").limit(200),
     supabase.from("Episode").select("id, season_number, episode_number, title").order("episode_number", { ascending: false }).limit(50),
+    supabase.from("ContestantEpisodeAppearance").select("episode_id, Contestant(id, name)").limit(2000),
   ]);
+
+  // Build episode_id → [{id, name}] map so the composer can filter by episode tab.
+  const episodeContestants = {};
+  for (const a of appearances || []) {
+    if (a.Contestant) {
+      if (!episodeContestants[a.episode_id]) episodeContestants[a.episode_id] = [];
+      episodeContestants[a.episode_id].push(a.Contestant);
+    }
+  }
 
   return (
     <CommunityPageClient
@@ -98,6 +107,7 @@ export default async function CommunityPage() {
       dbReady={dbReady}
       contestants={contestants || []}
       episodes={episodes || []}
+      episodeContestants={episodeContestants}
       currentUser={session?.user ? { id: session.user.id, isAdmin: !!session.user.isAdmin } : null}
     />
   );
