@@ -12,19 +12,30 @@ export const metadata = {
 
 export const revalidate = 0;
 
-export default async function PanelPage() {
+export default async function PanelPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   const judges = await getPanelMembers();
   const supabase = getServiceSupabase();
+
+  // Judges are classified per episode — pick the episode to rate/view, newest first.
+  const { data: episodes } = await supabase
+    .from("Episode")
+    .select("id, season_number, episode_number, title, status")
+    .in("status", ["LIVE", "REVEALED", "ARCHIVED"])
+    .order("season_number", { ascending: false })
+    .order("episode_number", { ascending: false });
+
+  const { episode: episodeParam } = await searchParams;
+  const selectedEpisodeId = episodes?.some((e) => e.id === episodeParam) ? episodeParam : episodes?.[0]?.id || null;
 
   let dbReady = true;
   const byJudge = {};
   const myRatings = {};
 
   try {
-    const { data, error } = await supabase
-      .from("JudgeRating")
-      .select("judge_id, user_id, harshness_score, accuracy_score, entertainment_score, comment");
+    let query = supabase.from("JudgeRating").select("judge_id, user_id, overall_score, tag, comment");
+    query = selectedEpisodeId ? query.eq("episode_id", selectedEpisodeId) : query.is("episode_id", null);
+    const { data, error } = await query;
     if (error) throw error;
     for (const row of data || []) {
       const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;
@@ -73,6 +84,8 @@ export default async function PanelPage() {
       fanFavouriteId={fanFavouriteId}
       dbReady={dbReady}
       isLoggedIn={!!session?.user}
+      episodes={episodes || []}
+      selectedEpisodeId={selectedEpisodeId}
     />
   );
 }

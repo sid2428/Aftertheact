@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import AdminLogoutButton from "@/components/admin/AdminLogoutButton";
 
 export const metadata = {
   title: "Admin Control Panel - AfterTheAct",
@@ -30,6 +31,7 @@ export default async function AdminLayout({ children }) {
             <Link href="/admin/contestants" className="hover:text-latent-gold transition-colors">Contestants</Link>
             <Link href="/admin/users" className="hover:text-latent-gold transition-colors">Users</Link>
             <Link href="/admin/panel" className="hover:text-latent-gold transition-colors">Panel</Link>
+            <AdminLogoutButton />
           </div>
         </div>
       </div>

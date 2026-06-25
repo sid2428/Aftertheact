@@ -89,7 +89,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
       : "rgba(255,255,255,0.1)";
 
   const submit = async () => {
-    if (busy) return;
+    if (busy || !tag || !episodeId) return;
     setBusy(true);
     setError(null);
     try {
@@ -316,7 +316,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
   );
 }
 
-export default function JudgePageClient({ judges, myRatings, mostControversialId, fanFavouriteId, dbReady, isLoggedIn }) {
+export default function JudgePageClient({ judges, myRatings, mostControversialId, fanFavouriteId, dbReady, isLoggedIn, episodes, selectedEpisodeId }) {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {/* Hero */}
@@ -366,6 +366,31 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
             Ratings aren&apos;t set up yet — run the JudgeRating migration to enable scoring.
           </div>
         )}
+
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+          {episodes.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {episodes.map((ep) => (
+                <Link
+                  key={ep.id}
+                  href={`/panel?episode=${ep.id}`}
+                  className={`font-display font-bold uppercase tracking-widest text-xs px-3 py-1.5 rounded-sm border transition-colors ${
+                    ep.id === selectedEpisodeId
+                      ? "bg-latent-gold/15 text-latent-gold border-latent-gold/50"
+                      : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"
+                  }`}
+                >
+                  S{ep.season_number}E{ep.episode_number}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="font-mono text-sm text-white/30">No episodes to classify judges by yet.</div>
+          )}
+          <Link href="/judges-scoreboard" className="font-display font-bold uppercase tracking-widest text-xs text-white/50 hover:text-latent-gold transition-colors">
+            Judge Popularity →
+          </Link>
+        </div>
 
         {judges.length === 0 ? (
           <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">

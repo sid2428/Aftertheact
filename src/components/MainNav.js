@@ -23,6 +23,7 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
   const isActive = (href) => pathname === href || pathname.startsWith(href + "/");
 
   return (
+    <>
     <nav className="glass-panel sticky top-0 z-50 border-b border-brand-border">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Brand */}
@@ -75,6 +76,7 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
           </button>
         </div>
       </div>
+    </nav>
 
       {/* Mobile drawer */}
       <AnimatePresence>
@@ -143,6 +145,6 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }
