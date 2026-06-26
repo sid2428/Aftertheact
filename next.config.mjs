@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow loading the dev server over the LAN IP (e.g. phone/other machine on the
+  // network); Next 16 otherwise blocks cross-origin dev assets (HMR ws, fonts → 403).
+  allowedDevOrigins: ["10.253.114.10"],
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",
