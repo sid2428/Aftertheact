@@ -1,4 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import Image from "next/image";
 import RollingNumber from "@/components/RollingNumber";
 import TypeOnce from "@/components/TypeOnce";
@@ -36,6 +38,7 @@ function Avatar({ user, highlight = false }) {
 
 export default async function LeaderboardPage() {
   const supabase = getServiceSupabase();
+  const session = await getServerSession(authOptions);
 
   // Two independent top-50 reads — run them together (saves a round-trip).
   const [{ data: topUsers }, { data: oracles }] = await Promise.all([
@@ -51,6 +54,50 @@ export default async function LeaderboardPage() {
       .order("oracle_score", { ascending: false })
       .limit(10),
   ]);
+
+  // The signed-in viewer's own standing — always shown as a separate pinned row
+  // beneath each top-10 table so they can find themselves at a glance, with a
+  // note when they're already in the visible top 10.
+  let seasonSelf = null; // { user, rank, inTop } for the Season Standing table
+  let oracleSelf = null; // { user, rank, inTop, qualified } for Prophet's Wall
+  if (session?.user?.id) {
+    const { data: me } = await supabase
+      .from("User")
+      .select("id, username, latent_points_alltime, latent_points_season, badges, avatar_url, oracle_score, oracle_qualifying_episodes")
+      .eq("id", session.user.id)
+      .single();
+
+    if (me) {
+      // Rank = how many users score strictly higher, plus one.
+      const { count: higherSeason } = await supabase
+        .from("User")
+        .select("id", { count: "exact", head: true })
+        .gt("latent_points_season", me.latent_points_season || 0);
+      seasonSelf = {
+        user: me,
+        rank: (higherSeason || 0) + 1,
+        inTop: topUsers?.some((u) => u.id === me.id) ?? false,
+      };
+
+      // Only ranked on the Oracle wall once they have a qualifying episode.
+      const qualified = (me.oracle_qualifying_episodes || 0) >= 1;
+      let oracleRank = null;
+      if (qualified) {
+        const { count: higherOracle } = await supabase
+          .from("User")
+          .select("id", { count: "exact", head: true })
+          .gte("oracle_qualifying_episodes", 1)
+          .gt("oracle_score", me.oracle_score || 0);
+        oracleRank = (higherOracle || 0) + 1;
+      }
+      oracleSelf = {
+        user: me,
+        rank: oracleRank,
+        qualified,
+        inTop: oracles?.some((u) => u.id === me.id) ?? false,
+      };
+    }
+  }
 
   return (
     <div className="min-h-screen bg-brand-bg text-white selection:bg-broadcast-red/30">
@@ -103,6 +150,32 @@ export default async function LeaderboardPage() {
                 </div>
               )}
             </div>
+
+            {seasonSelf && (
+              <div className="mt-5">
+                <div className="mb-2 font-display text-[10px] font-black uppercase tracking-widest text-white/40">Your Position</div>
+                <div className="border-4 border-oracle-gold bg-oracle-gold/[0.08] shadow-[var(--shadow-brutal-md)]">
+                  <div className="group relative flex items-center gap-2.5 p-3 sm:gap-4 sm:p-4">
+                    <div className="w-7 shrink-0 text-center font-mono text-2xl font-black text-oracle-gold sm:w-12 sm:text-4xl">
+                      #{seasonSelf.rank}
+                    </div>
+                    <Avatar user={seasonSelf.user} highlight />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-display text-base font-black uppercase tracking-tight text-oracle-gold sm:text-2xl">
+                        {seasonSelf.user.username}
+                      </div>
+                      <div className="font-display text-[10px] font-black uppercase tracking-widest text-white/40">
+                        {seasonSelf.inTop ? "You · In the top 10" : "You"}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <RollingNumber value={seasonSelf.user.latent_points_season || 0} decimals={0} height={30} className="justify-end font-bold text-broadcast-red" />
+                      <div className="font-display text-[10px] font-black uppercase tracking-widest text-white/40">Points</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="space-y-6">
@@ -149,6 +222,37 @@ export default async function LeaderboardPage() {
                 </div>
               )}
             </div>
+
+            {oracleSelf && (
+              <div className="mt-5">
+                <div className="mb-2 font-display text-[10px] font-black uppercase tracking-widest text-white/40">Your Position</div>
+                <div className="border-4 border-oracle-gold bg-oracle-gold/[0.08] shadow-[var(--shadow-brutal-md)]">
+                  <div className="group relative flex items-center gap-3 border-l-8 border-l-oracle-gold px-3 py-4 sm:gap-4 sm:px-4 sm:py-5">
+                    <div className="w-7 shrink-0 text-center font-mono text-xl font-black text-oracle-gold sm:w-10 sm:text-3xl">
+                      {oracleSelf.qualified ? `#${oracleSelf.rank}` : "—"}
+                    </div>
+                    <Avatar user={oracleSelf.user} highlight />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-display text-sm font-black uppercase tracking-tight text-oracle-gold sm:text-xl">
+                        {oracleSelf.user.username}
+                      </div>
+                      <div className="mt-1 truncate font-display text-[9px] font-black uppercase tracking-widest text-white/40 sm:text-[10px]">
+                        {oracleSelf.qualified
+                          ? `${oracleSelf.inTop ? "You · In the top 10 · " : "You · "}${oracleSelf.user.oracle_qualifying_episodes} predictions`
+                          : "You · Not ranked yet — make more predictions"}
+                      </div>
+                    </div>
+                    <div className="shrink-0 min-w-[60px] text-right sm:min-w-[80px]">
+                      <div className="flex items-baseline justify-end">
+                        <RollingNumber value={(oracleSelf.user.oracle_score || 0) * 100} decimals={1} height={24} className="justify-end font-bold text-oracle-green" />
+                        <span className="font-number text-base font-bold text-oracle-green sm:text-xl">%</span>
+                      </div>
+                      <div className="font-display text-[9px] font-black uppercase tracking-widest text-white/40 sm:text-[10px]">Accuracy</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </main>

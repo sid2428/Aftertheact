@@ -29,12 +29,21 @@ function playTone({ freq = 440, type = "sine", duration = 0.06, volume = 0.12, s
 }
 
 function playTick() {
-  playTone({ freq: 480, type: "square", duration: 0.025, volume: 0.05 });
+  playTone({ freq: 800, type: "square", duration: 0.02, volume: 0.25, sweepTo: 200 });
+  playTone({ freq: 1400, type: "triangle", duration: 0.03, volume: 0.15, sweepTo: 400 });
 }
 
 function playStamp() {
-  playTone({ freq: 180, type: "sine", duration: 0.22, volume: 0.4, sweepTo: 42 });
-  playTone({ freq: 90, type: "triangle", duration: 0.28, volume: 0.22, sweepTo: 30 });
+  playTone({ freq: 120, type: "sine", duration: 0.6, volume: 0.8, sweepTo: 20 });
+  playTone({ freq: 60, type: "square", duration: 0.4, volume: 0.6, sweepTo: 10 });
+  playTone({ freq: 300, type: "triangle", duration: 0.2, volume: 0.4, sweepTo: 40 });
+}
+
+function playLock() {
+  playTone({ freq: 400, type: "sine", duration: 0.1, volume: 0.5, sweepTo: 800 });
+  setTimeout(() => {
+    playTone({ freq: 800, type: "sine", duration: 0.2, volume: 0.5, sweepTo: 1600 });
+  }, 100);
 }
 
 /* ─────────────────────────────────────────────
@@ -558,6 +567,9 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       aria-activedescendant={isSnapped ? `${id}-opt-${selectedIndex}` : undefined}
       tabIndex={isLocked ? -1 : 0}
       onKeyDown={onKeyDown}
+      // Stops the global Lenis smooth-scroll from also moving the page while the
+      // wheel/trackpad is spinning the drum — only the drum should react.
+      data-lenis-prevent
       style={{
         position: "relative",
         width: 110,
@@ -1047,6 +1059,8 @@ export default function VotingScoreWheel({
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname || "/")}`);
       return;
     }
+
+    playLock();
 
     setIsSubmitting(true);
     setError(null);
