@@ -3,8 +3,8 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
-import { redis } from "@/lib/upstash";
 import { normalizeScore } from "@/lib/utils";
+import { recordVote } from "@/lib/voteCore";
 import { sendEmail } from "@/lib/email";
 
 export async function submitVote(episodeId, contestantId, score) {
@@ -52,85 +52,23 @@ export async function submitVote(episodeId, contestantId, score) {
     return { success: false, error: "Contestant is not part of this episode." };
   }
 
-  // 2. Rate limiting / Duplicate vote check in Redis (fast)
-  // Key: vote:{episodeId}:{contestantId}:{userId}
-  const hasVotedRedis = await redis.get(`vote:${episodeId}:${contestantId}:${userId}`);
-  if (hasVotedRedis) {
-    return { success: false, error: "You have already voted for this contestant." };
-  }
-
-  // 2.5 Hard check against Postgres (permanent)
-  // This prevents double-counting in Redis aggregates if the Redis cache was cleared
-  // or the 24h expiry passed.
-  const { data: existingVote } = await supabase
-    .from("UserVote")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("episode_id", episodeId)
-    .eq("contestant_id", contestantId)
-    .maybeSingle();
-
-  if (existingVote) {
-    // Restore the Redis lock so we don't have to hit Postgres next time
-    await redis.setex(`vote:${episodeId}:${contestantId}:${userId}`, 86400, score);
-    return { success: false, error: "You have already voted for this contestant." };
-  }
-
-  // 3. Mark as voted in Redis (24h expiry is enough, permanent record goes to Postgres later)
-  await redis.setex(`vote:${episodeId}:${contestantId}:${userId}`, 86400, score);
-
-  // 4. Atomically update the aggregate in Redis.
-  // Two server-side atomic ops avoid the lost-update race the old get/parse/set had:
-  //   - HINCRBYFLOAT accumulates the running total score
-  //   - HINCRBY accumulates the running vote count
-  // The SSE and flush routes read these `:total` / `:count` fields back.
-  const hashKey = `episode:${episodeId}:scores`;
-  const [newTotal, newCount] = await Promise.all([
-    redis.hincrbyfloat(hashKey, `${contestantId}:total`, score),
-    redis.hincrby(hashKey, `${contestantId}:count`, 1),
-  ]);
-
-  // 4b. Track unique voters for this episode. Only bump the counter the first
-  // time a given user votes in the episode, so it reflects people, not ballots.
-  // The count lives as a `voter_count` field INSIDE the scores hash so the live
-  // SSE route reads everything it needs in a single HGETALL (one Redis command
-  // per poll per client) instead of an extra GET — the dominant Upstash cost.
-  const firstVoteMarker = await redis.set(
-    `episode:${episodeId}:voted:${userId}`,
-    1,
-    { nx: true, ex: 86400 }
-  );
-  if (firstVoteMarker) {
-    await redis.hincrby(hashKey, "voter_count", 1);
-    // Defense-in-depth TTL so the live hash self-cleans if a reveal never runs.
-    // The reveal path deletes it explicitly; this is the backstop. Refreshed on
-    // each new voter, so it stays alive for the whole voting window.
-    await redis.expire(hashKey, 60 * 60 * 24 * 7);
-  }
-
-  // 5. Fire and forget to Postgres (permanent record).
-  // Upsert (not insert) so a replayed vote can't violate the unique constraint;
-  // we never block the user response waiting for this write.
-  supabase.from("UserVote").upsert({
-    user_id: userId,
-    episode_id: episodeId,
-    contestant_id: contestantId,
-    score: score,
-    trust_score_at_vote: session.user.trust_score ?? 0.3 // nullish: a real 0 trust score must survive
-  }, { onConflict: "user_id,episode_id,contestant_id" }).then(({ error }) => {
-    if (error) {
-      console.error(JSON.stringify({
-        event: "vote_insert_failed",
-        userId,
-        episodeId,
-        contestantId,
-        score,
-        error: error.message,
-      }));
-    }
+  // 2. Record the vote via the shared core: duplicate guard, Redis live
+  // aggregates, and the durable UserVote write. This is the exact same path the
+  // simulation script drives, so seeded and real votes are indistinguishable to
+  // the live scoreboard, flush, and reveal.
+  const result = await recordVote({
+    userId,
+    episodeId,
+    contestantId,
+    score,
+    trustScore: session.user.trust_score, // recordVote applies the 0.3 default
   });
 
-  // 6. Fire and forget email notification
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  // 3. Fire and forget email notification
   if (session.user.email) {
     const revealDate = episode?.voting_window_close ? new Date(episode.voting_window_close) : new Date(Date.now() + 48 * 60 * 60 * 1000);
     const formattedDate = revealDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -306,7 +244,5 @@ export async function submitVote(episodeId, contestantId, score) {
     }).catch(err => console.error("Failed to send vote email:", err));
   }
 
-  const total = Number(newTotal);
-  const count = Number(newCount);
-  return { success: true, newRawAverage: count > 0 ? total / count : score };
+  return { success: true, newRawAverage: result.newRawAverage };
 }
