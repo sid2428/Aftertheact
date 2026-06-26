@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { submitVote } from "@/app/actions/vote";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, CheckCircle2, Loader2, Target } from "lucide-react";
@@ -217,7 +217,7 @@ const LiveVoting = forwardRef(function LiveVoting(
           </div>
         </>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
+        <div className="vote-locked-state flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
           <span className="font-display text-xs uppercase tracking-widest text-white/40">
             Your verdict is locked at {score?.toFixed(1)}
           </span>

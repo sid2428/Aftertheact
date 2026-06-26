@@ -399,8 +399,8 @@ export default function CommunityPageClient({
 
       {/* Episode tabs */}
       {episodes.length > 0 && (
-        <div className="border-b border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-6 sm:px-12 py-3 overflow-x-auto">
+        <div className="bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-6 sm:px-12 py-3 overflow-x-auto no-scrollbar">
             <div className="flex gap-1.5 w-max">
               <button
                 onClick={() => setActiveEpisode(null)}

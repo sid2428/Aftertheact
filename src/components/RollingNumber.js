@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 // Each digit rolls upward/downward through intermediate values independently;
@@ -33,17 +34,95 @@ function RollingDigit({ digit, height, reduced }) {
   );
 }
 
-export default function RollingNumber({ value, decimals = 1, height = 48, className = "" }) {
+// `suspense` turns the count-up into a "KBC Audience Poll" reveal: when the
+// number first scrolls into view it flickers through random plausible values,
+// decelerating, then locks onto the real value with a distinct landing beat.
+// It runs once per mount (replays on a fresh page load, never restarts when the
+// card scrolls out and back). `headline` gives the landing a more pronounced pop.
+export default function RollingNumber({
+  value,
+  decimals = 1,
+  height = 48,
+  className = "",
+  suspense = false,
+  suspenseDuration = 5000,
+  headline = false,
+}) {
   const reduced = useReducedMotion();
   const num = Number.isFinite(value) ? value : 0;
-  const text = num.toFixed(decimals);
+  const ref = useRef(null);
+  const playedRef = useRef(false);
+  const [display, setDisplay] = useState(num);
+  const [suspending, setSuspending] = useState(false);
+  const [landed, setLanded] = useState(false);
+
+  useEffect(() => {
+    if (!suspense || reduced) return;
+    const el = ref.current;
+    if (!el) return;
+
+    let cancelled = false;
+    let timer;
+
+    const run = () => {
+      if (playedRef.current) return;
+      playedRef.current = true;
+      setSuspending(true);
+      const start = performance.now();
+      // Random values stay above zero and in a band that narrows toward the real
+      // number as time runs out, so it reads as "homing in" rather than noise.
+      const band = Math.max(num * 0.85, num > 10 ? 12 : 4);
+
+      const tick = () => {
+        if (cancelled) return;
+        const t = Math.min(1, (performance.now() - start) / suspenseDuration);
+        if (t >= 1) {
+          setSuspending(false);
+          setLanded(true);
+          return;
+        }
+        const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic — converge + decelerate
+        const spread = (1 - ease) * band;
+        setDisplay(Math.max(0, num + (Math.random() * 2 - 1) * spread));
+        // Flicker fast early (~45ms), slow to ~420ms near the end.
+        timer = setTimeout(() => requestAnimationFrame(tick), 45 + ease * 375);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    // Start the reveal the moment the score actually enters the viewport, so it's
+    // always seen rather than burning out while the card is still off-screen.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          run();
+          io.disconnect();
+        }
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      io.disconnect();
+    };
+  }, [suspense, reduced, num, suspenseDuration]);
+
+  const shown = suspending ? display : num;
+  const text = (Number.isFinite(shown) ? shown : 0).toFixed(decimals);
+  const landKeyframes = headline ? { scale: [1, 1.22, 1] } : { scale: [1, 1.09, 1] };
 
   return (
-    <span
+    <motion.span
+      ref={ref}
       className={`inline-flex items-center font-number tabular-nums ${className}`}
       style={{ height, fontSize: height, lineHeight: 1 }}
       aria-label={text}
       role="text"
+      animate={landed && !reduced ? landKeyframes : { scale: 1 }}
+      transition={{ duration: headline ? 0.7 : 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       {text.split("").map((ch, i) =>
         /\d/.test(ch) ? (
@@ -54,6 +133,6 @@ export default function RollingNumber({ value, decimals = 1, height = 48, classN
           </span>
         )
       )}
-    </span>
+    </motion.span>
   );
 }

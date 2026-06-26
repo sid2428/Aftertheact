@@ -176,7 +176,6 @@ export default function ScoreboardRow({
               fill
               sizes="56px"
               className={`object-cover transition-all duration-500 ${isPodium ? "grayscale-0" : "grayscale group-hover:grayscale-0"}`}
-              unoptimized
             />
           ) : (
             <span className="flex h-full w-full items-center justify-center font-display text-xl text-white/20">{initial}</span>

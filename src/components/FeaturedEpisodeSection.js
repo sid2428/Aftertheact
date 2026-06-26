@@ -122,10 +122,10 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="glass-row rounded-2xl border border-white/10 p-5 shadow-[0_14px_28px_rgba(0,0,0,0.28)] transition-colors hover:border-latent-gold/30 sm:p-6"
+                        className="glass-row rounded-[1.75rem] border border-white/10 p-6 shadow-[0_18px_36px_rgba(0,0,0,0.32)] transition-colors hover:border-latent-gold/30 sm:p-7"
                       >
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="rounded-full border border-latent-gold/20 bg-latent-gold/10 px-3 py-1 font-display text-xs uppercase tracking-widest text-latent-gold/90">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <span className="rounded-full border border-latent-gold/25 bg-latent-gold/10 px-4 py-1.5 font-display text-sm uppercase tracking-widest text-latent-gold/90">
                             {p.username || "Anonymous"}
                           </span>
                           <span className="font-number text-xs font-semibold text-white/40">
@@ -136,9 +136,17 @@ export default function FeaturedEpisodeSection({ episode, scoreboardRows = [], i
                             )}
                           </span>
                         </div>
-                        <p className="line-clamp-3 min-h-[3.2em] font-sans text-base leading-relaxed text-white/85">
-                          {p._new || index === 0 ? (
-                            <TypeOnce text={p.text} sessionKey={`green-room-post-${p.id}`} speed={24} />
+                        {/* New posts always type in. On first load, only the first
+                            three type — staggered — and anything below the fold
+                            renders instantly so the panel settles fast. */}
+                        <p className="line-clamp-4 min-h-[3.6em] font-sans text-lg leading-relaxed text-white/90 sm:text-xl">
+                          {p._new || index < 3 ? (
+                            <TypeOnce
+                              text={p.text}
+                              sessionKey={`green-room-post-${p.id}`}
+                              speed={24}
+                              delay={p._new ? 0 : index * 320}
+                            />
                           ) : (
                             p.text
                           )}

@@ -1,6 +1,27 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import EpisodeDirectory from "@/components/EpisodeDirectory";
 import LineupPosters from "@/components/LineupPosters";
+import ScrollStepper from "@/components/ScrollStepper";
+import ArcCarousel from "@/components/ArcCarousel";
+
+// How scoring works, for anyone landing on the lineup cold.
+const SCORING_STEPS = [
+  {
+    label: "While Live",
+    title: "Cast Your Verdict",
+    body: "When an episode is LIVE, score every act before the window shuts. One vote each — and once it closes, there are no take-backs.",
+  },
+  {
+    label: "In Real Time",
+    title: "Watch It Settle",
+    body: "Votes pour in and the scoreboard reorders live. Ranks climb, ranks slip, and the top spot changes hands right in front of you.",
+  },
+  {
+    label: "When It's Over",
+    title: "Read The Receipts",
+    body: "Voting closes and the Crowd Score is revealed against the Self and Panel scores. The board is final. Then the roast begins.",
+  },
+];
 
 export const metadata = {
   title: "The Lineup",
@@ -34,9 +55,8 @@ export default async function EpisodesPage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-4 mb-32 relative z-20">
-        <EpisodeDirectory episodes={episodes || []} />
-      </section>
+      {/* The Episodes Arc Carousel (Replacing How Scoring Works and grid) */}
+      <ArcCarousel episodes={episodes || []} />
     </>
   );
 }

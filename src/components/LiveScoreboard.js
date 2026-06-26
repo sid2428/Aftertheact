@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, LayoutGroup, useReducedMotion } from "framer-motion";
 import ScoreboardRow from "./ScoreboardRow";
 
+// How long the board "winds up" — telegraphing a rank swap — before the rows
+// actually glide to their new order.
+const ANTICIPATION_MS = 420;
+
 // The live leaderboard. Rows glide to new positions on score changes via Framer
 // Motion FLIP (`layout` + `LayoutGroup`); scores roll rather than snap. Three
 // modes (spec P0.3):
@@ -35,6 +39,7 @@ export default function LiveScoreboard({
   const prevLeaderId = useRef(null);
   const flashTimers = useRef({});
   const leaderBeatTimer = useRef(null);
+  const reorderTimer = useRef(null);
 
   // Mirror current scores into a ref so the SSE handler can diff against them
   // without re-subscribing.
@@ -110,18 +115,22 @@ export default function LiveScoreboard({
           newFlashes[id] = nextRanks[id] < before ? "up" : "down";
         }
       }
-      prevRanks.current = nextRanks;
 
-      setScores(nextScores);
+      const leaderChanged =
+        nextLeaderId && prevLeaderId.current && prevLeaderId.current !== nextLeaderId;
+      const hasRankChange = Object.keys(newFlashes).length > 0;
 
-      if (nextLeaderId && prevLeaderId.current && prevLeaderId.current !== nextLeaderId && !reduced) {
+      // The #1-change beat is the most intense version of the row treatment and
+      // is reserved for the very top changing hands — it plays with the reorder
+      // payoff, not before it.
+      const fireLeaderBeat = () => {
+        if (!leaderChanged || reduced) return;
         setLeaderBeatId(nextLeaderId);
         clearTimeout(leaderBeatTimer.current);
-        leaderBeatTimer.current = setTimeout(() => setLeaderBeatId(null), 1400);
-      }
-      prevLeaderId.current = nextLeaderId;
+        leaderBeatTimer.current = setTimeout(() => setLeaderBeatId(null), 1600);
+      };
 
-      if (!reduced && Object.keys(newFlashes).length) {
+      const flashAndClear = () => {
         setFlashes((f) => ({ ...f, ...newFlashes }));
         for (const id in newFlashes) {
           clearTimeout(flashTimers.current[id]);
@@ -131,9 +140,29 @@ export default function LiveScoreboard({
               delete c[id];
               return c;
             });
-          }, 1200);
+          }, 1400);
         }
+      };
+
+      const commit = () => {
+        prevRanks.current = nextRanks;
+        setScores(nextScores);
+        fireLeaderBeat();
+        prevLeaderId.current = nextLeaderId;
+      };
+
+      // No reorder (or reduced-motion): apply numbers immediately, no beat.
+      if (!hasRankChange || reduced) {
+        commit();
+        return;
       }
+
+      // Anticipation → payoff: telegraph the move (direction arrow + flash) a
+      // beat before the rows actually glide to their new positions, so a rank
+      // swap feels choreographed rather than snapping the instant scores arrive.
+      flashAndClear();
+      clearTimeout(reorderTimer.current);
+      reorderTimer.current = setTimeout(commit, ANTICIPATION_MS);
     };
     return () => es.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,6 +171,7 @@ export default function LiveScoreboard({
   useEffect(() => () => {
     Object.values(flashTimers.current).forEach(clearTimeout);
     clearTimeout(leaderBeatTimer.current);
+    clearTimeout(reorderTimer.current);
   }, []);
 
   const sorted = useMemo(() => {

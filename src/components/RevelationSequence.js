@@ -22,7 +22,7 @@ export default function RevelationSequence({ children, isRevealed }) {
       variants={container} 
       initial="hidden" 
       animate="show" 
-      className="grid md:grid-cols-2 gap-6 bg-[#0A0A0A] p-6 border border-brand-border rounded-md shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+      className="glass-surface grid md:grid-cols-2 gap-6 rounded-[2rem] p-6 sm:p-8"
     >
       {/* We pass the children through. If we want each card to animate, we need to map them or assume children are wrapped in motion.div */}
       {children}

@@ -11,14 +11,14 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
 
   return (
     <RevealOnView
-      className={`relative overflow-hidden rounded-md bg-[#111111] shadow-[0_0_20px_rgba(0,0,0,0.5)] ${
-        isVotingLive ? "border-live" : "border border-brand-border"
+      className={`contestant-card brutal-surface relative overflow-hidden bg-brand-panel text-white ${
+        isVotingLive ? "border-live" : ""
       }`}
     >
 
       {/* Contestant Header - High Contrast */}
-      <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 border-b border-brand-border bg-[#0A0A0A]">
-        <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 border border-brand-border bg-[#050505] overflow-hidden rounded-sm">
+      <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 border-b-4 border-white/10">
+        <div className="contestant-image-wipe relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 border-4 border-white/15 bg-[#050505] overflow-hidden">
           {contestant.image_url ? (
             <Image
               src={contestant.image_url}
@@ -26,7 +26,6 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
               fill
               sizes="96px"
               className="object-cover grayscale hover:grayscale-0 transition-all duration-500"
-              unoptimized
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center font-display text-4xl text-white/15">
@@ -50,10 +49,10 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
       </div>
 
       {/* Dynamic Content based on Status */}
-      <div className="p-4 sm:p-6 bg-[#111111]">
+      <div className="p-4 sm:p-6">
         {episodeStatus === "UPCOMING" && (
-          <div className="text-center py-6 text-white/30 font-display font-black uppercase tracking-widest border border-dashed border-white/10 rounded-sm">
-            Voting opens at air time
+          <div className="text-center py-6 text-white/35 font-display font-black uppercase tracking-widest border-4 border-dashed border-white/10">
+            Set lag raha hai. Come back when it&apos;s live.
           </div>
         )}
 

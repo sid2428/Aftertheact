@@ -33,12 +33,12 @@ export default async function PanelPage({ searchParams }) {
   const myRatings = {};
 
   try {
-    let query = supabase.from("JudgeRating").select("judge_id, user_id, overall_score, tag, comment");
+    let query = supabase.from("JudgeRating").select("judge_id, user_id, overall_score, harshness_score, accuracy_score, entertainment_score, tag, comment");
     query = selectedEpisodeId ? query.eq("episode_id", selectedEpisodeId) : query.is("episode_id", null);
     const { data, error } = await query;
     if (error) throw error;
     for (const row of data || []) {
-      const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;
+      const avgScore = row.overall_score || ((row.harshness_score + row.accuracy_score + row.entertainment_score) / 3);
       const mappedRow = {
         judge_id: row.judge_id,
         user_id: row.user_id,
