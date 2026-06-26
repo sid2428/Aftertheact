@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { getPanelMembers } from "@/lib/panel";
+import ToastForm from "@/components/admin/ToastForm";
 
 export const revalidate = 0;
 
@@ -35,7 +36,7 @@ export default async function ManageEpisode({ params }) {
       </div>
 
       {/* Episode fields */}
-      <form action={updateEpisode} className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">
+      <ToastForm action={updateEpisode} message="Episode updated" className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">
         <input type="hidden" name="episode_id" value={episode.id} />
         <h2 className="text-xl font-display font-black uppercase text-white border-b border-white/10 pb-2">Episode Details</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -73,7 +74,7 @@ export default async function ManageEpisode({ params }) {
           <p className="mt-1 text-xs font-mono text-white/35">Only checked judges appear on /panel for this episode. Unchecked = not rated here.</p>
         </div>
         <button className="bg-latent-gold text-[#0A0A0A] px-6 py-2 font-display font-black uppercase rounded-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all">Save Changes</button>
-      </form>
+      </ToastForm>
 
       {/* Lineup */}
       <div className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">

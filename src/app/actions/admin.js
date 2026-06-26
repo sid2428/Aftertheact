@@ -123,6 +123,7 @@ export async function updateEpisode(formData) {
   revalidatePath(`/episode/${id}`);
   revalidatePath("/episodes");
   revalidatePath("/panel");
+  return { success: true };
 }
 
 export async function removeAppearance(formData) {
