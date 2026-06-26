@@ -9,7 +9,7 @@ export async function GET(request) {
   try {
     // 1. Fetch users who need Trust Score recalculation (e.g., active recently)
     // For MVP, fetch all users. In prod, chunk this or queue it.
-    const { data: users } = await supabase.from("User").select("id, created_at, oracle_score");
+    const { data: users } = await supabase.from("User").select("id, created_at, oracle_score, latent_points_alltime");
 
     if (!users) return NextResponse.json({ success: true, message: "No users" });
 
@@ -36,8 +36,10 @@ export async function GET(request) {
       score += predScore;
       signals.prediction = predScore;
 
-      // D. Activity Diversity (Max 0.15)
-      const activityScore = 0.10; // Placeholder
+      // D. Activity / engagement (Max 0.15) — driven by latent points, which a
+      // user earns through votes, predictions and popular takes. ponytail: linear
+      // ramp, ~1500 alltime pts hits the cap; tune the divisor if points inflate.
+      const activityScore = Math.min(0.15, (user.latent_points_alltime || 0) / 1500 * 0.15);
       score += activityScore;
       signals.activity = activityScore;
 

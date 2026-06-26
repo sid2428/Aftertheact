@@ -28,10 +28,11 @@ export async function POST(req, { params }) {
     return NextResponse.json({ success: false, error: "Score must be 1–10." }, { status: 400 });
   }
   const comment = typeof body.comment === "string" ? body.comment.slice(0, 200) : null;
-  const episodeId = body.episodeId;
-
+  // One rating per (judge, user, episode) — a judge recurring across episodes is
+  // rated once in each, so the episode is required.
+  const episodeId = typeof body.episodeId === "string" ? body.episodeId : null;
   if (!episodeId) {
-    return NextResponse.json({ success: false, error: "Missing episode ID." }, { status: 400 });
+    return NextResponse.json({ success: false, error: "Pick an episode to rate within." }, { status: 400 });
   }
 
   // Ratings are keyed to a real User row (user_id is a UUID FK). The admin
@@ -46,29 +47,36 @@ export async function POST(req, { params }) {
 
   try {
     const supabase = getServiceSupabase();
-    const { error } = await supabase.from("JudgeRating").upsert(
-      {
-        judge_id: judgeId,
-        user_id: userId,
-        episode_id: episodeId,
-        overall_score: score,
-        harshness_score: score,
-        accuracy_score: score,
-        entertainment_score: score,
-        comment,
-      },
-      { onConflict: "judgerating_judge_user_episode_key" }
-    );
-    if (error) throw error;
+    // Insert, not upsert: one rating per (judge, user, episode) and it can't be
+    // changed. The unique constraint rejects a second attempt.
+    const { error } = await supabase.from("JudgeRating").insert({
+      judge_id: judgeId,
+      user_id: userId,
+      episode_id: episodeId,
+      harshness_score: score,
+      accuracy_score: score,
+      entertainment_score: score,
+      comment,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { success: false, error: "You've already locked your verdict for this judge this episode." },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
+    // Final score = every rating for this judge across ALL episodes, trust-weighted.
     const { data: rows } = await supabase
       .from("JudgeRating")
-      .select("overall_score, tag, harshness_score, accuracy_score, entertainment_score")
-      .eq("judge_id", judgeId)
-      .eq("episode_id", episodeId);
+      .select("harshness_score, accuracy_score, entertainment_score, User(trust_score)")
+      .eq("judge_id", judgeId);
 
     const mappedRows = (rows || []).map(r => ({
-      score: r.overall_score || ((r.harshness_score + r.accuracy_score + r.entertainment_score) / 3)
+      score: (r.harshness_score + r.accuracy_score + r.entertainment_score) / 3,
+      trust: r.User?.trust_score ?? 0,
     }));
 
     return NextResponse.json({ success: true, data: aggregateRatings(mappedRows) });

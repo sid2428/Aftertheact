@@ -3,6 +3,8 @@ import { updateEpisode } from "@/app/actions/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { getPanelMembers } from "@/lib/panel";
+import ToastForm from "@/components/admin/ToastForm";
 
 export const revalidate = 0;
 
@@ -21,6 +23,9 @@ export default async function ManageEpisode({ params }) {
     .select("id, latent_score, judge_average, Contestant(name, talent_type)")
     .eq("episode_id", id);
 
+  const panelMembers = await getPanelMembers();
+  const allocated = new Set(episode.judge_ids || []);
+
   return (
     <div className="space-y-8 max-w-4xl">
       <Link href="/admin/episodes" className="text-sm text-latent-gold hover:underline">← All Episodes</Link>
@@ -31,7 +36,7 @@ export default async function ManageEpisode({ params }) {
       </div>
 
       {/* Episode fields */}
-      <form action={updateEpisode} className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">
+      <ToastForm action={updateEpisode} message="Episode updated" className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">
         <input type="hidden" name="episode_id" value={episode.id} />
         <h2 className="text-xl font-display font-black uppercase text-white border-b border-white/10 pb-2">Episode Details</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -52,8 +57,24 @@ export default async function ManageEpisode({ params }) {
         </div>
         <div><label className={labelClass}>Admin Note</label><textarea name="admin_note" defaultValue={episode.admin_note || ""} rows={2} className={inputClass} /></div>
         <ImageUploadField name="thumbnail_file" label="Episode Thumbnail (shown on /episodes)" defaultImage={episode.thumbnail_url || ""} />
+        <div>
+          <label className={labelClass}>Judges on this episode</label>
+          {panelMembers.length === 0 ? (
+            <p className="text-xs font-mono text-white/35">No judges in the panel yet — add them in <Link href="/admin/panel" className="text-latent-gold hover:underline">Hero Panel</Link>.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-2">
+              {panelMembers.map((j) => (
+                <label key={j.id} className="flex items-center gap-2 bg-[#050505] border border-brand-border p-2 rounded-sm cursor-pointer">
+                  <input type="checkbox" name="judge_ids" value={j.id} defaultChecked={allocated.has(j.id)} className="accent-latent-gold" />
+                  <span className="font-mono text-sm text-white/80">{j.name || j.id}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          <p className="mt-1 text-xs font-mono text-white/35">Only checked judges appear on /panel for this episode. Unchecked = not rated here.</p>
+        </div>
         <button className="bg-latent-gold text-[#0A0A0A] px-6 py-2 font-display font-black uppercase rounded-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all">Save Changes</button>
-      </form>
+      </ToastForm>
 
       {/* Lineup */}
       <div className="bg-[#111111] border border-brand-border p-6 rounded-md space-y-4">

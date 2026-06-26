@@ -14,43 +14,45 @@ export const revalidate = 0;
 
 export default async function PanelPage({ searchParams }) {
   const session = await getServerSession(authOptions);
-  const judges = await getPanelMembers();
+  const allJudges = await getPanelMembers();
   const supabase = getServiceSupabase();
 
-  // Judges are classified per episode — pick the episode to rate/view, newest first.
+  // Judges are allocated per episode — pick the episode to rate/view, newest first.
   const { data: episodes } = await supabase
     .from("Episode")
-    .select("id, season_number, episode_number, title, status")
+    .select("id, season_number, episode_number, title, status, judge_ids")
     .in("status", ["LIVE", "REVEALED"])
     .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
   const { episode: episodeParam } = await searchParams;
-  const selectedEpisodeId = episodes?.some((e) => e.id === episodeParam) ? episodeParam : episodes?.[0]?.id || null;
+  const selectedEpisode = episodes?.find((e) => e.id === episodeParam) || episodes?.[0] || null;
+  const selectedEpisodeId = selectedEpisode?.id || null;
+
+  // Only judges allocated to the selected episode appear (Redis pool filtered by
+  // the episode's judge_ids).
+  const allocatedIds = selectedEpisode?.judge_ids || [];
+  const judges = allJudges.filter((j) => allocatedIds.includes(j.id));
 
   let dbReady = true;
   const byJudge = {};
   const myRatings = {};
 
   try {
-    let query = supabase.from("JudgeRating").select("judge_id, user_id, overall_score, harshness_score, accuracy_score, entertainment_score, tag, comment");
-    query = selectedEpisodeId ? query.eq("episode_id", selectedEpisodeId) : query.is("episode_id", null);
-    const { data, error } = await query;
+    // One rating per (judge, user, episode). The judge's final score aggregates
+    // EVERY rating across all episodes, trust-weighted (Σ score·trust / Σ trust);
+    // the episode pill-tabs pick which episode your vote applies to.
+    const { data, error } = await supabase
+      .from("JudgeRating")
+      .select("judge_id, user_id, episode_id, harshness_score, accuracy_score, entertainment_score, comment, User(trust_score)");
     if (error) throw error;
     for (const row of data || []) {
-      const avgScore = row.overall_score || ((row.harshness_score + row.accuracy_score + row.entertainment_score) / 3);
-      const mappedRow = {
-        judge_id: row.judge_id,
-        user_id: row.user_id,
-        score: avgScore,
-        comment: row.comment
-      };
-      (byJudge[mappedRow.judge_id] ||= []).push(mappedRow);
-      if (session?.user && mappedRow.user_id === session.user.id) {
-        myRatings[mappedRow.judge_id] = {
-          score: Math.round(mappedRow.score),
-          comment: mappedRow.comment || "",
-        };
+      const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;
+      (byJudge[row.judge_id] ||= []).push({ score: avgScore, trust: row.User?.trust_score ?? 0 });
+      // "My rating" is scoped to the selected episode, to prefill the form and
+      // show "already rated" for this episode only.
+      if (session?.user && row.user_id === session.user.id && row.episode_id === selectedEpisodeId) {
+        myRatings[row.judge_id] = { score: Math.round(avgScore), comment: row.comment || "" };
       }
     }
   } catch (err) {

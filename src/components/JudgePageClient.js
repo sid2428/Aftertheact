@@ -345,37 +345,37 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
                       transition={{ duration: 0.2, delay: 0.25 }}
                       className="flex flex-col flex-1 gap-3"
                     >
-                      {mine && !saved && (
-                        <div className="text-[11px] font-mono text-latent-gold bg-latent-gold/5 border border-latent-gold/20 rounded-md px-3 py-2">
-                          You&apos;ve already rated. Submit to update.
+                      {(mine || saved) ? (
+                        <div className="text-latent-gold font-mono text-xs bg-latent-gold/5 border border-latent-gold/20 rounded px-3 py-2">
+                          ✓ Verdict locked for this episode — one rating per judge, and it can&apos;t be changed.
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center rounded-xl border border-white/10 bg-[#0A0A0A] py-5 shadow-inner">
+                            <ScoreWheel label="Your Score" value={score} onChange={setScore} />
+                          </div>
+                          <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            maxLength={200}
+                            rows={3}
+                            placeholder="Optional verdict comment…"
+                            className="w-full bg-[#0A0A0A] border border-white/10 rounded-lg p-3 font-mono text-sm text-white placeholder:text-white/20 focus:border-latent-gold/40 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none resize-none transition-all"
+                          />
+                          {error && (
+                            <div className="text-latent-crimson font-mono text-xs bg-latent-crimson/5 border border-latent-crimson/20 rounded px-3 py-2">{error}</div>
+                          )}
+                          <motion.button
+                            onClick={submit}
+                            disabled={busy}
+                            whileHover={!busy ? { scale: 1.02, boxShadow: "0 0 25px rgba(139,30,45,0.7)" } : {}}
+                            whileTap={!busy ? { scale: 0.98 } : {}}
+                            className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-3 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(139,30,45,0.3)] mt-auto"
+                          >
+                            {busy ? "Submitting…" : "Lock In Verdict"}
+                          </motion.button>
+                        </>
                       )}
-                      <div className="flex items-center justify-center rounded-xl border border-white/10 bg-[#0A0A0A] py-5 shadow-inner">
-                        <ScoreWheel label="Your Score" value={score} onChange={setScore} />
-                      </div>
-                      <textarea
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        maxLength={200}
-                        rows={3}
-                        placeholder="Optional verdict comment…"
-                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-lg p-3 font-mono text-sm text-white placeholder:text-white/20 focus:border-latent-gold/40 focus:shadow-[0_0_15px_rgba(212,175,55,0.1)] outline-none resize-none transition-all"
-                      />
-                      {error && (
-                        <div className="text-latent-crimson font-mono text-xs bg-latent-crimson/5 border border-latent-crimson/20 rounded px-3 py-2">{error}</div>
-                      )}
-                      {saved && (
-                        <div className="text-latent-gold font-mono text-xs bg-latent-gold/5 border border-latent-gold/20 rounded px-3 py-2">✓ Rating saved — the jury has spoken.</div>
-                      )}
-                      <motion.button
-                        onClick={submit}
-                        disabled={busy}
-                        whileHover={!busy ? { scale: 1.02, boxShadow: "0 0 25px rgba(139,30,45,0.7)" } : {}}
-                        whileTap={!busy ? { scale: 0.98 } : {}}
-                        className="w-full bg-latent-crimson text-white font-display font-black uppercase tracking-widest py-3 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(139,30,45,0.3)] mt-auto"
-                      >
-                        {busy ? "Submitting…" : "Lock In Verdict"}
-                      </motion.button>
                     </motion.div>
                   )}
                 </AnimatePresence>
