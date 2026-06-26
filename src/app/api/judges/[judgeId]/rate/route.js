@@ -50,15 +50,14 @@ export async function POST(req, { params }) {
         entertainment_score: score,
         comment,
       },
-      { onConflict: "judge_id,user_id,episode_id" }
+      { onConflict: "judge_id,user_id" }
     );
     if (error) throw error;
 
     const { data: rows } = await supabase
       .from("JudgeRating")
-      .select("overall_score, tag")
-      .eq("judge_id", judgeId)
-      .eq("episode_id", episodeId);
+      .select("harshness_score, accuracy_score, entertainment_score")
+      .eq("judge_id", judgeId);
 
     const mappedRows = (rows || []).map(r => ({
       score: (r.harshness_score + r.accuracy_score + r.entertainment_score) / 3

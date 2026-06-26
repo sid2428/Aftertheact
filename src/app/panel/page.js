@@ -33,9 +33,11 @@ export default async function PanelPage({ searchParams }) {
   const myRatings = {};
 
   try {
-    let query = supabase.from("JudgeRating").select("judge_id, user_id, overall_score, tag, comment");
-    query = selectedEpisodeId ? query.eq("episode_id", selectedEpisodeId) : query.is("episode_id", null);
-    const { data, error } = await query;
+    // Ratings are global per (judge, user) — see migrations/0009-judgerating-unique-constraint.
+    // ponytail: episode pill-tabs are cosmetic now; rate route has no episode context.
+    const { data, error } = await supabase
+      .from("JudgeRating")
+      .select("judge_id, user_id, harshness_score, accuracy_score, entertainment_score, comment");
     if (error) throw error;
     for (const row of data || []) {
       const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;

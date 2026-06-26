@@ -89,7 +89,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
                                 "rgba(255,255,255,0.1)";
 
   const submit = async () => {
-    if (busy || !tag || !episodeId) return;
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
