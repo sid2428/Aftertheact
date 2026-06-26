@@ -1,6 +1,7 @@
 "use server";
 
 import { getServiceSupabase } from "@/lib/supabase";
+import { redis } from "@/lib/upstash";
 import { revalidatePath } from "next/cache";
 
 export async function triggerRevelation(episodeId) {
@@ -21,6 +22,12 @@ export async function triggerRevelation(episodeId) {
     console.error("Latent points RPC Error:", pointsError);
     return { success: false, error: `Failed to award latent points: ${pointsError.message}` };
   }
+
+  // The live SSE keys are now dead weight — the crowd verdict is finalized in
+  // Postgres. Delete them so they don't accumulate forever (they're created
+  // without a TTL during voting). Best-effort: a Redis hiccup must never fail a
+  // reveal. The per-user `vote:*` / `voted:*` markers carry their own 24h TTL.
+  redis.del(`episode:${episodeId}:scores`, `episode:${episodeId}:voter_count`).catch(console.error);
 
   // Generate share cards asynchronously
   fetch(`${process.env.NEXTAUTH_URL}/api/cron/generate-cards?episodeId=${episodeId}`, { method: 'POST' }).catch(console.error);

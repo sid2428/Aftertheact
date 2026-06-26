@@ -92,13 +92,20 @@ export async function submitVote(episodeId, contestantId, score) {
 
   // 4b. Track unique voters for this episode. Only bump the counter the first
   // time a given user votes in the episode, so it reflects people, not ballots.
+  // The count lives as a `voter_count` field INSIDE the scores hash so the live
+  // SSE route reads everything it needs in a single HGETALL (one Redis command
+  // per poll per client) instead of an extra GET — the dominant Upstash cost.
   const firstVoteMarker = await redis.set(
     `episode:${episodeId}:voted:${userId}`,
     1,
     { nx: true, ex: 86400 }
   );
   if (firstVoteMarker) {
-    await redis.incr(`episode:${episodeId}:voter_count`);
+    await redis.hincrby(hashKey, "voter_count", 1);
+    // Defense-in-depth TTL so the live hash self-cleans if a reveal never runs.
+    // The reveal path deletes it explicitly; this is the backstop. Refreshed on
+    // each new voter, so it stays alive for the whole voting window.
+    await redis.expire(hashKey, 60 * 60 * 24 * 7);
   }
 
   // 5. Fire and forget to Postgres (permanent record).

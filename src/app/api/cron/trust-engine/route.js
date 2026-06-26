@@ -1,9 +1,12 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { isAuthorizedCron } from "@/lib/cron";
 
 export async function GET(request) {
-  // Authentication for cron omitted for MVP brevity
-  
+  if (!isAuthorizedCron(request)) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   const supabase = getServiceSupabase();
 
   try {

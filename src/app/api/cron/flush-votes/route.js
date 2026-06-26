@@ -1,12 +1,12 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { triggerRevelation } from "@/app/actions/revelation";
+import { isAuthorizedCron } from "@/lib/cron";
 
 export async function GET(request) {
-  // In production, you would verify the Vercel cron secret header here:
-  // if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return new NextResponse('Unauthorized', { status: 401 });
-  // }
+  if (!isAuthorizedCron(request)) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
   const supabase = getServiceSupabase();
 
@@ -14,7 +14,7 @@ export async function GET(request) {
     // 1. Find all LIVE episodes
     const { data: liveEpisodes } = await supabase
       .from("Episode")
-      .select("id, voting_window_close")
+      .select("id, voting_window_close, is_revelation_triggered")
       .eq("status", "LIVE");
 
     if (!liveEpisodes || liveEpisodes.length === 0) {
@@ -68,9 +68,17 @@ export async function GET(request) {
           .match({ episode_id: episodeId, contestant_id: contestantId });
       }
 
-      if (ep.voting_window_close && new Date(ep.voting_window_close).getTime() <= Date.now()) {
-        const result = await triggerRevelation(episodeId);
-        if (result.success) revealed += 1;
+      const windowClosed = ep.voting_window_close && new Date(ep.voting_window_close).getTime() <= Date.now();
+      if (windowClosed) {
+        if (ep.is_revelation_triggered) {
+          // Already scored but stuck on LIVE (the reveal RPC early-returns once
+          // triggered, so it never flips status on its own). Settle it so we stop
+          // re-flushing it every run.
+          await supabase.from("Episode").update({ status: "REVEALED" }).eq("id", episodeId);
+        } else {
+          const result = await triggerRevelation(episodeId);
+          if (result.success) revealed += 1;
+        }
       }
     }
 
