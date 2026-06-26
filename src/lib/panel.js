@@ -35,6 +35,7 @@ function withId(member) {
     instagram_handle: member.instagram_handle || "",
     bio: member.bio || "",
     tags,
+    show_in_hero: member.show_in_hero !== false, // legacy entries default to shown
   };
 }
 
@@ -52,4 +53,34 @@ export async function getPanelMembers() {
 
 export async function setPanelMembers(members) {
   await redis.set(KEY, members.slice(0, MAX_PANEL).map(withId));
+}
+
+// Create or update one judge. An existing `id` updates that judge in place
+// (slug id stays stable, so JudgeRating rows and episode judge_ids keep
+// pointing at it). No id = create: the slug is derived from the name and must
+// be unique and within the MAX_PANEL cap. Returns the normalized saved judge.
+export async function upsertPanelMember(member) {
+  const members = await getPanelMembers();
+  const id = (member.id || "").trim();
+
+  if (id) {
+    const idx = members.findIndex((m) => m.id === id);
+    if (idx === -1) throw new Error("Judge not found.");
+    members[idx] = { ...members[idx], ...member, id };
+  } else {
+    const newId = slugify(member.name);
+    if (!newId) throw new Error("Judge needs a name.");
+    if (members.some((m) => m.id === newId)) throw new Error("A judge with that name already exists.");
+    if (members.length >= MAX_PANEL) throw new Error(`Panel is full (max ${MAX_PANEL} judges).`);
+    members.push({ ...member, id: newId });
+  }
+
+  await setPanelMembers(members);
+  const saved = await getPanelMembers();
+  return saved.find((m) => m.id === (id || slugify(member.name)));
+}
+
+export async function deletePanelMember(id) {
+  const members = await getPanelMembers();
+  await setPanelMembers(members.filter((m) => m.id !== id));
 }
