@@ -7,6 +7,7 @@ import { triggerExpiredRevelation } from "@/app/actions/revelation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { notFound } from "next/navigation";
+import VotingWheelPageClient from "./VotingWheelPageClient";
 
 export const revalidate = 0;
 
@@ -116,6 +117,26 @@ export default async function EpisodePage({ params }) {
     if (existingVotes) {
       userVotesMap = existingVotes.reduce((acc, v) => ({ ...acc, [v.contestant_id]: v.score }), {});
     }
+  }
+
+  // ── LIVE: hand the entire viewport to the voting wheel ───────────────────
+  if (episode.status === "LIVE" && sortedAppearances.length > 0) {
+    return (
+      <VotingWheelPageClient
+        contestants={sortedAppearances.map((app) => ({
+          id: app.Contestant.id,
+          name: app.Contestant.name,
+          tagline: app.Contestant.talent_type ?? null,
+          initial: app.Contestant.name?.[0]?.toUpperCase() ?? "?",
+          userVoteScore: userVotesMap[app.Contestant.id] ?? null,
+        }))}
+        episodeId={episode.id}
+        revealAt={episode.voting_window_close ?? null}
+        seasonLabel={`S${episode.season_number}E${episode.episode_number} · ${episode.title}`}
+        showTitle="After The Act"
+        isAuthenticated={!!session?.user}
+      />
+    );
   }
 
   return (

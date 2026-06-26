@@ -1,16 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut, UserCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
+function AvatarCircle({ userImage, userName }) {
+  return (
+    <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border-2 border-broadcast-red/60 bg-brand-elevated text-white/80 transition-colors group-hover:border-broadcast-red">
+      {userImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={userImage} alt={userName || "Account"} className="h-full w-full object-cover" />
+      ) : (
+        <User size={18} />
+      )}
+    </span>
+  );
+}
+
+export default function MainNav({ isLoggedIn = false, isAdmin = false, userName = null, userImage = null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [confirmSignout, setConfirmSignout] = useState(false);
+  const accountRef = useRef(null);
 
   const links = [
     { href: "/scoreboard", label: "Verdict Board" },
@@ -22,17 +37,32 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
 
   const isActive = (href) => pathname === href || pathname.startsWith(href + "/");
 
+  // Close the account menu on outside click or Escape.
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onClick = (e) => {
+      if (accountRef.current && !accountRef.current.contains(e.target)) setAccountOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setAccountOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountOpen]);
+
   return (
     <>
     <nav className="nav-scroll-reactive sticky top-0 z-50 border-b-4 border-brand-border bg-brand-bg">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:h-20 sm:px-6">
         {/* Brand */}
-        <Link href="/" className="flex items-center group shrink-0">
-          <img src="/logo.png" alt="After The Act" className="h-12 w-auto transition-transform group-hover:-translate-y-0.5" />
+        <Link href="/" className="group flex shrink-0 items-center">
+          <img src="/logo.png" alt="After The Act" className="h-9 w-auto transition-transform group-hover:-translate-y-0.5 sm:h-12" />
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-8 font-display font-bold uppercase tracking-widest text-sm text-white/70">
+        <div className="hidden items-center gap-6 font-display text-sm font-bold uppercase tracking-widest text-white/70 lg:flex lg:gap-8">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -49,36 +79,89 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center gap-6">
-            {isLoggedIn ? (
-              <>
-                {isAdmin && (
-                  <Link href="/admin" className="text-broadcast-red font-display font-bold uppercase text-sm hover:text-white transition-colors">Showrunner</Link>
-                )}
-                <Link href="/my-profile" className="text-white/70 font-display font-bold uppercase text-sm hover:text-white transition-colors">Profile</Link>
-                <button onClick={() => setConfirmSignout(true)} className="text-white/70 font-display font-bold uppercase text-sm hover:text-broadcast-red transition-colors">Logout</button>
-              </>
-            ) : (
-              <Link href="/api/auth/signin" className="brutal-button font-display font-black uppercase text-sm tracking-widest px-6 py-2.5">
-                Join the Jury
-              </Link>
-            )}
-          </div>
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Account: a single avatar circle with a dropdown (My Account / Logout). */}
+          {isLoggedIn ? (
+            <div className="relative" ref={accountRef}>
+              <button
+                onClick={() => setAccountOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={accountOpen}
+                aria-label="Account menu"
+                className="group flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-latent-gold"
+              >
+                <AvatarCircle userImage={userImage} userName={userName} />
+              </button>
 
-          {/* Mobile hamburger */}
+              <AnimatePresence>
+                {accountOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.14, ease: "easeOut" }}
+                    role="menu"
+                    className="absolute right-0 z-[70] mt-3 w-52 overflow-hidden rounded-md border border-brand-border bg-brand-panel shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+                  >
+                    {userName && (
+                      <div className="border-b border-brand-border px-4 py-3">
+                        <div className="truncate font-display text-xs font-black uppercase tracking-widest text-white/40">Signed in as</div>
+                        <div className="truncate font-display text-sm font-bold text-white">{userName}</div>
+                      </div>
+                    )}
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        role="menuitem"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 font-display text-sm font-bold uppercase tracking-widest text-broadcast-red transition-colors hover:bg-white/5"
+                      >
+                        Showrunner
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/my-profile"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 font-display text-sm font-bold uppercase tracking-widest text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+                    >
+                      <UserCircle size={16} className="shrink-0" />
+                      My Account
+                    </Link>
+
+                    <button
+                      onClick={() => { setAccountOpen(false); setConfirmSignout(true); }}
+                      role="menuitem"
+                      className="flex w-full items-center gap-3 border-t border-brand-border px-4 py-3 text-left font-display text-sm font-bold uppercase tracking-widest text-white/80 transition-colors hover:bg-broadcast-red/10 hover:text-broadcast-red"
+                    >
+                      <LogOut size={16} className="shrink-0" />
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link href="/login" aria-label="Log in" className="group flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-latent-gold">
+              <AvatarCircle />
+            </Link>
+          )}
+
+          {/* Mobile hamburger — opens nav links only */}
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"
-            className="md:hidden text-white/80 hover:text-broadcast-red transition-colors"
+            className="text-white/80 transition-colors hover:text-broadcast-red lg:hidden"
           >
-            <Menu size={28} />
+            <Menu size={26} />
           </button>
         </div>
       </div>
     </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer (nav links) */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -86,21 +169,21 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
-            className="fixed inset-0 z-[60] bg-brand-bg text-white flex flex-col p-8"
+            className="fixed inset-0 z-[60] flex flex-col bg-brand-bg p-6 text-white sm:p-8"
           >
             <div className="flex justify-end">
-              <button onClick={() => setOpen(false)} aria-label="Close menu" className="text-white/80 hover:text-broadcast-red transition-colors">
+              <button onClick={() => setOpen(false)} aria-label="Close menu" className="text-white/80 transition-colors hover:text-broadcast-red">
                 <X size={32} />
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center gap-6">
+            <div className="flex flex-1 flex-col justify-center gap-5 sm:gap-6">
               {links.map((l) => (
                 <Link
                   key={l.href}
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className={`font-display font-black uppercase tracking-widest text-3xl transition-colors ${
+                  className={`font-display text-2xl font-black uppercase tracking-widest transition-colors sm:text-3xl ${
                     isActive(l.href) ? "text-broadcast-red" : "text-white/80 hover:text-broadcast-red"
                   }`}
                 >
@@ -108,18 +191,18 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
                 </Link>
               ))}
 
-              <div className="h-1 w-full bg-white/10 my-4" />
+              <div className="my-3 h-1 w-full bg-white/10" />
 
               {isLoggedIn ? (
                 <>
                   {isAdmin && (
-                    <Link href="/admin" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-broadcast-red">Showrunner</Link>
+                    <Link href="/admin" onClick={() => setOpen(false)} className="font-display text-xl font-black uppercase tracking-widest text-broadcast-red sm:text-2xl">Showrunner</Link>
                   )}
-                  <Link href="/my-profile" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-white/80">Profile</Link>
-                  <button onClick={() => { setOpen(false); setConfirmSignout(true); }} className="text-left font-display font-black uppercase tracking-widest text-2xl text-white/80">Logout</button>
+                  <Link href="/my-profile" onClick={() => setOpen(false)} className="font-display text-xl font-black uppercase tracking-widest text-white/80 sm:text-2xl">My Account</Link>
+                  <button onClick={() => { setOpen(false); setConfirmSignout(true); }} className="text-left font-display text-xl font-black uppercase tracking-widest text-white/80 sm:text-2xl">Logout</button>
                 </>
               ) : (
-                <Link href="/api/auth/signin" onClick={() => setOpen(false)} className="font-display font-black uppercase tracking-widest text-2xl text-broadcast-red">Join the Jury</Link>
+                <Link href="/login" onClick={() => setOpen(false)} className="font-display text-xl font-black uppercase tracking-widest text-broadcast-red sm:text-2xl">Log In</Link>
               )}
             </div>
           </motion.div>
@@ -134,10 +217,10 @@ export default function MainNav({ isLoggedIn = false, isAdmin = false }) {
             className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-black/80 p-6"
             onClick={() => setConfirmSignout(false)}
           >
-            <div onClick={(e) => e.stopPropagation()} className="brutal-surface p-6 max-w-sm w-full text-center">
-              <div className="font-display font-black uppercase tracking-widest text-white mb-2">Sign out?</div>
-              <p className="text-white/60 text-sm mb-6">You&apos;ll need to sign back in to vote and post.</p>
-              <div className="flex gap-3 justify-center">
+            <div onClick={(e) => e.stopPropagation()} className="brutal-surface w-full max-w-sm p-6 text-center">
+              <div className="mb-2 font-display font-black uppercase tracking-widest text-white">Sign out?</div>
+              <p className="mb-6 text-sm text-white/60">You&apos;ll need to sign back in to vote and post.</p>
+              <div className="flex justify-center gap-3">
                 <button onClick={() => signOut({ callbackUrl: "/" })} className="btn-primary">Sign Out</button>
                 <button onClick={() => setConfirmSignout(false)} className="btn-ghost">Cancel</button>
               </div>
