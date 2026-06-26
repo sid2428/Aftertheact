@@ -361,8 +361,8 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
     }
     let pos = from;
     let vel = velRef.current;
-    const STIFFNESS = 0.28;
-    const DAMPING = 0.72;
+    const STIFFNESS = 0.35;
+    const DAMPING = 0.85;
     let last = performance.now();
     function step(ts) {
       const dt = Math.min(ts - last, 32);
@@ -396,7 +396,7 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
     }
     let pos = fromPos;
     let vel = velocity;
-    const FRICTION = 0.92;
+    const FRICTION = 0.86;
     let last = performance.now();
     function decel(ts) {
       const dt = Math.min(ts - last, 32);
@@ -562,6 +562,7 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
         outline: "none",
         flexShrink: 0,
         overflow: "hidden",
+        background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%)",
         WebkitMaskImage:
           "linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)",
         maskImage:
@@ -579,8 +580,8 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
           width: "90%",
           height: SLOT_H - 10,
           borderRadius: 10,
-          border: `1.5px solid ${isSnapped ? "#D4AF37" : "transparent"}`,
-          background: isSnapped ? "rgba(212,175,55,0.06)" : "transparent",
+          border: `1.5px solid ${isSnapped ? "#D4AF37" : "rgba(255,255,255,0.08)"}`,
+          background: isSnapped ? "rgba(212,175,55,0.06)" : "rgba(255,255,255,0.02)",
           transition: "border-color 200ms ease-out, background 200ms ease-out",
           zIndex: 3,
           pointerEvents: "none",

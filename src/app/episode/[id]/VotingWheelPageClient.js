@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import VotingScoreWheel from "@/components/VotingScoreWheel";
 
 /**
@@ -16,6 +17,7 @@ export default function VotingWheelPageClient({
   isAuthenticated = false,
 }) {
   const [idx, setIdx] = useState(0);
+  const router = useRouter();
   const c = contestants[idx];
 
   const handleVoteLocked = () => {
@@ -23,6 +25,8 @@ export default function VotingWheelPageClient({
     if (idx < contestants.length - 1) {
       // Small delay so the LOCKED stamp animation finishes before advancing
       setTimeout(() => setIdx((prev) => prev + 1), 1800);
+    } else {
+      setTimeout(() => router.push("/scoreboard"), 1800);
     }
   };
 
