@@ -33,26 +33,20 @@ export default async function PanelPage({ searchParams }) {
   const myRatings = {};
 
   try {
-    // Ratings are global per (judge, user) — see migrations/0009-judgerating-unique-constraint.
-    // ponytail: episode pill-tabs are cosmetic now; rate route has no episode context.
+    // One rating per (judge, user, episode). The judge's final score aggregates
+    // EVERY rating across all episodes, trust-weighted (Σ score·trust / Σ trust);
+    // the episode pill-tabs pick which episode your vote applies to.
     const { data, error } = await supabase
       .from("JudgeRating")
-      .select("judge_id, user_id, harshness_score, accuracy_score, entertainment_score, comment");
+      .select("judge_id, user_id, episode_id, harshness_score, accuracy_score, entertainment_score, comment, User(trust_score)");
     if (error) throw error;
     for (const row of data || []) {
       const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;
-      const mappedRow = {
-        judge_id: row.judge_id,
-        user_id: row.user_id,
-        score: avgScore,
-        comment: row.comment
-      };
-      (byJudge[mappedRow.judge_id] ||= []).push(mappedRow);
-      if (session?.user && mappedRow.user_id === session.user.id) {
-        myRatings[mappedRow.judge_id] = {
-          score: Math.round(mappedRow.score),
-          comment: mappedRow.comment || "",
-        };
+      (byJudge[row.judge_id] ||= []).push({ score: avgScore, trust: row.User?.trust_score ?? 0 });
+      // "My rating" is scoped to the selected episode, to prefill the form and
+      // show "already rated" for this episode only.
+      if (session?.user && row.user_id === session.user.id && row.episode_id === selectedEpisodeId) {
+        myRatings[row.judge_id] = { score: Math.round(avgScore), comment: row.comment || "" };
       }
     }
   } catch (err) {

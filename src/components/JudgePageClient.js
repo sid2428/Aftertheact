@@ -39,7 +39,7 @@ function ScoreWheel({ label, value, onChange }) {
   );
 }
 
-function JudgeCard({ judge, badge, mine, isLoggedIn }) {
+function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
   const [agg, setAgg] = useState(judge.agg);
   const [open, setOpen] = useState(false);
   const [score, setScore] = useState(mine?.score ?? 5);
@@ -89,14 +89,14 @@ function JudgeCard({ judge, badge, mine, isLoggedIn }) {
                                 "rgba(255,255,255,0.1)";
 
   const submit = async () => {
-    if (busy) return;
+    if (busy || !episodeId) return;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/judges/${encodeURIComponent(judge.id)}/rate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score, comment }),
+        body: JSON.stringify({ score, comment, episodeId }),
       });
       const json = await res.json();
       if (json.success) { setAgg(json.data); setSaved(true); }
@@ -479,6 +479,7 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
                   badge={j.id === mostControversialId ? "controversial" : j.id === fanFavouriteId ? "favourite" : null}
                   mine={myRatings[j.id] || null}
                   isLoggedIn={isLoggedIn}
+                  episodeId={selectedEpisodeId}
                 />
               ))}
             </div>

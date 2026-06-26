@@ -28,6 +28,12 @@ export async function POST(req, { params }) {
     return NextResponse.json({ success: false, error: "Score must be 1–10." }, { status: 400 });
   }
   const comment = typeof body.comment === "string" ? body.comment.slice(0, 200) : null;
+  // One rating per (judge, user, episode) — a judge recurring across episodes is
+  // rated once in each, so the episode is required.
+  const episodeId = typeof body.episodeId === "string" ? body.episodeId : null;
+  if (!episodeId) {
+    return NextResponse.json({ success: false, error: "Pick an episode to rate within." }, { status: 400 });
+  }
 
   // Ratings are keyed to a real User row (user_id is a UUID FK). The admin
   // "Showrunner" account isn't a User, so it can't store a rating.
@@ -45,22 +51,25 @@ export async function POST(req, { params }) {
       {
         judge_id: judgeId,
         user_id: userId,
+        episode_id: episodeId,
         harshness_score: score,
         accuracy_score: score,
         entertainment_score: score,
         comment,
       },
-      { onConflict: "judge_id,user_id" }
+      { onConflict: "judge_id,user_id,episode_id" }
     );
     if (error) throw error;
 
+    // Final score = every rating for this judge across ALL episodes, trust-weighted.
     const { data: rows } = await supabase
       .from("JudgeRating")
-      .select("harshness_score, accuracy_score, entertainment_score")
+      .select("harshness_score, accuracy_score, entertainment_score, User(trust_score)")
       .eq("judge_id", judgeId);
 
     const mappedRows = (rows || []).map(r => ({
-      score: (r.harshness_score + r.accuracy_score + r.entertainment_score) / 3
+      score: (r.harshness_score + r.accuracy_score + r.entertainment_score) / 3,
+      trust: r.User?.trust_score ?? 0,
     }));
 
     return NextResponse.json({ success: true, data: aggregateRatings(mappedRows) });
