@@ -28,7 +28,7 @@ export async function POST(req, { params }) {
 
     const { data: post } = await supabase
       .from("CommunityPost")
-      .select("like_count")
+      .select("user_id, like_count")
       .eq("id", postId)
       .single();
 
@@ -54,6 +54,9 @@ export async function POST(req, { params }) {
     }
 
     await supabase.from("CommunityPost").update({ like_count: likeCount }).eq("id", postId);
+    // Reddit-style: the author's karma (and latent points) update immediately,
+    // +1 on a like, -1 on an unlike. O(1), no scans.
+    if (post.user_id) await supabase.rpc("adjust_user_karma", { p_user_id: post.user_id, p_delta: liked ? 1 : -1 });
     return NextResponse.json({ success: true, data: { liked, likeCount } });
   } catch (err) {
     console.error("community like error:", err.message);

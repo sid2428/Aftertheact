@@ -71,9 +71,11 @@ export async function upvoteRoast(roastId) {
   // Increment counter safely
   // Since Supabase RPC for increment isn't set up yet, we'll do a basic read/write
   // For production, create an RPC function: `create function increment_roast(row_id uuid) ...`
-  const { data: current } = await supabase.from("Roast").select("upvote_count").eq("id", roastId).single();
+  const { data: current } = await supabase.from("Roast").select("user_id, upvote_count").eq("id", roastId).single();
   if (current) {
     await supabase.from("Roast").update({ upvote_count: current.upvote_count + 1 }).eq("id", roastId);
+    // Reddit-style: the author's karma (and latent points) tick up immediately. +1, O(1).
+    if (current.user_id) await supabase.rpc("adjust_user_karma", { p_user_id: current.user_id, p_delta: 1 });
   }
 
   return { success: true };

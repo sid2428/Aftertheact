@@ -62,13 +62,15 @@ BEGIN
         latent_points_season  = COALESCE((SELECT SUM(points) FROM "LatentPointsLedger" WHERE user_id = u.id), 0)
     WHERE u.id IS NOT NULL;
 
+    -- Alias the CTE as `rk`, not `r`: `r` is the loop RECORD above (only has
+    -- user_id), and PL/pgSQL would resolve `r.id`/`r.s_rank` to it, not the CTE.
     WITH Ranks AS (
         SELECT id,
             DENSE_RANK() OVER (ORDER BY latent_points_season DESC) AS s_rank,
             DENSE_RANK() OVER (ORDER BY latent_points_alltime DESC) AS a_rank
         FROM "User"
     )
-    UPDATE "User" u SET season_rank = r.s_rank, alltime_rank = r.a_rank
-    FROM Ranks r WHERE u.id = r.id;
+    UPDATE "User" u SET season_rank = rk.s_rank, alltime_rank = rk.a_rank
+    FROM Ranks rk WHERE u.id = rk.id;
 END;
 $$;

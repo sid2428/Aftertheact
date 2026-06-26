@@ -29,7 +29,7 @@ export default function SplitFlapScoreboard({ appearance, isLoading = false }) {
       <div className="p-3 sm:p-5 bg-[#0A0A0A] text-white relative">
         <div className="absolute inset-0 bg-gradient-to-br from-latent-crimson/20 to-transparent pointer-events-none" />
         <div className="relative z-10">
-          <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-latent-crimson mb-1">Latent Score</div>
+          <div className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-latent-crimson mb-1">Crowd Score</div>
           <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.5 }}>
             <RollingNumber value={appearance?.latent_score || 0} decimals={1} height={42} className="justify-center font-bold text-latent-crimson drop-shadow-[0_0_10px_rgba(139,30,45,0.4)]" />
           </motion.div>
