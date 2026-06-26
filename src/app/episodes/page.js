@@ -3,6 +3,7 @@ import EpisodeDirectory from "@/components/EpisodeDirectory";
 import LineupPosters from "@/components/LineupPosters";
 import ScrollStepper from "@/components/ScrollStepper";
 import ArcCarousel from "@/components/ArcCarousel";
+import TypeOnce from "@/components/TypeOnce";
 
 // How scoring works, for anyone landing on the lineup cold.
 const SCORING_STEPS = [
@@ -47,7 +48,9 @@ export default async function EpisodesPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,_var(--tw-gradient-stops))] from-latent-crimson/8 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 py-12 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
           <h1 className="text-6xl sm:text-8xl md:text-[8rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">
-            THE<br />LINEUP
+            <TypeOnce text="THE" sessionKey="hero-lineup-1" speed={70} />
+            <br />
+            <TypeOnce text="LINEUP" sessionKey="hero-lineup-2" speed={70} delay={260} />
           </h1>
 
           {/* Morphing recent-episode posters */}

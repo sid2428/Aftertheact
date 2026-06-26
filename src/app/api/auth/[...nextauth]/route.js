@@ -56,6 +56,7 @@ export const authOptions = {
         user.dbId = user.id;
         user.username = user.name;
         user.isAdmin = true;
+        user.onboarded = true; // admin skips the name/bio prompt
         return true;
       }
 
@@ -66,7 +67,7 @@ export const authOptions = {
       // Check if user exists in our database
       const { data: existingUser, error: checkError } = await supabase
         .from('User')
-        .select('id, username, is_admin')
+        .select('id, username, is_admin, onboarded')
         .eq('email', user.email)
         .single();
         
@@ -100,10 +101,12 @@ export const authOptions = {
         user.dbId = newUser.id;
         user.username = tempUsername;
         user.isAdmin = newUser.is_admin || false;
+        user.onboarded = false; // brand-new user must pick a name + bio
       } else {
         user.dbId = existingUser.id;
         user.username = existingUser.username;
         user.isAdmin = existingUser.is_admin || false;
+        user.onboarded = existingUser.onboarded || false;
       }
       
       return true;
@@ -113,11 +116,13 @@ export const authOptions = {
         token.dbId = user.dbId;
         token.username = user.username;
         token.isAdmin = user.isAdmin;
+        token.onboarded = user.onboarded;
         if (user.email) token.email = user.email;
       }
-      // Handle username updates from client
-      if (trigger === "update" && session?.username) {
-        token.username = session.username;
+      // Handle profile updates from client (onboarding / profile edits)
+      if (trigger === "update" && session) {
+        if (session.username) token.username = session.username;
+        if (typeof session.onboarded === "boolean") token.onboarded = session.onboarded;
       }
       return token;
     },
@@ -126,6 +131,7 @@ export const authOptions = {
         session.user.id = token.dbId;
         session.user.username = token.username;
         session.user.isAdmin = token.isAdmin;
+        session.user.onboarded = token.onboarded;
         session.user.email = token.email || session.user.email;
       }
       return session;

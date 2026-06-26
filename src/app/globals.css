@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  /* Three fonts only — see UI_ENHANCEMENT_V2 P0.1.
-     font-display → Bebas Neue, font-sans → DM Sans, font-mono/font-number → Rajdhani. */
-  --font-sans: var(--font-dm-sans);
-  --font-display: var(--font-bebas);
+  /* Three fonts only.
+     font-display → Anton (punchy condensed headlines), font-sans → Inter (body),
+     font-mono/font-number → Rajdhani (scores, ranks, counts). */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-anton);
   --font-mono: var(--font-rajdhani);
   --font-number: var(--font-rajdhani);
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
 import EpisodeCard from "./EpisodeCard";
+import TypeOnce from "./TypeOnce";
 
 // A scroll-driven "arc" of episode cards: while the section is pinned, scrolling
 // slides the cards left→right along a shallow parabola, each becoming the
@@ -33,13 +34,13 @@ export default function ArcCarousel({ episodes = [] }) {
           start: "top top",
           // Pin long enough to step through every card, then release cleanly
           // (pinSpacing reserves exactly this much runway — no black gap after).
-          end: () => "+=" + episodes.length * window.innerHeight * 0.6,
+          end: () => "+=" + episodes.length * window.innerHeight * 0.8,
           pin: pinRef.current,
           pinSpacing: true,
           // A small scrub lag lerps progress toward the scroll position instead
           // of snapping to it, so variable-rate touch-scroll events on mobile
           // resolve into fluid motion rather than frame-to-frame jitter.
-          scrub: 0.6,
+          scrub: 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => progress.set(self.progress),
         });
@@ -77,19 +78,10 @@ export default function ArcCarousel({ episodes = [] }) {
   return (
     <section ref={sectionRef} className="relative bg-[#0A0A0A]">
       <div ref={pinRef} className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
-        {/* Header / Intro */}
-        <div className="absolute top-6 md:top-12 left-0 right-0 z-50 text-center px-4">
+        {/* Header — sits above the cards (centered card reaches zIndex 100) so the
+            title stays visible; pointer-events-none so it never intercepts card clicks. */}
+        <div className="pointer-events-none absolute top-6 md:top-12 left-0 right-0 z-[110] text-center px-4">
           <ArcHeader />
-          <motion.div
-            className="mt-6 flex flex-col items-center justify-center gap-1 text-white/30"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <span className="font-display text-[10px] uppercase tracking-widest">Scroll Down</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M19 12l-7 7-7-7" />
-            </svg>
-          </motion.div>
         </div>
 
         {/* The Arc Track */}
@@ -105,17 +97,9 @@ export default function ArcCarousel({ episodes = [] }) {
 
 function ArcHeader() {
   return (
-    <>
-      <span className="mb-4 inline-block rounded-full border border-latent-gold/30 bg-latent-gold/10 px-3 py-1 font-display text-[11px] uppercase tracking-widest text-latent-gold">
-        The Episodes
-      </span>
-      <h2 className="font-display text-3xl uppercase tracking-widest text-white sm:text-4xl">
-        Live To Locked
-      </h2>
-      <p className="mt-4 font-sans text-white/50 max-w-xl mx-auto">
-        Scroll to explore the season&apos;s acts, submit your verdict, and read the receipts.
-      </p>
-    </>
+    <h2 className="font-display text-3xl uppercase tracking-widest text-white sm:text-4xl">
+      <TypeOnce text="Live To Locked" sessionKey="hero-live-to-locked" speed={60} />
+    </h2>
   );
 }
 

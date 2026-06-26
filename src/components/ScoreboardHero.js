@@ -4,19 +4,21 @@ import { motion } from "framer-motion";
 
 export function ScoreboardHero({ topThree = [] }) {
   return (
-    <div className="flex flex-col items-center justify-start lg:justify-center relative overflow-hidden bg-[#0A0A0A] pt-6 lg:pt-0" style={{ height: '60svh', minHeight: '360px' }}>
+    <div className="flex flex-col items-center justify-start lg:justify-center relative bg-[#0A0A0A] pt-6 lg:pt-0 pb-20 lg:pb-0" style={{ minHeight: 'max(60svh, 600px)' }}>
 
-      {/* Background Gradients & Glows */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-latent-crimson/5 blur-[120px] rounded-full pointer-events-none" />
+      {/* Background Gradients & Glows wrapper */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-latent-gold/5 via-[#0A0A0A]/80 to-[#0A0A0A] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-latent-crimson/5 blur-[120px] rounded-full pointer-events-none" />
 
-      {/* Faded diagonal grey lines */}
-      <div
-        className="absolute inset-0 pointer-events-none z-[1]"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(-45deg, rgba(180,180,180,0.04) 0px, rgba(180,180,180,0.04) 1px, transparent 1px, transparent 28px)',
-        }}
-      />
+        {/* Faded diagonal grey lines */}
+        <div
+          className="absolute inset-0 pointer-events-none z-[1]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(-45deg, rgba(180,180,180,0.04) 0px, rgba(180,180,180,0.04) 1px, transparent 1px, transparent 28px)',
+          }}
+        />
+      </div>
 
       <div className="relative z-10 w-full max-w-7xl px-6 sm:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-0">
 
@@ -71,28 +73,32 @@ export function ScoreboardHero({ topThree = [] }) {
         </motion.div>
 
         {/* Right: polaroids — mirrors the left side in width, centered within */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center w-full">
           {topThree.length > 0 ? (
-            <div className="relative h-[20rem] w-[28rem]">
+            <div className="relative h-[16rem] sm:h-[20rem] w-full max-w-[28rem]">
               {topThree.slice(0, 3).map((c, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0, rotate: [-8, 5, -4][i] }}
+                  initial={{ opacity: 0, y: 50, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, x: "-50%", rotate: [-8, 5, -4][i] }}
                   whileHover={{ scale: 1.12, rotate: 0, zIndex: 20, transition: { duration: 0.3 } }}
                   transition={{ delay: 0.5 + i * 0.15, duration: 0.6, ease: "easeOut" }}
                   className="absolute top-4 origin-bottom cursor-pointer"
-                  style={{ left: `${24 + i * 120}px`, zIndex: i === 1 ? 12 : 10 - i }}
+                  style={{ 
+                    left: '50%',
+                    marginLeft: `calc(${(i - 1) * 30}% - ${(i - 1) * 10}px)`, 
+                    zIndex: i === 1 ? 12 : 10 - i 
+                  }}
                 >
-                  <div className="bg-white p-3 pb-8 shadow-[0_15px_50px_rgba(0,0,0,0.8)] border-4 border-white transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(212,175,55,0.4)]">
-                    <div className="w-36 h-36 bg-[#111111] overflow-hidden flex items-center justify-center">
+                  <div className="bg-white p-2 pb-6 sm:p-3 sm:pb-8 shadow-[0_15px_50px_rgba(0,0,0,0.8)] border-4 border-white transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(212,175,55,0.4)]">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 bg-[#111111] overflow-hidden flex items-center justify-center">
                       {c.image_url ? (
                         <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
                       ) : (
-                        <span className="font-display font-black text-5xl text-black/20">{c.name?.[0]}</span>
+                        <span className="font-display font-black text-4xl sm:text-5xl text-black/20">{c.name?.[0]}</span>
                       )}
                     </div>
-                    <div className="mt-3 font-mono text-xs font-bold uppercase tracking-widest text-black/80 text-center truncate w-full">
+                    <div className="mt-2 sm:mt-3 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-widest text-black/80 text-center truncate w-full">
                       {c.name}
                     </div>
                   </div>
@@ -101,7 +107,7 @@ export function ScoreboardHero({ topThree = [] }) {
             </div>
           ) : (
             /* placeholder glow when no contestants yet */
-            <div className="w-[28rem] h-[20rem] flex items-center justify-center">
+            <div className="w-full max-w-[28rem] h-[16rem] sm:h-[20rem] flex items-center justify-center">
               <div className="w-48 h-48 rounded-full bg-latent-gold/5 blur-[60px]" />
             </div>
           )}

@@ -1,17 +1,18 @@
-import { Bebas_Neue, DM_Sans, Rajdhani } from "next/font/google";
+import { Anton, Inter, Rajdhani } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
-// Three fonts only (UI_ENHANCEMENT_V2 P0.1):
-//   Display  — Bebas Neue (headings ≥ 2rem, episode numbers, brand)
-//   Body     — DM Sans (prose, labels, inputs)
+// Three fonts only:
+//   Display  — Anton (headings ≥ 2rem, episode numbers, brand)
+//   Body     — Inter (prose, labels, inputs)
 //   Numbers  — Rajdhani (scores, ranks, vote counts, timestamps)
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-dm-sans" });
-const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter" });
+const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
 const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], variable: "--font-rajdhani" });
 
 export const metadata = {
@@ -27,22 +28,24 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" className="dark">
-      <body className={`${dmSans.variable} ${bebasNeue.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
+      <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
 
-        <SmoothScroll>
-          {/* Global Navigation - Dark Luxury Glassmorphic */}
-          <MainNav
-            isLoggedIn={!!session?.user}
-            isAdmin={!!session?.user?.isAdmin}
-            userName={session?.user?.name || session?.user?.email || null}
-            userImage={session?.user?.image || null}
-          />
+        <SessionProviderWrapper session={session}>
+          <SmoothScroll>
+            {/* Global Navigation - Dark Luxury Glassmorphic */}
+            <MainNav
+              isLoggedIn={!!session?.user}
+              isAdmin={!!session?.user?.isAdmin}
+              userName={session?.user?.username || session?.user?.name || session?.user?.email || null}
+              userImage={session?.user?.image || null}
+            />
 
-          {/* Main Content */}
-          <main className="flex-1 relative overflow-x-hidden">
-            {children}
-          </main>
-        </SmoothScroll>
+            {/* Main Content */}
+            <main className="flex-1 relative overflow-x-hidden">
+              {children}
+            </main>
+          </SmoothScroll>
+        </SessionProviderWrapper>
 
         <footer className="bg-[#111111] text-brand-white mt-20 border-t-4 border-broadcast-red/60">
           <div className="h-2 w-full bg-broadcast-red" />

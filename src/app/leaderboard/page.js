@@ -1,6 +1,7 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import Image from "next/image";
 import RollingNumber from "@/components/RollingNumber";
+import TypeOnce from "@/components/TypeOnce";
 import { Crown } from "lucide-react";
 
 export const metadata = {
@@ -42,13 +43,13 @@ export default async function LeaderboardPage() {
       .from("User")
       .select("id, username, latent_points_alltime, latent_points_season, badges, avatar_url")
       .order("latent_points_season", { ascending: false })
-      .limit(50),
+      .limit(10),
     supabase
       .from("User")
       .select("id, username, oracle_score, oracle_qualifying_episodes, avatar_url, badges")
       .gte("oracle_qualifying_episodes", 1)
       .order("oracle_score", { ascending: false })
-      .limit(50),
+      .limit(10),
   ]);
 
   return (
@@ -56,7 +57,7 @@ export default async function LeaderboardPage() {
       <section className="border-b-4 border-broadcast-red bg-[#080808] px-6 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <h1 className="border-b-8 border-white/15 pb-4 font-display text-6xl font-black uppercase tracking-tight text-white sm:text-8xl">
-            The Leaderboards
+            <TypeOnce text="The Leaderboards" sessionKey="hero-leaderboards" speed={55} />
           </h1>
           <p className="mt-4 font-mono text-sm font-black uppercase tracking-[var(--letter-spacing-scoreboard)] text-white/45">
             Season 2 standings - updated every 30 seconds.
