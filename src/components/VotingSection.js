@@ -95,6 +95,8 @@ export default function VotingSection({ episodeId, contestants, isEpisodeClosed 
             </div>
           );
         })}
+
+
       </div>
 
       {allLocked && typeof document !== "undefined" && createPortal(

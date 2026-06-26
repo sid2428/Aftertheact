@@ -20,7 +20,7 @@ function Badge({ children }) {
 
 function Avatar({ user, highlight = false }) {
   return (
-    <div className={`relative h-12 w-12 shrink-0 overflow-hidden border-4 bg-brand-gray ${highlight ? "border-oracle-gold" : "border-white/15"}`}>
+    <div className={`relative h-10 w-10 shrink-0 overflow-hidden border-4 bg-brand-gray sm:h-12 sm:w-12 ${highlight ? "border-oracle-gold" : "border-white/15"}`}>
       {highlight && <Crown className="absolute right-0 top-0 z-10 h-4 w-4 bg-brand-black text-oracle-gold" strokeWidth={2.5} />}
       {user.avatar_url ? (
         <Image src={user.avatar_url} alt={user.username} fill sizes="48px" className="object-cover grayscale transition-all duration-500 group-hover:grayscale-0" />
@@ -74,16 +74,16 @@ export default async function LeaderboardPage() {
               {topUsers?.map((user, idx) => (
                 <div
                   key={user.id}
-                  className={`group brutal-scroll-row relative flex items-center gap-4 border-b-4 border-white/10 p-4 transition-colors last:border-b-0 hover:bg-white/[0.04] ${
+                  className={`group brutal-scroll-row relative flex items-center gap-2.5 border-b-4 border-white/10 p-3 transition-colors last:border-b-0 hover:bg-white/[0.04] sm:gap-4 sm:p-4 ${
                     idx === 0 ? "bg-oracle-gold/[0.08]" : ""
                   }`}
                 >
-                  <div className="w-12 text-center font-mono text-4xl font-black text-white/20 transition-colors group-hover:text-broadcast-red">
+                  <div className="w-7 shrink-0 text-center font-mono text-2xl font-black text-white/20 transition-colors group-hover:text-broadcast-red sm:w-12 sm:text-4xl">
                     #{idx + 1}
                   </div>
                   <Avatar user={user} highlight={idx === 0} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 font-display text-2xl font-black uppercase tracking-tight text-white transition-colors group-hover:text-oracle-gold">
+                    <div className="flex flex-wrap items-center gap-2 font-display text-lg font-black uppercase tracking-tight text-white transition-colors group-hover:text-oracle-gold sm:text-2xl">
                       {user.username}
                       {(user.badges || []).map((badge) => <Badge key={badge}>{badge}</Badge>)}
                     </div>
@@ -113,16 +113,16 @@ export default async function LeaderboardPage() {
               {oracles?.map((user, idx) => (
                 <div
                   key={user.id}
-                  className={`group brutal-scroll-row relative flex items-center gap-4 border-b-4 border-white/10 p-4 transition-colors last:border-b-0 hover:bg-white/[0.04] ${
+                  className={`group brutal-scroll-row relative flex items-center gap-2.5 border-b-4 border-white/10 p-3 transition-colors last:border-b-0 hover:bg-white/[0.04] sm:gap-4 sm:p-4 ${
                     idx === 0 ? "border-l-8 border-l-oracle-gold bg-oracle-gold/[0.08]" : "border-l-8 border-l-transparent"
                   }`}
                 >
-                  <div className="w-12 text-center font-mono text-4xl font-black text-white/20 transition-colors group-hover:text-oracle-green">
+                  <div className="w-7 shrink-0 text-center font-mono text-2xl font-black text-white/20 transition-colors group-hover:text-oracle-green sm:w-12 sm:text-4xl">
                     #{idx + 1}
                   </div>
                   <Avatar user={user} highlight={idx === 0} />
                   <div className="min-w-0 flex-1">
-                    <div className={`flex flex-wrap items-center gap-2 font-display text-2xl font-black uppercase tracking-tight transition-colors ${
+                    <div className={`flex flex-wrap items-center gap-2 font-display text-lg font-black uppercase tracking-tight transition-colors sm:text-2xl ${
                       idx === 0 ? "text-oracle-gold" : "text-white group-hover:text-oracle-green"
                     }`}>
                       {user.username}
@@ -135,7 +135,7 @@ export default async function LeaderboardPage() {
                   <div className="shrink-0 text-right">
                     <div className="flex items-baseline justify-end">
                       <RollingNumber value={(user.oracle_score || 0) * 100} decimals={1} height={30} className="justify-end font-bold text-oracle-green" />
-                      <span className="font-number text-2xl font-bold text-oracle-green">%</span>
+                      <span className="font-number text-xl font-bold text-oracle-green sm:text-2xl">%</span>
                     </div>
                     <div className="font-display text-[10px] font-black uppercase tracking-widest text-white/40">Accuracy</div>
                   </div>

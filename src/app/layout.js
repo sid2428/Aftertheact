@@ -31,7 +31,12 @@ export default async function RootLayout({ children }) {
 
         <SmoothScroll>
           {/* Global Navigation - Dark Luxury Glassmorphic */}
-          <MainNav isLoggedIn={!!session?.user} isAdmin={!!session?.user?.isAdmin} />
+          <MainNav
+            isLoggedIn={!!session?.user}
+            isAdmin={!!session?.user?.isAdmin}
+            userName={session?.user?.name || session?.user?.email || null}
+            userImage={session?.user?.image || null}
+          />
 
           {/* Main Content */}
           <main className="flex-1 relative overflow-x-hidden">

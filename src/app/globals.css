@@ -581,3 +581,74 @@ body::after {
     }
   }
 }
+
+/* ── VotingScoreWheel Keyframes ───────────────────────────────────────────── */
+
+/* Live-indicator red dot: subtle opacity pulse */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Drum attract-spin: inner track scrolls upward continuously.
+   The track height is set via --drum-track-h custom property on the element. */
+@keyframes drumAttractSpin {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(var(--drum-spin-distance, -50%)); }
+}
+
+/* Stamp entry: scale + rotate sequence per spec timing table.
+   Keyframe percentages map to: 0ms / 50ms / 250ms / 500ms / 560ms / 650ms
+   over a total duration of 650ms → percentages below. */
+@keyframes stampEntry {
+  0%   { transform: scale(0.2)  rotate(12deg);  opacity: 0; }
+  7%   { transform: scale(0.3)  rotate(10deg);  opacity: 1; }
+  38%  { transform: scale(1.5)  rotate(-2deg);  opacity: 1; }
+  77%  { transform: scale(1.0)  rotate(-6deg);  opacity: 1; }
+  86%  { transform: scale(0.97) rotate(-6.5deg);opacity: 1; }
+  100% { transform: scale(1.0)  rotate(-6deg);  opacity: 1; }
+}
+
+/* Starburst: pops in fast then fades out.
+   Duration should be set to 450ms on the element.
+   0ms–50ms: appear / 50ms–450ms: fade out. */
+@keyframes starburstFlash {
+  0%   { transform: scale(0.4); opacity: 0; }
+  11%  { transform: scale(1.1); opacity: 1; }
+  22%  { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 0; }
+}
+
+/* Drum column gradient fade mask – utility so the pseudo-elements
+   in VotingScoreWheel can reference a single class. */
+@layer utilities {
+  .drum-fade-mask {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 25%,
+      black 75%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 25%,
+      black 75%,
+      transparent 100%
+    );
+  }
+
+  /* VotingScoreWheel act-card logo block */
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.06),
+      0 8px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+

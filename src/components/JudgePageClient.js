@@ -163,10 +163,10 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
         </motion.div>
       )}
 
-      <div className={`flex ${open ? "flex-row min-h-[460px]" : "flex-col"}`}>
+      <div className={`flex ${open ? "flex-col lg:flex-row lg:min-h-[460px]" : "flex-col"}`}>
 
         {/* ── LEFT: photo ── */}
-        <div className={open ? "relative w-64 flex-shrink-0 overflow-hidden" : "relative aspect-[3/4] w-full overflow-hidden"}>
+        <div className={open ? "relative w-full h-64 lg:h-auto lg:w-64 flex-shrink-0 overflow-hidden" : "relative aspect-[3/4] w-full overflow-hidden"}>
           {judge.image ? (
             <>
               <motion.img
@@ -200,7 +200,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3, delay: 0.18 }}
-              className="flex-1 flex flex-col p-8 border-x border-white/5 overflow-y-auto"
+              className="flex-1 flex flex-col p-5 sm:p-8 border-y lg:border-x lg:border-y-0 border-white/5 overflow-y-auto"
             >
               {/* Profile row */}
               <div className="flex items-center gap-5 mb-8">
@@ -278,7 +278,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
         </AnimatePresence>
 
         {/* ── RIGHT / COLLAPSED BODY: card info + voting ── */}
-        <div className={open ? "w-72 flex-shrink-0 p-6 flex flex-col" : "p-6 flex flex-col flex-1"}>
+        <div className={open ? "w-full lg:w-72 flex-shrink-0 p-6 flex flex-col" : "p-6 flex flex-col flex-1"}>
 
           {/* Collapsed-only: judge info */}
           {!open && (
