@@ -312,6 +312,15 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false
   );
+  // Same value as the ref above, but usable during render. Reading a ref's
+  // `.current` while rendering is unsupported in React 19 (it can render stale);
+  // the ref stays for the imperative animation code (effects/callbacks), where
+  // ref reads are the correct pattern. Lazy init so it's computed once.
+  const [prefersReducedMotion] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false
+  );
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -585,7 +594,7 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       />
 
       {/* Attract spin */}
-      {phase === "attract" && !reducedMotion.current ? (
+      {phase === "attract" && !prefersReducedMotion ? (
         <div
           style={{
             position: "absolute",

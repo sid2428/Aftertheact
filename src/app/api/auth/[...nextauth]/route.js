@@ -37,15 +37,20 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.otp) return null;
-        
-        const storedOtp = await redis.get(`otp:${credentials.email}`);
-        if (!storedOtp || storedOtp.toString() !== credentials.otp) {
+
+        // Normalize identically to send-otp (trim + lowercase) so the Redis key
+        // matches no matter how the user typed/cased their email. Otherwise a
+        // stray space or capital letter makes a valid OTP look "expired".
+        const email = credentials.email.trim().toLowerCase();
+
+        const storedOtp = await redis.get(`otp:${email}`);
+        if (!storedOtp || storedOtp.toString() !== credentials.otp.trim()) {
            throw new Error("Invalid or expired OTP");
         }
-        
-        await redis.del(`otp:${credentials.email}`);
-        
-        return { id: credentials.email, email: credentials.email, isEmailOtp: true };
+
+        await redis.del(`otp:${email}`);
+
+        return { id: email, email, isEmailOtp: true };
       }
     }),
   ],
@@ -118,6 +123,25 @@ export const authOptions = {
         token.isAdmin = user.isAdmin;
         token.onboarded = user.onboarded;
         if (user.email) token.email = user.email;
+
+        // Fallback for Credentials provider where signIn mutations might be lost
+        if (!token.dbId) {
+          if (user.id === 'admin-master') {
+            token.dbId = user.id;
+            token.username = user.name || "admin";
+            token.isAdmin = true;
+            token.onboarded = true;
+          } else if (user.email) {
+            const supabase = getServiceSupabase();
+            const { data: dbUser } = await supabase.from('User').select('id, username, is_admin, onboarded').eq('email', user.email).single();
+            if (dbUser) {
+              token.dbId = dbUser.id;
+              token.username = dbUser.username;
+              token.isAdmin = dbUser.is_admin || false;
+              token.onboarded = dbUser.onboarded || false;
+            }
+          }
+        }
       }
       // Handle profile updates from client (onboarding / profile edits)
       if (trigger === "update" && session) {

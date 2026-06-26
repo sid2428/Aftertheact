@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Menu, X, User, LogOut, UserCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,7 +20,16 @@ function AvatarCircle({ userImage, userName }) {
   );
 }
 
-export default function MainNav({ isLoggedIn = false, isAdmin = false, userName = null, userImage = null }) {
+export default function MainNav() {
+  // Auth state is read on the client so the root layout doesn't need to call
+  // getServerSession — that call would force every route to render dynamically
+  // and defeat static/ISR caching. See layout.js.
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+  const isAdmin = !!session?.user?.isAdmin;
+  const userName = session?.user?.username || session?.user?.name || session?.user?.email || null;
+  const userImage = session?.user?.image || null;
+
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
