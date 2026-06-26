@@ -166,35 +166,8 @@ export default async function EpisodePage({ params }) {
         </div>
       </header>
 
-      <section className="border-b-4 border-white/10 bg-brand-panel">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[1fr_2fr_1fr] lg:items-center lg:px-12">
-          <div className="font-mono text-xs font-black uppercase tracking-[var(--letter-spacing-scoreboard)] text-white/50">
-            {episode.status === "LIVE" && episode.voting_window_close ? (
-              <RevealCountdown key={episode.voting_window_close} revealAt={episode.voting_window_close} />
-            ) : (
-              <>
-                <div>Season {episode.season_number}</div>
-                <div>Episode {episode.episode_number}</div>
-              </>
-            )}
-          </div>
 
-          <div className="font-display text-3xl font-black uppercase tracking-tight text-white lg:text-center lg:text-5xl">
-            {episode.title}
-          </div>
 
-          {isClosed && finalAverage != null ? (
-            <div className="justify-self-start border-4 border-oracle-gold bg-[#120f02] px-4 py-2 text-oracle-gold shadow-[4px_4px_0px_0px_#E53935] lg:justify-self-end lg:text-right">
-              <div className="font-mono text-4xl font-black leading-none">{finalAverage.toFixed(1)}</div>
-              <div className="font-mono text-[10px] font-black uppercase tracking-widest">{totalVotes} votes</div>
-            </div>
-          ) : (
-            <div className="font-display text-sm font-black uppercase tracking-widest text-white/55 lg:text-right">
-              {episode.status === "UPCOMING" ? "Set lag raha hai. Come back when it's live." : "Voting Open"}
-            </div>
-          )}
-        </div>
-      </section>
 
       <main className="mx-auto max-w-7xl space-y-12 p-4 sm:p-6 lg:p-12">
         {episode.admin_note && (

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
-import ScrollDigit from "./ScrollDigit";
+import { DrumColumn, DRUM_H } from "./VotingScoreWheel";
 import LiveScoreboard from "./LiveScoreboard";
 
 const SCORE_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -34,7 +34,20 @@ function ScoreWheel({ label, value, onChange }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <span className="font-display text-[10px] uppercase tracking-widest text-white/50">{label}</span>
-      <ScrollDigit options={SCORE_OPTIONS} value={value} onChange={onChange} size="lg" />
+      <div 
+        style={{ 
+          position: "relative",
+          height: DRUM_H,
+          width: 110,
+          overflow: "hidden",
+          borderRadius: 12,
+          background: "rgba(0,0,0,0.4)",
+          boxShadow: "inset 0 0 20px rgba(0,0,0,0.9)"
+        }}
+      >
+        <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "linear-gradient(to bottom, #111 0%, transparent 25%, transparent 75%, #111 100%)", pointerEvents: "none" }} />
+        <DrumColumn options={SCORE_OPTIONS} lockedValue={value} onLocked={onChange} id="judge-score" />
+      </div>
     </div>
   );
 }

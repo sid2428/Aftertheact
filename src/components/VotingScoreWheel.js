@@ -41,14 +41,14 @@ function playStamp() {
    Constants & helpers
 ───────────────────────────────────────────── */
 
-const SLOT_H = 88;
+export const SLOT_H = 88;
 const VISIBLE_SLOTS = 5;
-const DRUM_H = SLOT_H * VISIBLE_SLOTS;
+export const DRUM_H = SLOT_H * VISIBLE_SLOTS;
 
 const INT_OPTS = Array.from({ length: 10 }, (_, i) => i + 1);
 const DEC_OPTS = Array.from({ length: 10 }, (_, i) => i);
 
-function shuffled(arr) {
+export function shuffled(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -138,7 +138,7 @@ function HeaderBar({ showTitle, seasonLabel, revealAt, narrow = false }) {
         />
         <span
           style={{
-            fontFamily: "var(--font-bebas)",
+            fontFamily: "var(--font-anton)",
             fontSize: 13,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
@@ -182,7 +182,7 @@ function HeaderBar({ showTitle, seasonLabel, revealAt, narrow = false }) {
           </span>
           <span
             style={{
-              fontFamily: "var(--font-bebas)",
+              fontFamily: "var(--font-anton)",
               fontSize: 11,
               letterSpacing: "0.2em",
               color: "rgba(255,255,255,0.3)",
@@ -237,7 +237,7 @@ function ActCard({ initial, name, tagline, compact = false }) {
         />
         <span
           style={{
-            fontFamily: "var(--font-bebas)",
+            fontFamily: "var(--font-anton)",
             fontSize: compact ? "2.6rem" : "clamp(5rem, 14vw, 9rem)",
             color: "rgba(255,255,255,0.18)",
             lineHeight: 1,
@@ -251,7 +251,7 @@ function ActCard({ initial, name, tagline, compact = false }) {
       <div style={{ textAlign: compact ? "left" : "center" }}>
         <h2
           style={{
-            fontFamily: "var(--font-bebas)",
+            fontFamily: "var(--font-anton)",
             fontSize: compact ? "1.5rem" : "clamp(1.6rem, 3.5vw, 2.6rem)",
             color: "#ffffff",
             letterSpacing: "0.04em",
@@ -284,7 +284,7 @@ function ActCard({ initial, name, tagline, compact = false }) {
 /* ─────────────────────────────────────────────
    Component 4 — DrumColumn
 ───────────────────────────────────────────── */
-function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ariaLabel }) {
+export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ariaLabel }) {
   const ATTRACT_NUMS = [...shuffled(options), ...shuffled(options), ...shuffled(options)];
 
   const containerRef = useRef(null);
@@ -360,9 +360,9 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
       return;
     }
     let pos = from;
-    let vel = velRef.current;
-    const STIFFNESS = 0.35;
-    const DAMPING = 0.85;
+    let vel = velRef.current * 0.5;
+    const STIFFNESS = 0.18;
+    const DAMPING = 0.65;
     let last = performance.now();
     function step(ts) {
       const dt = Math.min(ts - last, 32);
@@ -371,7 +371,7 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
       vel = vel * DAMPING + force;
       pos += vel * (dt / 16);
       applyTranslate(pos);
-      if (Math.abs(vel) < 0.08 && Math.abs(pos - target) < 0.5) {
+      if (Math.abs(vel) < 0.15 && Math.abs(pos - target) < 0.8) {
         applyTranslate(target);
         onDone?.();
         return;
@@ -396,7 +396,7 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
     }
     let pos = fromPos;
     let vel = velocity;
-    const FRICTION = 0.86;
+    const FRICTION = 0.82;
     let last = performance.now();
     function decel(ts) {
       const dt = Math.min(ts - last, 32);
@@ -404,21 +404,16 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
       vel *= Math.pow(FRICTION, dt / 16);
       pos += vel * (dt / 16);
       applyTranslate(pos);
-      if (Math.abs(vel) < 0.5) {
+      if (Math.abs(vel) < 0.8) {
         const { idx: fi, pos: fPos } = getSnapPos(pos);
-        const dir = vel >= 0 ? 1 : -1;
-        const overshoot = fPos + dir * SLOT_H * 0.065;
-        velRef.current = vel;
-        runSpring(pos, overshoot, () => {
-          velRef.current = 0;
-          runSpring(overshoot, fPos, () => {
-            applyTranslate(fPos);
-            posRef.current = fPos;
-            setSelectedIndex(fi);
-            setPhase("snapped");
-            onLocked(options[fi]);
-            playTick();
-          });
+        velRef.current = 0;
+        runSpring(pos, fPos, () => {
+          applyTranslate(fPos);
+          posRef.current = fPos;
+          setSelectedIndex(fi);
+          setPhase("snapped");
+          onLocked(options[fi]);
+          playTick();
         });
         return;
       }
@@ -562,6 +557,7 @@ function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ar
         outline: "none",
         flexShrink: 0,
         overflow: "hidden",
+        touchAction: "none",
         background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%)",
         WebkitMaskImage:
           "linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)",
@@ -887,7 +883,7 @@ function LockedStamp({ visible }) {
             />
             <span
               style={{
-                fontFamily: "var(--font-bebas)",
+                fontFamily: "var(--font-anton)",
                 fontSize: "clamp(3rem, 8vw, 5.5rem)",
                 color: "#E53935",
                 letterSpacing: "0.14em",
@@ -936,7 +932,7 @@ function SealButton({ disabled, onClick, sealed, needsAuth }) {
         padding: "16px 32px",
         border: "none",
         borderRadius: 10,
-        fontFamily: "var(--font-bebas)",
+        fontFamily: "var(--font-anton)",
         fontSize: "clamp(1.1rem, 2.5vw, 1.45rem)",
         letterSpacing: "0.18em",
         textTransform: "uppercase",
@@ -1083,7 +1079,7 @@ export default function VotingScoreWheel({
         <HeaderBar showTitle={showTitle} seasonLabel={seasonLabel} revealAt={revealAt} narrow={narrow} />
         <span
           style={{
-            fontFamily: "var(--font-bebas)",
+            fontFamily: "var(--font-anton)",
             fontSize: 28,
             letterSpacing: "0.12em",
             color: "rgba(255,255,255,0.35)",

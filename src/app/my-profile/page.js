@@ -67,6 +67,11 @@ export default async function MyProfile() {
             <h1 className="text-4xl md:text-6xl font-display font-black uppercase tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
               {userProfile.username}
             </h1>
+            {userProfile.bio && (
+              <p className="mt-3 max-w-prose text-sm font-medium text-white/60 leading-relaxed">
+                {userProfile.bio}
+              </p>
+            )}
             <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
               {userProfile.badges && userProfile.badges.length > 0 ? (
                 userProfile.badges.map(badge => (

@@ -31,7 +31,8 @@ export default async function CommunityScoreboard() {
       )
     `)
     .not("latent_score", "is", null)
-    .order("latent_score", { ascending: false });
+    .order("latent_score", { ascending: false })
+    .limit(10);
 
   // Live episode whose reveal countdown floats beside the board.
   // maybeSingle + limit(1): .single() throws when no episode is live.
@@ -45,7 +46,8 @@ export default async function CommunityScoreboard() {
     .limit(1)
     .maybeSingle();
 
-  const valid = (rankings || []).filter((r) => r.Contestant && !r.Contestant.is_removed_by_request);
+  const valid = (rankings || [])
+    .filter((r) => r.Contestant && !r.Contestant.is_removed_by_request);
   const podium = valid.slice(0, 3).map((r) => ({
     id: r.id,
     name: r.Contestant.name,

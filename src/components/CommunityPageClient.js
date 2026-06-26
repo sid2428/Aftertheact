@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { MessageCircle, Flag, Trash2, Trophy, PenLine } from "lucide-react";
+import TypeOnce from "@/components/TypeOnce";
 
 const COMPOSE_PROMPTS = ["Drop your take…", "Was that score actually fair?…", "Who got robbed tonight?…"];
 
@@ -356,7 +357,9 @@ export default function CommunityPageClient({
         <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 py-12 grid lg:grid-cols-2 gap-8 items-center relative z-10">
           <div className="space-y-5">
             <h1 className="text-6xl sm:text-8xl font-display font-black tracking-tighter uppercase text-white leading-[0.85]">
-              THE GREEN<br />ROOM
+              <TypeOnce text="THE GREEN" sessionKey="hero-greenroom-1" speed={60} />
+              <br />
+              <TypeOnce text="ROOM" sessionKey="hero-greenroom-2" speed={60} delay={560} />
             </h1>
             <p className="text-xl text-white/60 font-medium">No filter. No mercy. Just takes.</p>
             <div className="flex flex-wrap gap-3">
