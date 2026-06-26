@@ -1,10 +1,13 @@
 import { getServiceSupabase } from "@/lib/supabase";
+import { getPanelMembers } from "@/lib/panel";
 import AdminDashboardClient from "@/components/AdminDashboardClient";
 
 export const revalidate = 0; // Don't cache admin page
 
 export default async function AdminPage() {
   const supabase = getServiceSupabase();
+
+  const panelMembers = await getPanelMembers();
 
   // Fetch episodes
   const { data: episodes } = await supabase
@@ -51,7 +54,7 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <AdminDashboardClient initialEpisodes={episodes || []} initialRoasts={heldRoasts || []} initialReportedPosts={reportedPosts} />
+      <AdminDashboardClient initialEpisodes={episodes || []} initialRoasts={heldRoasts || []} initialReportedPosts={reportedPosts} panelMembers={panelMembers} />
 
     </div>
   );

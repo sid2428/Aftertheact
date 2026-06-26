@@ -260,7 +260,13 @@ body::after {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  @media (prefers-reduced-motion: no-preference) {
+  /* The shimmer rotates a conic-gradient *background*, which is a paint (not a
+     composite) — so it forces a repaint of every glass panel every frame, and
+     these panels also carry a backdrop-filter. Restricted to fine-pointer
+     (desktop) devices: touch devices, where this continuous repaint is most
+     costly, get a static border. The shimmer is subtle enough that its absence
+     reads as a normal tinted hairline. */
+  @media (prefers-reduced-motion: no-preference) and (pointer: fine) {
     .glass-panel {
       animation: shimmer-spin 60s linear infinite;
     }

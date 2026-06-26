@@ -18,27 +18,38 @@ const SIDE_SLOTS = {
 
 const CYCLE_MS = 3500;
 
-// Cycles an index 0..length-1 on an interval; pauses if there's nothing to cycle through.
+// Monotonic counter ticking on an interval; pauses if there's nothing to cycle.
+// Monotonic (not modulo'd) so the per-tick value can double as a z-index — each
+// incoming face sits above the one it replaces, including across the wrap.
 function useCycle(length) {
-  const [i, setI] = useState(0);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     if (length <= 1) return;
-    const id = setInterval(() => setI((v) => (v + 1) % length), CYCLE_MS);
+    const id = setInterval(() => setTick((t) => t + 1), CYCLE_MS);
     return () => clearInterval(id);
   }, [length]);
-  return i;
+  return tick;
 }
 
-function Face({ member, delay, slot }) {
+// Desktop side face. The outgoing face exits fast while the incoming one (higher
+// z) pops in at delay 0 with a subtle spring overshoot — they overlap by a frame
+// or two, so the swap reads as "old gone, new bounces in" with no blank gap.
+function Face({ member, delay, slot, z }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.85, rotate: slot.tilt }}
+      initial={{ opacity: 0, scale: 1.28, rotate: slot.tilt }}
       animate={{ opacity: 1, scale: 1.4, rotate: slot.tilt }}
-      exit={{ opacity: 0, scale: 0.85 }}
+      exit={{ opacity: 0, scale: 1.3, transition: { duration: 0.2, ease: "easeIn" } }}
       whileHover={{ rotate: 0, scale: 1.8 }}
-      transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={{
+        delay,
+        type: "spring",
+        stiffness: 240,
+        damping: 14, // subtle single overshoot ≈ the "bounce"
+        opacity: { delay, duration: 0.28, ease: "easeOut" },
+      }}
       className="group absolute -translate-x-1/2 -translate-y-1/2"
-      style={{ left: slot.x, top: slot.y }}
+      style={{ left: slot.x, top: slot.y, zIndex: z }}
     >
       {/* Tooltip on hover */}
       <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-sm border border-latent-gold/30 bg-[#111111] px-3 py-1.5 text-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -65,11 +76,62 @@ function Face({ member, delay, slot }) {
   );
 }
 
+// Mobile-only stage: full-width logo (revealed instantly as the curtains part)
+// over a single deck of judge photos that deal in from off-screen and settle
+// into a fanned stack — like cards — when scrolled into view. No infinite loop.
+function MobileStage({ members }) {
+  const n = members.length;
+  return (
+    <div className="md:hidden relative z-10 flex flex-col items-center w-full px-4">
+      <motion.img
+        src="/logo.png"
+        alt="After The Act"
+        className="w-[94vw] max-w-none h-auto transform-gpu"
+        initial={{ opacity: 1 }}
+      />
+
+      <div className="relative mt-4 flex w-full justify-center" style={{ height: "16rem" }}>
+        {members.map((m, i) => {
+          const center = (n - 1) / 2;
+          return (
+            <motion.div
+              key={m.id || i}
+              className="absolute top-0"
+              style={{ zIndex: i }}
+              initial={{ x: i % 2 ? "120vw" : "-120vw", rotate: i % 2 ? 22 : -22, opacity: 0 }}
+              whileInView={{ x: (i - center) * 30, y: i * 6, rotate: (i - center) * 7, opacity: 1 }}
+              viewport={{ once: false, amount: 0.4 }}
+              transition={{ delay: i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="relative w-40 h-56">
+                {m.image && (
+                  <Image
+                    src={m.image}
+                    alt={m.name || ""}
+                    fill
+                    sizes="160px"
+                    className="object-contain object-bottom drop-shadow-[0_0_14px_rgba(212,175,55,0.35)]"
+                  />
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function CurtainHero({ members = [] }) {
-  const idx = useCycle(members.length);
-  const half = Math.ceil(members.length / 2) || 1;
-  const leftMember = members[idx];
-  const rightMember = members[(idx + half) % members.length];
+  // Only judges flagged for the hero, and only ones with a photo to show.
+  const heroMembers = members.filter((m) => m.show_in_hero !== false && m.image);
+
+  const tick = useCycle(heroMembers.length);
+  const len = heroMembers.length;
+  const idx = len ? tick % len : 0;
+  const half = Math.ceil(len / 2) || 1;
+  const leftMember = len ? heroMembers[idx] : null;
+  const rightMember = len ? heroMembers[(idx + half) % len] : null;
 
   return (
     <div
@@ -85,11 +147,13 @@ export default function CurtainHero({ members = [] }) {
       <div className="spotlight-cone spot-a" style={{ left: "12%" }} />
       <div className="spotlight-cone spot-b" style={{ right: "12%" }} />
 
-      {/* One judge face per side — absolutely positioned, independent of the logo, cycling through the roster */}
-      <AnimatePresence mode="popLayout">
-        {leftMember && <Face key={`l-${idx}`} member={leftMember} delay={idx === 0 ? 1.6 : 0} slot={SIDE_SLOTS.left} />}
-        {rightMember && <Face key={`r-${idx}`} member={rightMember} delay={idx === 0 ? 1.75 : 0} slot={SIDE_SLOTS.right} />}
-      </AnimatePresence>
+      {/* Desktop: one judge face per side, cycling through the roster (hidden on mobile) */}
+      <div className="hidden md:block">
+        <AnimatePresence mode="popLayout">
+          {leftMember && <Face key={`l-${tick}`} member={leftMember} delay={tick === 0 ? 1.6 : 0} slot={SIDE_SLOTS.left} z={tick} />}
+          {rightMember && <Face key={`r-${tick}`} member={rightMember} delay={tick === 0 ? 1.75 : 0} slot={SIDE_SLOTS.right} z={tick} />}
+        </AnimatePresence>
+      </div>
 
       {/* Logo: centered on its own, unaffected by the scatter above */}
       <div className="relative z-10 flex items-center justify-center px-6 -mt-24 md:mt-0">
@@ -105,6 +169,11 @@ export default function CurtainHero({ members = [] }) {
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
           />
+          {/* The looping scale stays on a bare image (no filter) so it's a pure
+              GPU composite every frame. The gold glow comes from the static halo
+              above — keeping a drop-shadow here would force the filter to
+              re-rasterize on every frame of the infinite scale, which tanks the
+              hero's frame rate on mobile. */}
           <motion.img
             src="/logo.png"
             alt="After The Act"
@@ -114,6 +183,9 @@ export default function CurtainHero({ members = [] }) {
           />
         </motion.div>
       </div>
+
+      {/* Mobile stage: instant full-width logo + scroll-dealt card deck */}
+      <MobileStage members={heroMembers} />
 
       {/* CTAs revealed after the curtains open */}
       <motion.div
