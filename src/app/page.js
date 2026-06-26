@@ -3,11 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import EpisodeDirectory from "@/components/EpisodeDirectory";
 import CurtainHero from "@/components/CurtainHero";
 import JudgePanel from "@/components/JudgePanel";
 import IntroSequence from "@/components/IntroSequence";
 import FeaturedEpisodeSection from "@/components/FeaturedEpisodeSection";
+import ArcCarousel from "@/components/ArcCarousel";
 import { getPanelMembers } from "@/lib/panel";
 
 export default async function Home() {
@@ -79,6 +79,9 @@ export default async function Home() {
         {/* The Panel */}
         <JudgePanel members={panelMembers} />
 
+        {/* The Episodes Arc Carousel (Replacing How Scoring Works) */}
+        <ArcCarousel episodes={episodes || []} />
+
         {/* Featured episode: scoreboard + community feed (first scroll destination) */}
         <div className="mt-12">
           <FeaturedEpisodeSection
@@ -89,9 +92,6 @@ export default async function Home() {
         </div>
 
         <section className="max-w-7xl mx-auto p-6 sm:p-12 mt-20 mb-32 space-y-24 relative z-20">
-
-          {/* Episode Directory */}
-          <EpisodeDirectory episodes={episodes || []} />
 
           {/* Season pulse — quick stats + a way into the boards */}
           <SeasonStatsBand episodes={episodes || []} />
@@ -144,14 +144,14 @@ function SeasonStatsBand({ episodes }) {
         <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
           <Link
             href="/scoreboard"
-            className="group relative overflow-hidden text-center bg-latent-gold text-[#0A0A0A] font-display font-black uppercase tracking-widest text-sm px-8 py-4 rounded-lg shadow-[0_0_24px_rgba(212,175,55,0.3)] hover:shadow-[0_0_40px_rgba(212,175,55,0.6)] transition-all transform hover:-translate-y-1"
+            className="group relative overflow-hidden text-center border-4 border-latent-gold bg-[#120f02] text-latent-gold font-display font-black uppercase tracking-widest text-sm px-8 py-4 shadow-[4px_4px_0px_0px_#8B1E2D] hover:shadow-[8px_8px_0px_0px_#E53935] transition-all transform hover:-translate-y-1"
           >
             <span className="relative z-10">View the Verdict Board</span>
-            <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+            <div className="absolute inset-0 bg-latent-gold/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
           </Link>
           <Link
             href="/community"
-            className="group relative overflow-hidden text-center border border-white/15 text-white/80 font-display font-black uppercase tracking-widest text-sm px-8 py-4 rounded-lg hover:border-latent-gold/50 hover:text-latent-gold shadow-lg transition-all transform hover:-translate-y-1"
+            className="group relative overflow-hidden text-center border-4 border-white/15 text-white/80 font-display font-black uppercase tracking-widest text-sm px-8 py-4 hover:border-latent-gold/50 hover:text-latent-gold shadow-[4px_4px_0px_0px_#161616] transition-all transform hover:-translate-y-1"
           >
             <span className="relative z-10">Enter the Green Room</span>
             <div className="absolute inset-0 bg-latent-gold/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />

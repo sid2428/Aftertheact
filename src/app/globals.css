@@ -11,20 +11,32 @@
   /* Brand Accents */
   --color-latent-gold: #D4AF37;
   --color-latent-gold-light: #F5D97B;
-  --color-latent-crimson: #8B1E2D;
+  --color-latent-crimson: #E53935;
   
   /* Dark Luxury Base */
   --color-brand-bg: #0A0A0A;
   --color-brand-panel: #111111;
   --color-brand-elevated: #161616;
-  --color-brand-border: rgba(255, 255, 255, 0.07);
+  --color-brand-border: rgba(255, 255, 255, 0.12);
 
   /* Legacy aliases to prevent breaking immediately, but redefining them dark */
   --color-brand-black: #0A0A0A; 
   --color-brand-white: #FFFFFF;
-  --color-brand-gray: #111111;
-  --color-broadcast-red: #8B1E2D;
-  --color-broadcast-dark: #63121E;
+  --color-brand-gray: #161616;
+  --color-broadcast-red: #E53935;
+  --color-broadcast-dark: #B71C1C;
+  --color-controversy-orange: #FF9800;
+  --color-oracle-gold: #FFD700;
+  --color-oracle-green: #4CAF50;
+  --color-noise-overlay: rgba(255, 255, 255, 0.035);
+
+  --shadow-brutal-sm: 2px 2px 0px 0px #E53935;
+  --shadow-brutal-md: 4px 4px 0px 0px #E53935;
+  --shadow-brutal-lg: 8px 8px 0px 0px #E53935;
+  --shadow-brutal-red: 8px 8px 0px 0px #E53935;
+  --font-size-display-hero: clamp(4rem, 12vw, 12rem);
+  --font-size-display-section: clamp(2rem, 5vw, 5rem);
+  --letter-spacing-scoreboard: 0.15em;
 
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   
@@ -50,6 +62,27 @@ body {
   position: relative;
 }
 
+.font-mono,
+.font-number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lenis smooth-scroll (see SmoothScroll.js). These only apply once Lenis adds
+   its classes to <html>, so native scroll / reduced-motion is unaffected. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
 /* Organic film-grain texture behind every page. It sits at z-index -1 (above
    the html base colour, below all in-flow content) so it NEVER needs the
    children of <body> to be lifted above it. The previous approach lifted every
@@ -64,23 +97,66 @@ body::after {
   inset: -50%;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  body::after {
-    animation: grain 0.6s steps(4) infinite;
+@property --score-progress {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+
+@property --controversy-intensity {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+
+@property --trust-progress {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+
+@keyframes slideReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-@keyframes grain {
-  0%   { transform: translate(0, 0); }
-  25%  { transform: translate(-3px, 2px); }
-  50%  { transform: translate(2px, -3px); }
-  75%  { transform: translate(-2px, -2px); }
-  100% { transform: translate(0, 0); }
+@keyframes navSolid {
+  from {
+    background: rgba(10, 10, 10, 0.82);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  to {
+    background: rgba(10, 10, 10, 0.98);
+    border-color: color-mix(in oklch, var(--color-broadcast-red) 55%, var(--color-brand-white));
+  }
 }
+
+@keyframes flap {
+  0% { transform: rotateX(0deg); }
+  48% { transform: rotateX(-90deg); }
+  52% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+@keyframes borderFlash {
+  0%, 100% { border-color: var(--color-brand-black); }
+  40% { border-color: var(--color-broadcast-red); box-shadow: var(--shadow-brutal-red); }
+}
+
+/* The grain used to jitter every 0.6s forever across an oversized full-page
+   layer on every route — a continuous repaint for a texture that reads
+   essentially identically when static. It's now a fixed frame: same look, none
+   of the per-frame paint cost. */
 
 /* Animatable angle for the glass-panel border shimmer. */
 @property --shimmer-angle {
@@ -330,6 +406,86 @@ body::after {
   .backface-hidden {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+  }
+
+  .brutal-surface {
+    background: var(--color-brand-panel);
+    border: 4px solid var(--color-brand-border);
+    box-shadow: var(--shadow-brutal-md);
+    border-radius: 0;
+  }
+
+  .brutal-surface-lg {
+    background: var(--color-brand-panel);
+    border: 4px solid var(--color-brand-border);
+    box-shadow: var(--shadow-brutal-lg);
+    border-radius: 0;
+  }
+
+  .brutal-button {
+    border: 4px solid var(--color-broadcast-red);
+    background: var(--color-broadcast-red);
+    color: var(--color-brand-white);
+    box-shadow: var(--shadow-brutal-md);
+    border-radius: 0;
+    transition-property: transform, box-shadow, background-color, color, border-color;
+    transition-duration: 180ms;
+    transition-timing-function: linear(0, 0.004, 0.016, 0.035, 0.063, 0.098, 0.141, 0.191, 0.25, 0.316, 0.39, 0.47, 0.557, 0.651, 0.75, 0.855, 0.965, 1.077, 1.19, 1.302, 1.41, 1.51, 1.598, 1.67, 1.72, 1.745, 1.738, 1.696, 1.618, 1.505, 1.364, 1.201, 1.024, 0.843, 0.665, 0.497, 0.343, 0.209, 0.097, 0.009, -0.05, 0.983, 1);
+  }
+
+  .brutal-button:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px 0px var(--color-oracle-gold);
+    background: var(--color-brand-black);
+    border-color: var(--color-oracle-gold);
+  }
+
+  .brutal-scroll-row {
+    animation: slideReveal both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 24%;
+  }
+
+  .nav-scroll-reactive {
+    animation: navSolid both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120px;
+  }
+
+  .contestant-card {
+    transition: border-color 180ms ease-out, box-shadow 180ms ease-out, transform 180ms ease-out;
+  }
+
+  .contestant-card:has(.vote-locked-state) {
+    border-color: var(--color-broadcast-red);
+    box-shadow: var(--shadow-brutal-red);
+  }
+
+  .contestant-image-wipe img {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    transition: clip-path 300ms ease-out, filter 300ms ease-out, transform 300ms ease-out;
+  }
+
+  .contestant-image-wipe:hover img {
+    clip-path: polygon(0 0, 100% 0, 100% 92%, 0 100%);
+    transform: scale(1.04);
+  }
+
+  .roast-textarea {
+    field-sizing: content;
+    min-height: 5.5rem;
+    max-height: 14rem;
+    overflow-y: auto;
+  }
+
+  .revelation-entry {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 240ms ease-out, transform 240ms ease-out;
+    @starting-style {
+      opacity: 0;
+      transform: translateY(20px);
+    }
   }
 }
 

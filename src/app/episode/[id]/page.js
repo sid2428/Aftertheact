@@ -21,16 +21,39 @@ export async function generateMetadata({ params }) {
 
   if (!episode) return { title: "Episode" };
   return {
-    title: `S${episode.season_number}E${episode.episode_number} — ${episode.title}`,
+    title: `S${episode.season_number}E${episode.episode_number} - ${episode.title}`,
     description: `Verdicts and scores for ${episode.title}.`,
   };
+}
+
+function EpisodeStatusBadge({ status }) {
+  const labels = {
+    LIVE: "ABHI VOTE KAR",
+    UPCOMING: "SET LAG RAHA HAI",
+    REVEALED: "RESULT AA GAYA. COPE.",
+    ARCHIVED: "ARCHIVE",
+  };
+
+  const tone =
+    status === "LIVE"
+      ? "bg-broadcast-red text-white border-broadcast-red"
+      : status === "UPCOMING"
+        ? "bg-brand-panel text-white/70 border-white/20"
+        : "bg-[#120f02] text-oracle-gold border-oracle-gold";
+
+  return (
+    <span className={`inline-flex items-center gap-2 border-4 px-3 py-1 font-display text-xs font-black uppercase tracking-widest shadow-[var(--shadow-brutal-sm)] ${tone}`}>
+      {status === "LIVE" && <span className="h-2.5 w-2.5 animate-pulse-fast bg-white" />}
+      {labels[status] || status}
+    </span>
+  );
 }
 
 export default async function EpisodePage({ params }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
   const supabase = getServiceSupabase();
-  
+
   let { data: episode, error } = await supabase
     .from("Episode")
     .select("*")
@@ -39,9 +62,9 @@ export default async function EpisodePage({ params }) {
 
   if (error || !episode) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 selection:bg-broadcast-red/30">
-        <div className="border-4 border-brand-black p-12 text-center shadow-[16px_16px_0px_0px_#0A0A0A] bg-white">
-          <div className="text-4xl font-display font-black uppercase text-brand-black">Episode not found.</div>
+      <div className="flex min-h-screen items-center justify-center bg-brand-bg p-6 selection:bg-broadcast-red/30">
+        <div className="border-4 border-broadcast-red bg-brand-panel p-12 text-center shadow-[var(--shadow-brutal-red)]">
+          <div className="font-display text-4xl font-black uppercase text-white">Episode not found.</div>
         </div>
       </div>
     );
@@ -83,7 +106,6 @@ export default async function EpisodePage({ params }) {
     : null;
   const totalVotes = sortedAppearances.reduce((sum, a) => sum + (a.total_votes_raw || 0), 0);
 
-  // Fetch the current user's existing votes for this episode so the UI locks them instantly.
   let userVotesMap = {};
   if (session?.user?.id) {
     const { data: existingVotes } = await supabase
@@ -97,112 +119,87 @@ export default async function EpisodePage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-latent-crimson/30">
-      
-      {/* Episode header — static so it doesn't trail the page while voting */}
-      <div className="relative z-30 bg-[#111111]/90 backdrop-blur-md border-b border-brand-border p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="min-h-screen bg-brand-bg text-white selection:bg-broadcast-red/30">
+      <header className="border-b-4 border-broadcast-red bg-[#080808] p-4 sm:p-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">S{episode.season_number}E{episode.episode_number} — {episode.title}</h1>
-              <span className={`px-2 py-1 text-[10px] sm:text-xs font-display font-black uppercase tracking-widest border rounded-sm ${
-                episode.status === 'LIVE' ? 'bg-latent-crimson/20 text-latent-crimson border-latent-crimson animate-pulse-fast shadow-[0_0_10px_rgba(139,30,45,0.5)]' :
-                episode.status === 'UPCOMING' ? 'bg-[#050505] text-white/50 border-white/20' :
-                'bg-latent-gold/20 text-latent-gold border-latent-gold/50'
-              }`}>
-                {episode.status}
-              </span>
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-4xl font-black uppercase tracking-tight text-white sm:text-6xl">
+                S{episode.season_number}E{episode.episode_number} - {episode.title}
+              </h1>
+              <EpisodeStatusBadge status={episode.status} />
             </div>
-            <div className="text-sm font-mono font-bold text-white/50">Aired: {new Date(episode.air_date).toLocaleDateString()}</div>
+            <div className="font-mono text-sm font-black uppercase tracking-[var(--letter-spacing-scoreboard)] text-white/45">
+              Aired: {new Date(episode.air_date).toLocaleDateString()}
+            </div>
           </div>
 
           {episode.status === "LIVE" && (
-            <div className="flex items-center gap-3 bg-latent-crimson text-white font-display font-black uppercase tracking-widest text-sm px-4 py-2 rounded-sm shadow-[0_0_20px_rgba(139,30,45,0.6)]">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse-fast shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
-              LIVE — Cast Your Verdict
+            <div className="border-4 border-broadcast-red bg-broadcast-red px-5 py-3 font-display text-sm font-black uppercase tracking-widest text-white shadow-[var(--shadow-brutal-md)]">
+              Live - Cast Your Verdict
             </div>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* Mini-hero band */}
-      <div className="relative overflow-hidden border-b border-brand-border">
-        {episode.thumbnail_url && (
-          <img
-            src={episode.thumbnail_url}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ filter: "blur(20px) brightness(0.3)" }}
-          />
-        )}
-        <div className="relative bg-gradient-to-r from-[#0A0A0A] via-[#111111]/60 to-[#0A0A0A]">
-          <div className="max-w-7xl mx-auto min-h-[90px] px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-between gap-4">
-            <div className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-white/50 shrink-0 w-[30%]">
-              {episode.status === "LIVE" && episode.voting_window_close ? (
-                <RevealCountdown key={episode.voting_window_close} revealAt={episode.voting_window_close} />
-              ) : (
-                <>
-                  <div>Season {episode.season_number}</div>
-                  <div>Episode {episode.episode_number}</div>
-                  <div className="text-white/30">{new Date(episode.air_date).toLocaleDateString()}</div>
-                </>
-              )}
-            </div>
-
-            <div className="flex-1 text-center font-display font-black uppercase tracking-tight text-white text-lg sm:text-2xl lg:text-3xl truncate">
-              {episode.title}
-            </div>
-
-            <div className="shrink-0 w-[30%] flex justify-end">
-              {episode.status === "LIVE" ? (
-                <div className="flex items-center gap-2 bg-latent-crimson/20 border border-latent-crimson/50 text-latent-crimson font-display font-black uppercase tracking-widest text-[10px] sm:text-xs px-3 py-2 rounded-sm animate-pulse-fast">
-                  <span className="w-2 h-2 rounded-full bg-latent-crimson" />
-                  Voting Open
-                </div>
-              ) : isClosed && finalAverage != null ? (
-                <div className="text-right">
-                  <div className="font-mono font-black text-2xl sm:text-3xl text-latent-gold leading-none">{finalAverage.toFixed(1)}</div>
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-white/40">{totalVotes} votes</div>
-                </div>
-              ) : null}
-            </div>
+      <section className="border-b-4 border-white/10 bg-brand-panel">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[1fr_2fr_1fr] lg:items-center lg:px-12">
+          <div className="font-mono text-xs font-black uppercase tracking-[var(--letter-spacing-scoreboard)] text-white/50">
+            {episode.status === "LIVE" && episode.voting_window_close ? (
+              <RevealCountdown key={episode.voting_window_close} revealAt={episode.voting_window_close} />
+            ) : (
+              <>
+                <div>Season {episode.season_number}</div>
+                <div>Episode {episode.episode_number}</div>
+              </>
+            )}
           </div>
+
+          <div className="font-display text-3xl font-black uppercase tracking-tight text-white lg:text-center lg:text-5xl">
+            {episode.title}
+          </div>
+
+          {isClosed && finalAverage != null ? (
+            <div className="justify-self-start border-4 border-oracle-gold bg-[#120f02] px-4 py-2 text-oracle-gold shadow-[4px_4px_0px_0px_#E53935] lg:justify-self-end lg:text-right">
+              <div className="font-mono text-4xl font-black leading-none">{finalAverage.toFixed(1)}</div>
+              <div className="font-mono text-[10px] font-black uppercase tracking-widest">{totalVotes} votes</div>
+            </div>
+          ) : (
+            <div className="font-display text-sm font-black uppercase tracking-widest text-white/55 lg:text-right">
+              {episode.status === "UPCOMING" ? "Set lag raha hai. Come back when it's live." : "Voting Open"}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-12 space-y-12">
-
+      <main className="mx-auto max-w-7xl space-y-12 p-4 sm:p-6 lg:p-12">
         {episode.admin_note && (
-          <div className="bg-[#111111] text-white p-6 border border-latent-crimson/30 rounded-md shadow-[0_0_20px_rgba(139,30,45,0.2)] font-mono font-bold relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-latent-crimson" />
-            <span className="text-latent-crimson block mb-2 uppercase tracking-widest text-xs font-display">System Broadcast:</span>
+          <div className="brutal-surface bg-brand-panel p-6 font-mono font-black text-white">
+            <span className="mb-2 block font-display text-xs font-black uppercase tracking-widest text-broadcast-red">System Broadcast:</span>
             {episode.admin_note}
           </div>
         )}
 
-        {/* Prediction Banner for Upcoming */}
         {episode.status === "UPCOMING" && (
-          <div className="bg-[#111111] border border-latent-gold/30 rounded-md p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-latent-gold/5 to-transparent pointer-events-none" />
-            <div className="relative z-10">
-              <h2 className="text-3xl font-display font-black uppercase tracking-widest text-latent-gold mb-2 drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">The Oracle Board is open</h2>
-              <p className="text-white/70 font-medium">Lock in your predictions for Top, Bottom, and Alignment before air time. Once it starts, your calls are permanent.</p>
+          <div className="brutal-surface-lg flex flex-col items-start justify-between gap-6 bg-[#120f02] p-8 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="mb-2 font-display text-4xl font-black uppercase tracking-tight text-oracle-gold">The Oracle Board is open</h2>
+              <p className="max-w-2xl font-medium text-white/65">Lock in Top, Bottom, and Alignment before air time. Predictions locked. Bhai, ab sirf wait karo.</p>
             </div>
-            <button className="shrink-0 relative z-10 bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] border border-transparent rounded-sm px-8 py-4 font-display font-black uppercase tracking-widest transition-all">
+            <button className="brutal-button shrink-0 px-8 py-4 font-display font-black uppercase tracking-widest">
               Make Predictions
             </button>
           </div>
         )}
 
         <div className="space-y-8">
-          <h2 className="text-4xl font-display font-black tracking-tighter uppercase text-white border-b border-white/10 pb-2">
+          <h2 className="border-b-4 border-broadcast-red pb-2 font-display text-5xl font-black uppercase tracking-tight text-white">
             The Lineup
           </h2>
-          
+
           {episode.status === "LIVE" ? (
             <div className="relative">
-              {/* Live heartbeat behind the voting cards */}
-              <div className="episode-pulse pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2" />
+              <div className="episode-pulse pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2" />
               <div className="relative">
                 <VotingSection
                   episodeId={episode.id}
@@ -232,13 +229,12 @@ export default async function EpisodePage({ params }) {
           )}
 
           {sortedAppearances.length === 0 && (
-            <div className="text-center py-24 bg-[#050505] text-white/30 font-display font-black uppercase tracking-widest text-2xl border border-white/10 border-dashed rounded-md">
+            <div className="border-4 border-dashed border-white/15 bg-brand-panel py-24 text-center font-display text-2xl font-black uppercase tracking-widest text-white/30">
               No contestants have been added to this episode yet.
             </div>
           )}
         </div>
-
-      </div>
+      </main>
     </div>
   );
 }

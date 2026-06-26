@@ -8,7 +8,6 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
   const [topId, setTopId] = useState(existingPrediction?.predicted_top_contestant_id || "");
   const [bottomId, setBottomId] = useState(existingPrediction?.predicted_bottom_contestant_id || "");
   const [alignment, setAlignment] = useState(existingPrediction?.predicted_alignment !== undefined ? existingPrediction.predicted_alignment : null);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocked, setIsLocked] = useState(!!existingPrediction);
 
@@ -32,96 +31,94 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
     setIsSubmitting(false);
   };
 
+  const choiceClass = (active, tone = "red") => {
+    if (active && tone === "gold") {
+      return "border-oracle-gold bg-[#120f02] text-oracle-gold shadow-[4px_4px_0px_0px_#E53935]";
+    }
+    if (active) {
+      return "border-broadcast-red bg-broadcast-red text-white shadow-[4px_4px_0px_0px_#D4AF37]";
+    }
+    return "border-white/15 bg-[#080808] text-white/50 hover:border-broadcast-red hover:text-white disabled:opacity-40";
+  };
+
   return (
-    <div className="bg-[#111111] border border-brand-border p-6 sm:p-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] rounded-md relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-latent-gold to-transparent opacity-50" />
-      <div className="mb-8 border-b border-brand-border pb-4 relative z-10">
-        <h2 className="text-3xl font-display font-black text-white tracking-tight uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">The Oracle Board</h2>
-        <p className="text-white/60 font-medium mt-2">
+    <div className="brutal-surface-lg relative overflow-hidden bg-brand-panel p-6 text-white sm:p-10">
+      <div className="absolute left-0 top-0 h-2 w-full bg-broadcast-red" />
+      <div className="relative z-10 mb-8 border-b-4 border-white/10 pb-4">
+        <h2 className="font-display text-4xl font-black uppercase tracking-tight text-white">The Oracle Board</h2>
+        <p className="mt-2 font-medium text-white/60">
           Lock in your predictions. Your Oracle Score is permanent. Choose wisely.
         </p>
       </div>
 
-      <div className="space-y-8 relative z-10">
+      <div className="relative z-10 space-y-8">
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-latent-gold mb-3 drop-shadow-[0_0_5px_rgba(212,175,55,0.3)]">
+          <label className="mb-3 block font-display text-sm font-black uppercase tracking-widest text-oracle-gold">
             1. Who will top the episode?
           </label>
           <div className="relative">
-            <select 
+            <select
               disabled={isLocked}
-              value={topId} 
+              value={topId}
               onChange={(e) => setTopId(e.target.value)}
-              className="w-full bg-[#050505] appearance-none border border-brand-border rounded-sm p-4 text-white font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-latent-gold transition-colors shadow-inner"
+              className="w-full appearance-none border-4 border-white/15 bg-[#080808] p-4 font-display font-bold uppercase text-white transition-colors focus:border-oracle-gold focus:outline-none disabled:opacity-50"
             >
               <option value="" disabled>Select the Latent Legend...</option>
-              {contestants.map(c => (
+              {contestants.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/50">
-              ▼
+            <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-oracle-gold">
+              V
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-white/70 mb-3">
+          <label className="mb-3 block font-display text-sm font-black uppercase tracking-widest text-white/70">
             2. Who will bottom the episode?
           </label>
           <div className="relative">
-            <select 
+            <select
               disabled={isLocked}
-              value={bottomId} 
+              value={bottomId}
               onChange={(e) => setBottomId(e.target.value)}
-              className="w-full bg-[#050505] appearance-none border border-brand-border rounded-sm p-4 text-white font-display font-bold uppercase disabled:opacity-50 focus:outline-none focus:ring-0 focus:border-latent-gold transition-colors shadow-inner"
+              className="w-full appearance-none border-4 border-white/15 bg-[#080808] p-4 font-display font-bold uppercase text-white transition-colors focus:border-oracle-gold focus:outline-none disabled:opacity-50"
             >
               <option value="" disabled>Select the Rock Bottom...</option>
-              {contestants.map(c => (
+              {contestants.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/50">
-              ▼
+            <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-oracle-gold">
+              V
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-display font-black uppercase tracking-widest text-white/70 mb-3">
+          <label className="mb-3 block font-display text-sm font-black uppercase tracking-widest text-white/70">
             3. Will Judges & Audience Agree? (Divergence &lt; {ORACLE_SCORING.ALIGNMENT_MARGIN})
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <button
               disabled={isLocked}
               onClick={() => setAlignment("HARSH")}
-              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
-                alignment === "HARSH" 
-                  ? "bg-latent-crimson/20 text-latent-crimson border-latent-crimson shadow-[0_0_15px_rgba(139,30,45,0.3)]" 
-                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
-              }`}
+              className={`border-4 py-4 font-display font-black uppercase tracking-widest transition-all ${choiceClass(alignment === "HARSH")}`}
             >
               Judges Harsher
             </button>
-            <button 
+            <button
               disabled={isLocked}
               onClick={() => setAlignment("ALIGNED")}
-              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
-                alignment === "ALIGNED" 
-                  ? "bg-latent-gold/20 text-latent-gold border-latent-gold shadow-[0_0_15px_rgba(212,175,55,0.3)]" 
-                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
-              }`}
+              className={`border-4 py-4 font-display font-black uppercase tracking-widest transition-all ${choiceClass(alignment === "ALIGNED", "gold")}`}
             >
               Aligned
             </button>
-            <button 
+            <button
               disabled={isLocked}
               onClick={() => setAlignment("GENEROUS")}
-              className={`py-4 font-display font-black uppercase tracking-widest border transition-all rounded-sm ${
-                alignment === "GENEROUS" 
-                  ? "bg-blue-500/20 text-blue-500 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]" 
-                  : "bg-[#050505] text-white/50 border-brand-border hover:bg-white/10 hover:text-white disabled:opacity-50"
-              }`}
+              className={`border-4 py-4 font-display font-black uppercase tracking-widest transition-all ${choiceClass(alignment === "GENEROUS")}`}
             >
               Judges Generous
             </button>
@@ -129,16 +126,16 @@ export default function PredictionGame({ episodeId, contestants, existingPredict
         </div>
       </div>
 
-      <div className="mt-10 relative z-10">
+      <div className="relative z-10 mt-10">
         {isLocked ? (
-          <div className="text-center py-4 bg-[#050505] text-latent-gold font-display font-black uppercase tracking-widest border border-latent-gold/30 rounded-sm shadow-[0_0_20px_rgba(212,175,55,0.1)]">
-            Predictions Locked. Awaiting Revelation.
+          <div className="border-4 border-oracle-gold bg-[#080808] py-4 text-center font-display font-black uppercase tracking-widest text-oracle-gold shadow-[var(--shadow-brutal-sm)]">
+            Predictions locked. Bhai, ab sirf wait karo.
           </div>
         ) : (
-          <button 
+          <button
             disabled={isSubmitting}
             onClick={handleLock}
-            className="w-full bg-white text-[#0A0A0A] hover:bg-latent-gold hover:text-[#0A0A0A] border border-transparent font-display font-black uppercase tracking-widest py-5 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 rounded-sm"
+            className="brutal-button w-full py-5 font-display font-black uppercase tracking-widest disabled:opacity-50"
           >
             {isSubmitting ? "Locking..." : "Lock Predictions"}
           </button>

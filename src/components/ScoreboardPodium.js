@@ -111,7 +111,7 @@ function PodiumCard({ entry, place, reduced }) {
           style={{ transform: "translateZ(30px)" }}
         >
           {entry.imageUrl ? (
-            <Image src={entry.imageUrl} alt={entry.name} fill sizes="256px" className="object-cover" unoptimized />
+            <Image src={entry.imageUrl} alt={entry.name} fill sizes="256px" className="object-cover" />
           ) : (
             <span className="font-display text-4xl font-black text-white/20 sm:text-7xl">{entry.name?.[0]}</span>
           )}

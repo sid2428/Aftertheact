@@ -1,80 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 
-// Lightweight golden-particle field drifting up the stage.
-function ParticleField() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    let width = 0;
-    let height = 0;
-    let particles = [];
-    let raf;
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      width = canvas.width = rect.width;
-      height = canvas.height = rect.height;
-      const count = Math.min(80, Math.max(40, Math.floor(width / 18)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        r: 3 + Math.random() * 3,
-        speed: 1 + Math.random() * 2,
-        baseAlpha: 0.3 + Math.random() * 0.3,
-        twinkle: Math.random() * Math.PI * 2,
-      }));
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-      for (const p of particles) {
-        p.y -= p.speed;
-        p.twinkle += 0.03;
-        if (p.y + p.r < 0) {
-          p.y = height + p.r;
-          p.x = Math.random() * width;
-        }
-        const alpha = p.baseAlpha + Math.sin(p.twinkle) * 0.15;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${Math.max(0, alpha)})`;
-        ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    if (reduce) {
-      // Draw a single static frame for reduced-motion users.
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212, 175, 55, ${p.baseAlpha})`;
-        ctx.fill();
-      }
-    } else {
-      draw();
-    }
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
-}
+// The one deliberate WebGL atmosphere layer (see brief §5). Client-only — the
+// R3F canvas has nothing to render on the server.
+const HeroAtmosphere = dynamic(() => import("./HeroAtmosphere"), { ssr: false });
 
 // Fixed side slots, kept clear of the center column (logo) and the bottom CTA band.
 const SIDE_SLOTS = {
@@ -122,7 +56,6 @@ function Face({ member, delay, slot }) {
             fill
             sizes="224px"
             className="object-contain object-bottom drop-shadow-[0_0_14px_rgba(212,175,55,0.35)] group-hover:drop-shadow-[0_0_22px_rgba(212,175,55,0.6)] transition-[filter] duration-300"
-            unoptimized
           />
         ) : (
           <span className="font-display font-black text-3xl text-white/20">{member.name?.[0] || "?"}</span>
@@ -146,6 +79,9 @@ export default function CurtainHero({ members = [] }) {
           "radial-gradient(ellipse at 50% 80%, rgba(139,30,45,0.15) 0%, transparent 60%), radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 50%), url('/bluecurtains-bg.png') center/cover",
       }}
     >
+      {/* Volumetric golden atmosphere — sits behind everything, never blocks UI */}
+      <HeroAtmosphere className="pointer-events-none absolute inset-0 z-0" />
+
       <div className="spotlight-cone spot-a" style={{ left: "12%" }} />
       <div className="spotlight-cone spot-b" style={{ right: "12%" }} />
 
@@ -186,9 +122,9 @@ export default function CurtainHero({ members = [] }) {
         transition={{ delay: 1.9, duration: 0.6 }}
         className="absolute bottom-24 z-10 flex flex-col sm:flex-row justify-center gap-6 px-6 w-full max-w-4xl"
       >
-        <Link href="/api/auth/signin" className="relative group overflow-hidden flex-1 text-center bg-latent-gold text-[#0A0A0A] font-display font-black uppercase tracking-[0.25em] px-8 sm:px-10 py-5 sm:py-6 text-lg sm:text-xl shadow-[0_0_30px_rgba(212,175,55,0.2)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:-translate-y-1 transition-all duration-500 rounded-none border border-transparent">
-          <span className="relative z-10 group-hover:text-black transition-colors duration-500">Join the Jury</span>
-          <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+        <Link href="/api/auth/signin" className="relative group overflow-hidden flex-1 text-center bg-[#120f02] text-latent-gold font-display font-black uppercase tracking-[0.25em] px-8 sm:px-10 py-5 sm:py-6 text-lg sm:text-xl shadow-[4px_4px_0px_0px_#8B1E2D] hover:shadow-[8px_8px_0px_0px_#E53935] hover:-translate-y-1 transition-all duration-500 rounded-none border-4 border-latent-gold">
+          <span className="relative z-10 transition-colors duration-500">Join the Jury</span>
+          <div className="absolute inset-0 bg-latent-gold/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
         </Link>
         <Link href="/scoreboard" className="relative group overflow-hidden flex-1 text-center bg-[#050505]/60 backdrop-blur-xl text-white font-display font-black uppercase tracking-[0.25em] px-8 sm:px-10 py-5 sm:py-6 text-lg sm:text-xl border border-white/20 hover:border-latent-gold hover:text-latent-gold shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:shadow-[0_0_50px_rgba(212,175,55,0.3)] hover:-translate-y-1 transition-all duration-500 rounded-none">
           <span className="relative z-10">Explore Scoreboard</span>

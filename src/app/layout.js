@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import MainNav from "@/components/MainNav";
+import SmoothScroll from "@/components/SmoothScroll";
 
 // Three fonts only (UI_ENHANCEMENT_V2 P0.1):
 //   Display  — Bebas Neue (headings ≥ 2rem, episode numbers, brand)
@@ -26,48 +27,49 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" className="dark">
-      <body className={`${dmSans.variable} ${bebasNeue.variable} ${rajdhani.variable} font-sans bg-[#0A0A0A] text-white min-h-screen flex flex-col selection:bg-latent-crimson/40`}>
+      <body className={`${dmSans.variable} ${bebasNeue.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
 
-        {/* Global Navigation - Dark Luxury Glassmorphic */}
-        <MainNav isLoggedIn={!!session?.user} isAdmin={!!session?.user?.isAdmin} />
+        <SmoothScroll>
+          {/* Global Navigation - Dark Luxury Glassmorphic */}
+          <MainNav isLoggedIn={!!session?.user} isAdmin={!!session?.user?.isAdmin} />
 
-        {/* Main Content */}
-        <main className="flex-1 relative overflow-x-hidden">
-          {children}
-        </main>
+          {/* Main Content */}
+          <main className="flex-1 relative overflow-x-hidden">
+            {children}
+          </main>
+        </SmoothScroll>
 
-        <footer className="bg-[#111111] mt-20">
-          {/* Gold hairline rule */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-latent-gold/40 to-transparent" />
+        <footer className="bg-[#111111] text-brand-white mt-20 border-t-4 border-broadcast-red/60">
+          <div className="h-2 w-full bg-broadcast-red" />
           <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Column 1: brand */}
             <div className="space-y-4">
               <img src="/logo.png" alt="After The Act" className="h-12 w-auto opacity-80" />
-              <p className="text-white/50 font-mono text-xs">The show ends. The receipts begin.</p>
+              <p className="text-brand-white/60 font-mono text-xs">The show ends. The receipts begin.</p>
             </div>
 
             {/* Column 2: quick links */}
             <div className="space-y-3">
-              <h3 className="font-display font-black uppercase tracking-widest text-white/80 text-sm">Explore</h3>
-              <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-white/50">
-                <Link href="/scoreboard" className="hover:text-latent-gold transition-colors">Verdict Board</Link>
-                <Link href="/leaderboard" className="hover:text-latent-gold transition-colors">Prophet&apos;s Wall</Link>
-                <Link href="/episodes" className="hover:text-latent-gold transition-colors">The Lineup</Link>
-                <Link href="/community" className="hover:text-latent-gold transition-colors">The Green Room</Link>
-                <Link href="/panel" className="hover:text-latent-gold transition-colors">Judge the Judges</Link>
+              <h3 className="font-display font-black uppercase tracking-widest text-brand-white text-sm">Explore</h3>
+              <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-brand-white/60">
+                <Link href="/scoreboard" className="hover:text-broadcast-red transition-colors">Verdict Board</Link>
+                <Link href="/leaderboard" className="hover:text-broadcast-red transition-colors">Prophet&apos;s Wall</Link>
+                <Link href="/episodes" className="hover:text-broadcast-red transition-colors">The Lineup</Link>
+                <Link href="/community" className="hover:text-broadcast-red transition-colors">The Green Room</Link>
+                <Link href="/panel" className="hover:text-broadcast-red transition-colors">Judge the Judges</Link>
               </div>
             </div>
 
             {/* Column 3: social / legal */}
             <div className="space-y-3">
-              <h3 className="font-display font-black uppercase tracking-widest text-white/80 text-sm">The Fine Print</h3>
-              <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-white/50">
-                <span className="text-white/30">Instagram (soon)</span>
-                <span className="text-white/30">Twitter / X (soon)</span>
-                <p className="text-white/30 font-mono normal-case tracking-normal text-[11px] mt-2 leading-relaxed">
+              <h3 className="font-display font-black uppercase tracking-widest text-brand-white text-sm">The Fine Print</h3>
+              <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-brand-white/60">
+                <span className="text-brand-white/30">Instagram (soon)</span>
+                <span className="text-brand-white/30">Twitter / X (soon)</span>
+                <p className="text-brand-white/30 font-mono normal-case tracking-normal text-[11px] mt-2 leading-relaxed">
                   Disclaimer: Fan community site. Not affiliated with any official production.
                 </p>
-                <Link href="/admin-login" className="text-white/20 hover:text-latent-crimson font-mono font-bold transition-colors text-[10px] uppercase tracking-widest mt-2">
+                <Link href="/admin-login" className="text-brand-white/20 hover:text-broadcast-red font-mono font-bold transition-colors text-[10px] uppercase tracking-widest mt-2">
                   Showrunner Access
                 </Link>
               </div>

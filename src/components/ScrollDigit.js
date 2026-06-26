@@ -73,6 +73,46 @@ export default function ScrollDigit({ options, value, onChange, disabled, size =
     settleTimer.current = setTimeout(commitFromScroll, 90);
   };
 
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const scrollTop = useRef(0);
+
+  const handlePointerDown = (e) => {
+    if (disabled) return;
+    isDragging.current = true;
+    startY.current = e.pageY - listRef.current.offsetTop;
+    scrollTop.current = listRef.current.scrollTop;
+    listRef.current.style.scrollSnapType = "none";
+    document.body.style.userSelect = "none";
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging.current || disabled) return;
+    e.preventDefault();
+    const y = e.pageY - listRef.current.offsetTop;
+    const walk = (y - startY.current) * 1.5;
+    listRef.current.scrollTop = scrollTop.current - walk;
+  };
+
+  const handlePointerUp = () => {
+    isDragging.current = false;
+    if (listRef.current) {
+      listRef.current.style.scrollSnapType = "y mandatory";
+    }
+    document.body.style.userSelect = "";
+    // Re-trigger scroll snap settling
+    handleScroll();
+  };
+
+  useEffect(() => {
+    document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointermove", handlePointerMove, { passive: false });
+    return () => {
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointermove", handlePointerMove);
+    };
+  }, [disabled]);
+
   const handlePick = (opt, idx) => {
     if (disabled) return;
     listRef.current?.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
@@ -100,7 +140,8 @@ export default function ScrollDigit({ options, value, onChange, disabled, size =
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+        onPointerDown={handlePointerDown}
+        className="h-full overflow-y-scroll snap-y snap-mandatory touch-pan-y overscroll-contain cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none", scrollPaddingTop: ITEM_H, scrollPaddingBottom: ITEM_H }}
       >
         <div style={{ height: ITEM_H }} />

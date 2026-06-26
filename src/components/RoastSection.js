@@ -54,8 +54,7 @@ export default function RoastSection({ episodeId, contestantId, roasts, isArchiv
             onChange={(e) => setContent(e.target.value)}
             maxLength={280}
             placeholder="Drop a roast..."
-            className="w-full bg-[#111111] p-4 text-white font-medium resize-none pr-24 focus:outline-none focus:bg-[#1A1A1A] transition-colors"
-            rows={3}
+            className="roast-textarea w-full bg-[#111111] p-4 text-white font-medium resize-none pr-24 focus:outline-none focus:bg-[#1A1A1A] transition-colors"
           />
           <div className="absolute bottom-4 right-4 flex items-center gap-4">
             <span className={`text-xs font-mono font-bold ${content.length === 280 ? 'text-latent-crimson drop-shadow-[0_0_5px_rgba(139,30,45,0.5)]' : 'text-white/40'}`}>
