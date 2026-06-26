@@ -22,30 +22,30 @@ const TILT_SPRING = { stiffness: 200, damping: 16, mass: 0.5 };
 const PLACE_STYLE = {
   1: {
     ring: "border-latent-gold shadow-[0_0_60px_rgba(212,175,55,0.5)]",
-    size: "h-40 w-40 border-8 sm:h-60 sm:w-60",
-    pedestal: "h-40 sm:h-56 from-latent-gold/25",
-    name: "text-2xl text-latent-gold sm:text-4xl",
-    score: "text-5xl text-latent-gold drop-shadow-[0_0_20px_rgba(212,175,55,0.6)] sm:text-8xl",
+    size: "h-28 w-28 border-4 sm:border-8 sm:h-60 sm:w-60",
+    pedestal: "h-32 w-24 sm:w-44 sm:h-56 from-latent-gold/25",
+    name: "text-lg text-latent-gold sm:text-4xl",
+    score: "text-3xl text-latent-gold drop-shadow-[0_0_20px_rgba(212,175,55,0.6)] sm:text-8xl",
     rankNum: "text-white/40",
     order: "order-2",
     delay: 0.15,
   },
   2: {
     ring: "border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.1)]",
-    size: "h-32 w-32 border-[6px] sm:h-48 sm:w-48",
-    pedestal: "h-28 sm:h-40 from-white/15",
-    name: "text-xl text-white/90 sm:text-3xl",
-    score: "text-4xl text-white/90 sm:text-7xl",
+    size: "h-20 w-20 border-4 sm:border-[6px] sm:h-48 sm:w-48",
+    pedestal: "h-24 w-20 sm:w-36 sm:h-40 from-white/15",
+    name: "text-sm text-white/90 sm:text-3xl",
+    score: "text-2xl text-white/90 sm:text-7xl",
     rankNum: "text-white/30",
     order: "order-1",
     delay: 0.3,
   },
   3: {
     ring: "border-latent-crimson/60 shadow-[0_0_30px_rgba(139,30,45,0.3)]",
-    size: "h-24 w-24 border-4 sm:h-40 sm:w-40",
-    pedestal: "h-20 sm:h-28 from-latent-crimson/20",
-    name: "text-lg text-white/70 sm:text-2xl",
-    score: "text-3xl text-white/70 sm:text-5xl",
+    size: "h-16 w-16 border-2 sm:border-4 sm:h-40 sm:w-40",
+    pedestal: "h-20 w-16 sm:w-32 sm:h-28 from-latent-crimson/20",
+    name: "text-xs text-white/70 sm:text-2xl",
+    score: "text-xl text-white/70 sm:text-5xl",
     rankNum: "text-white/20",
     order: "order-3",
     delay: 0.45,
@@ -145,9 +145,9 @@ function PodiumCard({ entry, place, reduced }) {
         viewport={{ once: true }}
         transition={reduced ? { duration: 0.2 } : { delay: s.delay + 0.2, duration: 0.7, ease: "easeOut" }}
         style={{ originY: 1 }}
-        className={`mt-6 w-28 rounded-t-[1.75rem] border-x border-t border-white/10 bg-gradient-to-b to-transparent backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:w-44 ${s.pedestal}`}
+        className={`mt-4 sm:mt-6 rounded-t-[1.75rem] border-x border-t border-white/10 bg-gradient-to-b to-transparent backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${s.pedestal}`}
       >
-        <div className="flex h-full items-start justify-center pt-3 font-display text-3xl font-black text-white/10 sm:text-5xl">
+        <div className="flex h-full items-start justify-center pt-3 font-display text-2xl font-black text-white/10 sm:pt-4 sm:text-5xl">
           {place}
         </div>
       </motion.div>
@@ -221,7 +221,7 @@ export default function ScoreboardPodium({ podium = [] }) {
           The Executioners&apos; Block
         </motion.div>
 
-        <div className="flex items-end justify-center gap-6 sm:gap-16">
+        <div className="flex items-end justify-center gap-3 sm:gap-16">
           {ordered.map(({ entry, place }) => (
             <PodiumCard key={entry.id} entry={entry} place={place} reduced={reduced} />
           ))}

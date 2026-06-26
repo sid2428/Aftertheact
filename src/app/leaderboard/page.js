@@ -65,7 +65,7 @@ export default async function LeaderboardPage() {
       </section>
 
       <main className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="mx-auto max-w-4xl space-y-16">
           <section className="space-y-6">
             <div className="flex items-end justify-between border-b-4 border-white/15 pb-3">
               <h2 className="font-display text-4xl font-black uppercase tracking-tight text-white">Season Standing</h2>
@@ -85,9 +85,8 @@ export default async function LeaderboardPage() {
                   </div>
                   <Avatar user={user} highlight={idx === 0} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 font-display text-lg font-black uppercase tracking-tight text-white transition-colors group-hover:text-oracle-gold sm:text-2xl">
+                    <div className="truncate font-display text-base font-black uppercase tracking-tight text-white transition-colors group-hover:text-oracle-gold sm:text-2xl">
                       {user.username}
-                      {(user.badges || []).map((badge) => <Badge key={badge}>{badge}</Badge>)}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
@@ -115,31 +114,30 @@ export default async function LeaderboardPage() {
               {oracles?.map((user, idx) => (
                 <div
                   key={user.id}
-                  className={`group brutal-scroll-row relative flex items-center gap-2.5 border-b-4 border-white/10 p-3 transition-colors last:border-b-0 hover:bg-white/[0.04] sm:gap-4 sm:p-4 ${
+                  className={`group brutal-scroll-row relative flex items-center gap-3 border-b-4 border-white/10 px-3 py-4 transition-colors last:border-b-0 hover:bg-white/[0.04] sm:gap-4 sm:px-4 sm:py-5 ${
                     idx === 0 ? "border-l-8 border-l-oracle-gold bg-oracle-gold/[0.08]" : "border-l-8 border-l-transparent"
                   }`}
                 >
-                  <div className="w-7 shrink-0 text-center font-mono text-2xl font-black text-white/20 transition-colors group-hover:text-oracle-green sm:w-12 sm:text-4xl">
+                  <div className="w-7 shrink-0 text-center font-mono text-xl font-black text-white/20 transition-colors group-hover:text-oracle-green sm:w-10 sm:text-3xl">
                     #{idx + 1}
                   </div>
                   <Avatar user={user} highlight={idx === 0} />
                   <div className="min-w-0 flex-1">
-                    <div className={`flex flex-wrap items-center gap-2 font-display text-lg font-black uppercase tracking-tight transition-colors sm:text-2xl ${
+                    <div className={`truncate font-display text-sm font-black uppercase tracking-tight transition-colors sm:text-xl ${
                       idx === 0 ? "text-oracle-gold" : "text-white group-hover:text-oracle-green"
                     }`}>
                       {user.username}
-                      {(user.badges || []).map((badge) => <Badge key={badge}>{badge}</Badge>)}
                     </div>
-                    <div className="mt-0.5 truncate font-display text-[10px] font-black uppercase tracking-widest text-white/45">
+                    <div className="mt-1 truncate font-display text-[9px] font-black uppercase tracking-widest text-white/40 sm:text-[10px]">
                       {user.oracle_qualifying_episodes} predictions
                     </div>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0 min-w-[60px] text-right sm:min-w-[80px]">
                     <div className="flex items-baseline justify-end">
-                      <RollingNumber value={(user.oracle_score || 0) * 100} decimals={1} height={30} className="justify-end font-bold text-oracle-green" />
-                      <span className="font-number text-xl font-bold text-oracle-green sm:text-2xl">%</span>
+                      <RollingNumber value={(user.oracle_score || 0) * 100} decimals={1} height={24} className="justify-end font-bold text-oracle-green" />
+                      <span className="font-number text-base font-bold text-oracle-green sm:text-xl">%</span>
                     </div>
-                    <div className="font-display text-[10px] font-black uppercase tracking-widest text-white/40">Accuracy</div>
+                    <div className="font-display text-[9px] font-black uppercase tracking-widest text-white/40 sm:text-[10px]">Accuracy</div>
                   </div>
                 </div>
               ))}

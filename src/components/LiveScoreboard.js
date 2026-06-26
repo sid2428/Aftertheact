@@ -194,7 +194,7 @@ export default function LiveScoreboard({
   }
 
   return (
-    <div role="list" aria-label={ariaLabel} aria-live="polite" className="flex flex-col gap-1.5">
+    <div role="list" aria-label={ariaLabel} aria-live="polite" className="flex flex-col gap-3">
       <LayoutGroup>
         <AnimatePresence initial={false}>
           {sorted.map((row, i) => (
