@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
+
+// Assets in the order the visitor stumbles on them after pressing Enter:
+// intro.mp4 is already buffering via the <video preload="auto"> below, so it's
+// omitted here; the curtains fly in mid-intro (~7s) and the homepage reveals its
+// backdrop + logo right after. Warming them during playback kills the pop-in.
+const PRELOAD_SEQUENCE = [
+  "/curtains-left.png",
+  "/curtains-right.png",
+  "/bluecurtains-bg.png",
+  "/logo.png",
+];
 
 const SEEN_KEY = "ata_intro_seen";
 const PAUSE_AT = 7.0; // curtain moment
@@ -59,6 +71,10 @@ export default function IntroSequence({ children }) {
 
   const handleEnter = () => {
     setHasInteracted(true);
+    // Warm the cache in journey order while the intro plays (React 19 hoists these
+    // to <link rel="preload">). The video has the dwell time to itself; these get
+    // the ~7s of playback before the curtains and homepage need them.
+    PRELOAD_SEQUENCE.forEach((href) => ReactDOM.preload(href, { as: "image" }));
     if (videoRef.current) {
       videoRef.current.play().catch(() => {});
     }

@@ -14,7 +14,8 @@ export async function GET(req, { params }) {
       .from("CommunityPostReply")
       .select(REPLY_SELECT)
       .eq("post_id", postId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .limit(100); // ponytail: hard cap; add keyset pagination if a post ever exceeds 100 replies
     if (error) throw error;
     return NextResponse.json({ success: true, data });
   } catch (err) {
@@ -58,18 +59,8 @@ export async function POST(req, { params }) {
       .single();
     if (error) throw error;
 
-    // Best-effort reply_count bump.
-    const { data: post } = await supabase
-      .from("CommunityPost")
-      .select("reply_count")
-      .eq("id", postId)
-      .single();
-    if (post) {
-      await supabase
-        .from("CommunityPost")
-        .update({ reply_count: (post.reply_count || 0) + 1 })
-        .eq("id", postId);
-    }
+    // Atomic reply_count bump — no read-modify-write race.
+    await supabase.rpc("bump_post_replies", { p_post_id: postId });
 
     return NextResponse.json({ success: true, data });
   } catch (err) {

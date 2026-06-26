@@ -28,35 +28,34 @@ export default async function CommunityPage() {
   let stats = { postsToday: 0, activeRoasters: 0, mostRoasted: null };
 
   try {
-    const { data, error } = await supabase
-      .from("CommunityPost")
-      .select(POST_SELECT)
-      .eq("moderation_status", "VISIBLE")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) throw error;
-    posts = data || [];
-
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: hot } = await supabase
-      .from("CommunityPost")
-      .select(POST_SELECT)
-      .eq("moderation_status", "VISIBLE")
-      .order("like_count", { ascending: false })
-      .limit(5);
-    hotTakes = hot || [];
-
-    // Today's activity for the stat pills.
+    // The feed, the hot takes, and today's activity are independent — fetch together.
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const { data: todays } = await supabase
-      .from("CommunityPost")
-      .select("user_id, contestant_tag, Contestant ( name )")
-      .eq("moderation_status", "VISIBLE")
-      .gte("created_at", startOfDay.toISOString())
-      .limit(500);
+    const [postsRes, hotRes, todaysRes] = await Promise.all([
+      supabase
+        .from("CommunityPost")
+        .select(POST_SELECT)
+        .eq("moderation_status", "VISIBLE")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("CommunityPost")
+        .select(POST_SELECT)
+        .eq("moderation_status", "VISIBLE")
+        .order("like_count", { ascending: false })
+        .limit(5),
+      supabase
+        .from("CommunityPost")
+        .select("user_id, contestant_tag, Contestant ( name )")
+        .eq("moderation_status", "VISIBLE")
+        .gte("created_at", startOfDay.toISOString())
+        .limit(500),
+    ]);
+    if (postsRes.error) throw postsRes.error;
+    posts = postsRes.data || [];
+    hotTakes = hotRes.data || [];
 
+    const todays = todaysRes.data;
     if (todays) {
       stats.postsToday = todays.length;
       stats.activeRoasters = new Set(todays.map((p) => p.user_id).filter(Boolean)).size;

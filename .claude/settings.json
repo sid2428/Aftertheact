@@ -1,6 +1,6 @@
 {
   "enabledPlugins": {
-    "ponytail@ponytail": true,
+    "ponytail@ponytail": false,
     "supabase@claude-plugins-official": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": true
   }
