@@ -42,9 +42,15 @@ export default async function PanelPage({ searchParams }) {
     // One rating per (judge, user, episode). The judge's final score aggregates
     // EVERY rating across all episodes, trust-weighted (Σ score·trust / Σ trust);
     // the episode pill-tabs pick which episode your vote applies to.
-    const { data, error } = await supabase
-      .from("JudgeRating")
-      .select("judge_id, user_id, episode_id, harshness_score, accuracy_score, entertainment_score, comment, User(trust_score)");
+    // Only judges allocated to this episode are rendered, so scope the scan to them
+    // (the aggregate is still trust-weighted across ALL episodes — just for these judges).
+    // idx_judgerating_judge_id serves this lookup.
+    const { data, error } = allocatedIds.length
+      ? await supabase
+          .from("JudgeRating")
+          .select("judge_id, user_id, episode_id, harshness_score, accuracy_score, entertainment_score, comment, User(trust_score)")
+          .in("judge_id", allocatedIds)
+      : { data: [], error: null };
     if (error) throw error;
     for (const row of data || []) {
       const avgScore = (row.harshness_score + row.accuracy_score + row.entertainment_score) / 3;

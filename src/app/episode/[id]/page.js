@@ -85,13 +85,23 @@ export default async function EpisodePage({ params }) {
     notFound();
   }
 
-  const { data: appearances } = await supabase
-    .from("ContestantEpisodeAppearance")
-    .select(`
-      *,
-      Contestant (*)
-    `)
-    .eq("episode_id", episode.id);
+  // Appearances and the viewer's own votes are independent — fetch together.
+  const [{ data: appearances }, votesRes] = await Promise.all([
+    supabase
+      .from("ContestantEpisodeAppearance")
+      .select(`
+        *,
+        Contestant (*)
+      `)
+      .eq("episode_id", episode.id),
+    session?.user?.id
+      ? supabase
+          .from("UserVote")
+          .select("contestant_id, score")
+          .eq("episode_id", episode.id)
+          .eq("user_id", session.user.id)
+      : Promise.resolve({ data: null }),
+  ]);
 
   const sortedAppearances = appearances?.sort((a, b) => {
     if (episode.status === "REVEALED" || episode.status === "ARCHIVED") {
@@ -108,15 +118,8 @@ export default async function EpisodePage({ params }) {
   const totalVotes = sortedAppearances.reduce((sum, a) => sum + (a.total_votes_raw || 0), 0);
 
   let userVotesMap = {};
-  if (session?.user?.id) {
-    const { data: existingVotes } = await supabase
-      .from("UserVote")
-      .select("contestant_id, score")
-      .eq("episode_id", episode.id)
-      .eq("user_id", session.user.id);
-    if (existingVotes) {
-      userVotesMap = existingVotes.reduce((acc, v) => ({ ...acc, [v.contestant_id]: v.score }), {});
-    }
+  if (votesRes.data) {
+    userVotesMap = votesRes.data.reduce((acc, v) => ({ ...acc, [v.contestant_id]: v.score }), {});
   }
 
   // ── LIVE: hand the entire viewport to the voting wheel ───────────────────

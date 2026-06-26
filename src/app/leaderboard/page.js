@@ -36,18 +36,20 @@ function Avatar({ user, highlight = false }) {
 export default async function LeaderboardPage() {
   const supabase = getServiceSupabase();
 
-  const { data: topUsers } = await supabase
-    .from("User")
-    .select("id, username, latent_points_alltime, latent_points_season, badges, avatar_url")
-    .order("latent_points_season", { ascending: false })
-    .limit(50);
-
-  const { data: oracles } = await supabase
-    .from("User")
-    .select("id, username, oracle_score, oracle_qualifying_episodes, avatar_url, badges")
-    .gte("oracle_qualifying_episodes", 1)
-    .order("oracle_score", { ascending: false })
-    .limit(50);
+  // Two independent top-50 reads — run them together (saves a round-trip).
+  const [{ data: topUsers }, { data: oracles }] = await Promise.all([
+    supabase
+      .from("User")
+      .select("id, username, latent_points_alltime, latent_points_season, badges, avatar_url")
+      .order("latent_points_season", { ascending: false })
+      .limit(50),
+    supabase
+      .from("User")
+      .select("id, username, oracle_score, oracle_qualifying_episodes, avatar_url, badges")
+      .gte("oracle_qualifying_episodes", 1)
+      .order("oracle_score", { ascending: false })
+      .limit(50),
+  ]);
 
   return (
     <div className="min-h-screen bg-brand-bg text-white selection:bg-broadcast-red/30">
