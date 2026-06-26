@@ -124,7 +124,7 @@ function ArcCard({ ep, i, total, progress }) {
 
   return (
     <motion.div
-      className="absolute left-1/2 top-[52%] -ml-[140px] -mt-[190px] w-[280px] h-[380px]"
+      className="absolute left-1/2 top-[52%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
       // willChange + backfaceVisibility keep each card on its own GPU layer, so
       // the per-frame scale/rotate is a cheap composite instead of a repaint.
       style={{ x: xOffset, y, rotate, scale, opacity, zIndex, willChange: "transform", backfaceVisibility: "hidden" }}

@@ -2,9 +2,9 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
@@ -240,5 +240,15 @@ export default function LoginPage() {
 
       </div>
     </div>
+  );
+}
+
+// useSearchParams() requires a Suspense boundary so the page can be statically
+// rendered (CSR bailout otherwise). The form hydrates on the client.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[80vh]" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,8 +1,6 @@
 import { Anton, Inter, Rajdhani } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
@@ -23,22 +21,15 @@ export const metadata = {
   },
 };
 
-export default async function RootLayout({ children }) {
-  const session = await getServerSession(authOptions);
-
+export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
 
-        <SessionProviderWrapper session={session}>
+        <SessionProviderWrapper>
           <SmoothScroll>
             {/* Global Navigation - Dark Luxury Glassmorphic */}
-            <MainNav
-              isLoggedIn={!!session?.user}
-              isAdmin={!!session?.user?.isAdmin}
-              userName={session?.user?.username || session?.user?.name || session?.user?.email || null}
-              userImage={session?.user?.image || null}
-            />
+            <MainNav />
 
             {/* Main Content */}
             <main className="flex-1 relative overflow-x-hidden">

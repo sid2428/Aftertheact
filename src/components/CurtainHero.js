@@ -155,8 +155,8 @@ export default function CurtainHero({ members = [] }) {
         </AnimatePresence>
       </div>
 
-      {/* Desktop logo: centered on its own, unaffected by the scatter above */}
-      <div className="hidden md:flex relative z-10 items-center justify-center px-6">
+      {/* Logo: centered on its own, unaffected by the scatter above */}
+      <div className="relative z-10 flex items-center justify-center px-6 -mt-24 md:mt-0">
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -177,8 +177,7 @@ export default function CurtainHero({ members = [] }) {
           <motion.img
             src="/logo.png"
             alt="After The Act"
-            className="relative w-[53vw] max-w-none h-auto transform-gpu"
-            style={{ willChange: "transform", backfaceVisibility: "hidden" }}
+            className="relative w-[80vw] md:w-[53vw] max-w-none h-auto drop-shadow-[0_0_40px_rgba(212,175,55,0.5)]"
             animate={{ scale: [1, 1.25, 1, 1.15, 1] }}
             transition={{ repeat: Infinity, duration: 2.5, times: [0, 0.15, 0.3, 0.45, 1] }}
           />
