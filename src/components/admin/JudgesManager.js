@@ -7,7 +7,7 @@ const inputClass = "w-full bg-[#050505] text-white border border-brand-border p-
 
 const blank = { id: "", name: "", image: "", descriptor: "", instagram_handle: "", bio: "", tags: [], show_in_hero: true };
 
-export default function JudgesManager({ initialJudges, maxPanel, defaultTags }) {
+export default function JudgesManager({ initialJudges, defaultTags }) {
   const [judges, setJudges] = useState(initialJudges);
   const [editing, setEditing] = useState(blank); // blank = "add new" form
   const [busy, setBusy] = useState(false);
@@ -15,7 +15,6 @@ export default function JudgesManager({ initialJudges, maxPanel, defaultTags }) 
   const formRef = useRef(null);
 
   const isEdit = !!editing.id;
-  const full = judges.length >= maxPanel;
 
   const startEdit = (j) => {
     setError("");
@@ -126,12 +125,9 @@ export default function JudgesManager({ initialJudges, maxPanel, defaultTags }) 
         </label>
 
         {error && <p className="font-display text-xs uppercase tracking-widest text-latent-crimson">{error}</p>}
-        {!isEdit && full && (
-          <p className="font-mono text-xs text-white/40">Panel is full ({maxPanel}). Delete a judge to add another.</p>
-        )}
 
         <button
-          disabled={busy || (!isEdit && full)}
+          disabled={busy}
           className="bg-latent-gold text-[#0A0A0A] px-6 py-2 font-display font-black uppercase rounded-sm hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all disabled:opacity-40"
         >
           {busy ? "Saving…" : isEdit ? "Save Judge" : "Add Judge"}
