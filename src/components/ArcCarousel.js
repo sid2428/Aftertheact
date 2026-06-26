@@ -36,7 +36,10 @@ export default function ArcCarousel({ episodes = [] }) {
           end: () => "+=" + episodes.length * window.innerHeight * 0.6,
           pin: pinRef.current,
           pinSpacing: true,
-          scrub: true,
+          // A small scrub lag lerps progress toward the scroll position instead
+          // of snapping to it, so variable-rate touch-scroll events on mobile
+          // resolve into fluid motion rather than frame-to-frame jitter.
+          scrub: 0.6,
           invalidateOnRefresh: true,
           onUpdate: (self) => progress.set(self.progress),
         });
@@ -138,9 +141,11 @@ function ArcCard({ ep, i, total, progress }) {
   return (
     <motion.div
       className="absolute left-1/2 top-[52%] -ml-[140px] -mt-[190px] w-[280px] h-[380px]"
-      style={{ x: xOffset, y, rotate, scale, opacity, zIndex }}
+      // willChange + backfaceVisibility keep each card on its own GPU layer, so
+      // the per-frame scale/rotate is a cheap composite instead of a repaint.
+      style={{ x: xOffset, y, rotate, scale, opacity, zIndex, willChange: "transform", backfaceVisibility: "hidden" }}
     >
-      <EpisodeCard ep={ep} className="w-full h-full" innerClassName="shadow-2xl" />
+      <EpisodeCard ep={ep} flat className="w-full h-full" innerClassName="shadow-2xl" />
     </motion.div>
   );
 }

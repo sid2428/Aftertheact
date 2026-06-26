@@ -283,6 +283,22 @@ body::after {
       0 24px 70px rgba(0, 0, 0, 0.5);
   }
 
+  /* Opaque twin of .glass-surface — identical look (same gradient, border, inner
+     highlight, ambient shadow) but with NO backdrop-filter. For cards that are
+     transformed every frame (e.g. the scroll-driven ArcCarousel): an animated
+     backdrop-filter is re-sampled on every frame and tanks mobile frame rate.
+     Over the near-black section background the live blur is invisible anyway, so
+     this reads the same while compositing cheaply on the GPU. */
+  .card-surface {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.016)),
+      rgb(15, 15, 15);
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 24px 70px rgba(0, 0, 0, 0.5);
+  }
+
   /* Lighter glass for items living inside a .glass-surface (e.g. rows). Brightens
      smoothly on hover so the whole slab feels alive without hard state jumps. */
   .glass-row {

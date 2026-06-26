@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -15,9 +15,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
+  // Tick down the resend cooldown.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  const sendOtp = async () => {
     if (!email) return;
     setIsLoading(true);
     setError("");
@@ -30,14 +37,21 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.error) {
         setError(data.error);
+        if (data.retryAfter) setCooldown(data.retryAfter);
       } else {
         setStep(1);
+        setCooldown(60); // matches server COOLDOWN_SEC
       }
     } catch (err) {
       setError("Something went wrong");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSendOtp = (e) => {
+    e.preventDefault();
+    sendOtp();
   };
 
   const handleVerifyOtp = async (e) => {
@@ -141,13 +155,23 @@ export default function LoginPage() {
                 >
                   {isLoading ? "Verifying..." : "Verify & Login"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(0)}
-                  className="text-xs text-white/40 hover:text-white uppercase tracking-wider mt-2"
-                >
-                  Use a different email
-                </button>
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(0)}
+                    className="text-xs text-white/40 hover:text-white uppercase tracking-wider"
+                  >
+                    Use a different email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendOtp}
+                    disabled={isLoading || cooldown > 0}
+                    className="text-xs text-white/40 hover:text-white uppercase tracking-wider disabled:opacity-40 disabled:hover:text-white/40"
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                  </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleAdminLogin} className="space-y-4">

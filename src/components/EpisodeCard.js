@@ -73,7 +73,7 @@ function EpisodeActions({ ep }) {
   );
 }
 
-export default function EpisodeCard({ ep, index = 0, reduced = false, className = "", innerClassName = "" }) {
+export default function EpisodeCard({ ep, index = 0, reduced = false, flat = false, className = "", innerClassName = "" }) {
   const isLive = ep.status === "LIVE";
 
   const px = useMotionValue(0);
@@ -82,7 +82,7 @@ export default function EpisodeCard({ ep, index = 0, reduced = false, className 
   const rotateY = useSpring(useTransform(px, [-0.5, 0.5], [-6, 6]), TILT_SPRING);
 
   function handleMove(e) {
-    if (reduced) return;
+    if (reduced || flat) return;
     const rect = e.currentTarget.getBoundingClientRect();
     px.set((e.clientX - rect.left) / rect.width - 0.5);
     py.set((e.clientY - rect.top) / rect.height - 0.5);
@@ -94,19 +94,19 @@ export default function EpisodeCard({ ep, index = 0, reduced = false, className 
 
   return (
     <motion.div
-      layout={!reduced}
+      layout={!reduced && !flat}
       initial={reduced ? undefined : { opacity: 0, y: 24 }}
       animate={reduced ? undefined : { opacity: 1, y: 0 }}
       exit={reduced ? undefined : { opacity: 0, y: -12, scale: 0.97 }}
       transition={reduced ? { duration: 0.15 } : { duration: 0.5, delay: Math.min(index * 0.05, 0.4), ease: [0.22, 1, 0.36, 1] }}
-      style={{ perspective: 1000 }}
+      style={flat ? undefined : { perspective: 1000 }}
       className={className}
     >
       <motion.div
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className={`group/card flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 glass-surface shadow-2xl transition-all duration-500 ${
+        style={flat ? undefined : { rotateX, rotateY, transformStyle: "preserve-3d" }}
+        className={`group/card flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 ${flat ? "card-surface" : "glass-surface"} shadow-2xl transition-all duration-500 ${
           isLive
             ? "border-latent-crimson/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_40px_rgba(139,30,45,0.3)]"
             : "hover:border-latent-gold/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_40px_rgba(212,175,55,0.25)]"
