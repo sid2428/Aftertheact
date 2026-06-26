@@ -47,19 +47,26 @@ export async function POST(req, { params }) {
 
   try {
     const supabase = getServiceSupabase();
-    const { error } = await supabase.from("JudgeRating").upsert(
-      {
-        judge_id: judgeId,
-        user_id: userId,
-        episode_id: episodeId,
-        harshness_score: score,
-        accuracy_score: score,
-        entertainment_score: score,
-        comment,
-      },
-      { onConflict: "judge_id,user_id,episode_id" }
-    );
-    if (error) throw error;
+    // Insert, not upsert: one rating per (judge, user, episode) and it can't be
+    // changed. The unique constraint rejects a second attempt.
+    const { error } = await supabase.from("JudgeRating").insert({
+      judge_id: judgeId,
+      user_id: userId,
+      episode_id: episodeId,
+      harshness_score: score,
+      accuracy_score: score,
+      entertainment_score: score,
+      comment,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { success: false, error: "You've already locked your verdict for this judge this episode." },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
     // Final score = every rating for this judge across ALL episodes, trust-weighted.
     const { data: rows } = await supabase

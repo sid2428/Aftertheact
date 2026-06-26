@@ -109,6 +109,8 @@ export async function updateEpisode(formData) {
     air_date: new Date(formData.get("air_date")).toISOString(),
     admin_note: formData.get("admin_note") || null,
     voting_window_close: formData.get("voting_window_close") ? new Date(formData.get("voting_window_close")).toISOString() : null,
+    // Which panel judges (by slug id) appear on this episode.
+    judge_ids: formData.getAll("judge_ids"),
   };
 
   const thumbnailFile = formData.get("thumbnail_file");
@@ -120,6 +122,7 @@ export async function updateEpisode(formData) {
   revalidatePath(`/admin/episodes/${id}`);
   revalidatePath(`/episode/${id}`);
   revalidatePath("/episodes");
+  revalidatePath("/panel");
 }
 
 export async function removeAppearance(formData) {

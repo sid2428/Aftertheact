@@ -14,19 +14,25 @@ export const revalidate = 0;
 
 export default async function PanelPage({ searchParams }) {
   const session = await getServerSession(authOptions);
-  const judges = await getPanelMembers();
+  const allJudges = await getPanelMembers();
   const supabase = getServiceSupabase();
 
-  // Judges are classified per episode — pick the episode to rate/view, newest first.
+  // Judges are allocated per episode — pick the episode to rate/view, newest first.
   const { data: episodes } = await supabase
     .from("Episode")
-    .select("id, season_number, episode_number, title, status")
+    .select("id, season_number, episode_number, title, status, judge_ids")
     .in("status", ["LIVE", "REVEALED"])
     .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
   const { episode: episodeParam } = await searchParams;
-  const selectedEpisodeId = episodes?.some((e) => e.id === episodeParam) ? episodeParam : episodes?.[0]?.id || null;
+  const selectedEpisode = episodes?.find((e) => e.id === episodeParam) || episodes?.[0] || null;
+  const selectedEpisodeId = selectedEpisode?.id || null;
+
+  // Only judges allocated to the selected episode appear (Redis pool filtered by
+  // the episode's judge_ids).
+  const allocatedIds = selectedEpisode?.judge_ids || [];
+  const judges = allJudges.filter((j) => allocatedIds.includes(j.id));
 
   let dbReady = true;
   const byJudge = {};
