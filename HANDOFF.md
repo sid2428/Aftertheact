@@ -1,30 +1,38 @@
-# Handoff — 2026-06-25
-last_commit: ab2a9807c8bb4d7405a726de59517b8e29b7be70
+# Handoff — 2026-06-26
+last_commit: 578f4f0
 branch: main
 
 ## Done
-- Hero judge faces (src/components/CurtainHero.js): absolutely-positioned slots flanking the logo, one cycling PNG cutout per side, gold glow, logo unaffected.
-- User profile page (`src/app/my-profile/page.js`): votes grouped by episode (read-only, no delete), "Your Comments" panel (`src/components/ProfileCommentsPanel.js`) with delete + "this is permanent" confirm popup, wired to the existing `DELETE /api/community/posts/[id]`.
-- Signout is now a confirm popup (not NextAuth's own page) in `MainNav.js` and a new `src/components/admin/AdminLogoutButton.js` for the admin Control Panel header (`src/app/admin/layout.js`).
-- Judge the Judges (`/panel`) reworked to match the contestant voting UI: one overall score via `ScrollDigit` (1–10) + pick-one vibe tag, replacing the old 3-slider form. Tags default to 6 presets, editable per judge in `/admin/panel` (`tags` field, comma-separated).
-- Judge ratings now scoped per episode (episode pill-tabs on `/panel`, newest first) via new `episode_id` column + unique constraint on `JudgeRating`. `src/lib/judges.js` aggregation rewritten for `overall_score`/`tag` instead of harshness/accuracy/entertainment.
-- New `/judges-scoreboard` page: ranks judges by total votes received, then avg score ("popularity").
-- Migrations added: `migrations/0009-judgerating-overall-tag.sql`, `migrations/0010-judgerating-episode.sql`.
+- Live global post-karma. Likes (`api/community/posts/[id]/like/route.js`) and
+  roast upvotes (`actions/roasts.js`) call `adjust_user_karma(user_id, ±1)` —
+  O(1), updates author's latent_points instantly. Migrations `0021` (global
+  model + one-time backfill) and `0022` (incremental ±1, drops the old
+  recompute fn). RUN BOTH in Supabase if not already.
+- `award_episode_latent_points` (in 0021) no longer awards per-episode
+  post_karma — karma is global now, so reveal + live would otherwise double-count.
+- Relabel "Latent Score" → "Crowd Score" tile (`SplitFlapScoreboard.js`,
+  `admin/episodes/[id]/page.js`).
 
 ## In progress
-- Nothing mid-edit. All above is committed (`ab2a980`) and already pushed to `origin/main`.
+- None. All shipped.
 
 ## Next action
-- **Run migrations 0009 and 0010 against the live Supabase DB** (no migration runner in this repo — apply manually, same as 0001-0008). Judge rating/scoreboard will error until this is done.
-- Visually verify hero face cycling, the new /panel episode tabs, and /judges-scoreboard in a real browser (desktop + mobile).
+- In Supabase: confirm `0021`+`0022` ran. Then upvote a roast and check that
+  author's `latent_points_season` jumps (leaderboard reflects within 30s).
 
-## Decisions (with reasoning, not just the what)
-- Old `harshness_score`/`accuracy_score`/`entertainment_score` columns left in place (unused) rather than dropped — avoids destroying existing rating data.
-- Judge tags/episodes still sourced from Redis (`panel:members`) + the existing `Episode` table, not the unused relational `Judge` table — not worth migrating onto it for this change.
-- `episode_id` nullable + unique constraint includes it — old cumulative rows (NULL episode_id) don't collide with new per-episode rows.
+## Decisions (with reasoning)
+- Karma is GLOBAL (one ledger row per user, `episode_id IS NULL`, enforced by
+  partial unique index `uniq_global_karma`), not per-episode — user chose
+  reddit-style over matching the old per-episode keying.
+- Increment by ±1 instead of re-summing all posts/roasts per click — avoids
+  O(n) scans. ledger + User move together; reveal's SUM(ledger) self-heals drift.
+- "Pseudo-live": author's point TOTAL updates instantly; rank ORDER settles via
+  leaderboard `revalidate=30` + next reveal (skipped O(users) re-rank per click).
 
 ## Do not touch
-- `.claude/worktrees/glowing-soaring-locket` (shows as modified/untracked in git status) — tooling artifact, not application code.
+- `score_episode_predictions` (in 0017) — non-idempotent counter increments;
+  known footgun, untouched this session. Don't toggle `is_revelation_triggered`
+  manually (caused a prior stuck-status bug).
 
 ## Blockers
-- None, other than the unrun migrations above.
+- None.
