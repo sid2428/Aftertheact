@@ -47,8 +47,8 @@ export async function POST(req) {
       );
     }
 
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a 6-digit OTP with a crypto-grade RNG (not Math.random()).
+    const otp = crypto.randomInt(100000, 1000000).toString();
 
     // Store in Redis with 15 minutes expiration
     await redis.setex(`otp:${email}`, 900, otp);
