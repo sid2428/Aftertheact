@@ -1,8 +1,16 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import sharp from "sharp";
 import { NextResponse } from "next/server";
+import { isAuthorizedCron } from "@/lib/cron";
 
 export async function POST(req) {
+  // Same gate as flush-votes / trust-engine: this route does sharp image
+  // generation + Storage uploads (upsert overwrites existing cards), so it must
+  // not be callable by anonymous traffic.
+  if (!isAuthorizedCron(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const episodeId = searchParams.get("episodeId");
 

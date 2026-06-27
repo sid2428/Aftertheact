@@ -11,6 +11,24 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Global security headers on every route. Helmet is Express-only; the Next
+        // equivalent is a global headers() entry.
+        //   - nosniff: stop MIME-sniffing of responses.
+        //   - frame-ancestors 'none' + X-Frame-Options: clickjacking protection.
+        //   - HSTS: force HTTPS for a year incl. subdomains (Vercel/edge may also set
+        //     this; harmless to assert it here too).
+        //   - Referrer-Policy / Permissions-Policy: trim referrer leakage and unused APIs.
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+      {
         // Uploaded filenames are random UUIDs, so caching forever is safe — a new upload is a new URL.
         source: "/uploads/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
