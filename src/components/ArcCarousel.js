@@ -55,6 +55,53 @@ export default function ArcCarousel({ episodes = [] }) {
     };
   }, [reduced, episodes.length, progress]);
 
+  // Mobile: let a sideways swipe drive the same scroll-through animation as a
+  // downward scroll. Lenis leaves touch scrolling native, so a horizontal drag
+  // would otherwise do nothing here. We detect a horizontal-dominant gesture and
+  // translate it into vertical scroll, which the ScrollTrigger above turns into
+  // progress — so both "down" and "sideways" slide the cards toward the right.
+  useEffect(() => {
+    if (reduced || episodes.length === 0) return;
+    const el = sectionRef.current;
+    if (!el) return;
+
+    let lastX = 0;
+    let lastY = 0;
+    let horizontal = false;
+
+    const onStart = (e) => {
+      const t = e.touches[0];
+      lastX = t.clientX;
+      lastY = t.clientY;
+      horizontal = false;
+    };
+
+    const onMove = (e) => {
+      const t = e.touches[0];
+      const dx = t.clientX - lastX;
+      const dy = t.clientY - lastY;
+      // Lock to horizontal once the drag clearly favours the x-axis, so a normal
+      // vertical scroll still falls through to the browser untouched.
+      if (!horizontal && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 4) {
+        horizontal = true;
+      }
+      if (horizontal) {
+        e.preventDefault();
+        // Swipe left (dx < 0) scrolls down → progress up → cards slide right.
+        window.scrollBy(0, -dx * 1.6);
+        lastX = t.clientX;
+        lastY = t.clientY;
+      }
+    };
+
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+    };
+  }, [reduced, episodes.length]);
+
   if (!episodes || episodes.length === 0) return null;
 
   // ── Reduced-motion fallback: a plain horizontal, snap-scrolling row ───────
@@ -76,11 +123,11 @@ export default function ArcCarousel({ episodes = [] }) {
   }
 
   return (
-    <section ref={sectionRef} className="relative bg-[#0A0A0A]">
+    <section ref={sectionRef} className="relative bg-[#0A0A0A] overflow-x-clip">
       <div ref={pinRef} className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
         {/* Header — sits above the cards (centered card reaches zIndex 100) so the
             title stays visible; pointer-events-none so it never intercepts card clicks. */}
-        <div className="pointer-events-none absolute top-6 md:top-12 left-0 right-0 z-[110] text-center px-4">
+        <div className="pointer-events-none absolute top-4 md:top-8 left-0 right-0 z-[110] text-center px-4">
           <ArcHeader />
         </div>
 
@@ -97,9 +144,41 @@ export default function ArcCarousel({ episodes = [] }) {
 
 function ArcHeader() {
   return (
-    <h2 className="font-display text-3xl uppercase tracking-widest text-white sm:text-4xl">
-      <TypeOnce text="Live To Locked" sessionKey="hero-live-to-locked" speed={60} />
-    </h2>
+    <div className="flex flex-col items-center gap-1.5 sm:gap-3">
+      {/* Label */}
+      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-latent-crimson/40 bg-latent-crimson/10 font-display text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-latent-crimson/80">
+        <span className="w-1.5 h-1.5 rounded-full bg-latent-crimson animate-pulse" />
+        Season Arc
+      </span>
+
+      {/* Main title */}
+      <h2 className="font-display text-2xl sm:text-4xl md:text-5xl uppercase tracking-widest leading-none">
+        <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">
+          <TypeOnce text="LIVE TO" sessionKey="hero-live-to" speed={55} />
+        </span>
+        {" "}
+        <span
+          className="relative inline-block"
+          style={{ color: "#E53935", textShadow: "0 0 30px rgba(229,57,53,0.7), 0 0 60px rgba(229,57,53,0.35)" }}
+        >
+          <TypeOnce text="LOCKED" sessionKey="hero-locked" speed={55} delay={520} />
+          {/* Crimson underline */}
+          <span
+            aria-hidden
+            className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[2px] sm:h-[3px] rounded-full"
+            style={{
+              background: "linear-gradient(90deg, #E53935, #FF5252)",
+              boxShadow: "0 0 12px 2px rgba(229,57,53,0.6)",
+            }}
+          />
+        </span>
+      </h2>
+
+      {/* Scroll hint — hidden on mobile to save vertical space */}
+      <p className="hidden sm:block font-mono text-[11px] uppercase tracking-[0.2em] text-white/30 mt-1">
+        scroll to browse episodes
+      </p>
+    </div>
   );
 }
 
@@ -124,7 +203,7 @@ function ArcCard({ ep, i, total, progress }) {
 
   return (
     <motion.div
-      className="absolute left-1/2 top-[52%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
+      className="absolute left-1/2 top-[62%] sm:top-[52%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
       // willChange + backfaceVisibility keep each card on its own GPU layer, so
       // the per-frame scale/rotate is a cheap composite instead of a repaint.
       style={{ x: xOffset, y, rotate, scale, opacity, zIndex, willChange: "transform", backfaceVisibility: "hidden" }}

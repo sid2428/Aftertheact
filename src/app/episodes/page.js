@@ -44,13 +44,26 @@ export default async function EpisodesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden min-h-[40vh] flex items-center">
+      <section className="relative overflow-hidden flex items-center pt-6 pb-2">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,_var(--tw-gradient-stops))] from-latent-crimson/8 via-transparent to-transparent pointer-events-none" />
-        <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 py-12 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
+        {/* Ambient glow behind LINEUP */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[radial-gradient(ellipse,rgba(212,175,55,0.12),transparent_70%)] pointer-events-none" />
+        <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 py-6 flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
           <h1 className="text-6xl sm:text-8xl md:text-[8rem] font-display font-black tracking-tighter uppercase text-white leading-[0.85] drop-shadow-2xl">
             <TypeOnce text="THE" sessionKey="hero-lineup-1" speed={70} />
             <br />
-            <TypeOnce text="LINEUP" sessionKey="hero-lineup-2" speed={70} delay={260} />
+            <span className="relative inline-block">
+              <TypeOnce text="LINEUP" sessionKey="hero-lineup-2" speed={70} delay={260} />
+              {/* Gold underline with glow */}
+              <span
+                aria-hidden
+                className="absolute left-0 -bottom-2 w-full h-[5px] rounded-full"
+                style={{
+                  background: "linear-gradient(90deg, #F5D97B 0%, #D4AF37 50%, #B8860B 100%)",
+                  boxShadow: "0 0 18px 4px rgba(212,175,55,0.55), 0 0 40px 8px rgba(212,175,55,0.25)",
+                }}
+              />
+            </span>
           </h1>
 
           {/* Morphing recent-episode posters */}

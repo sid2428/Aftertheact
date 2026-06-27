@@ -16,9 +16,8 @@ const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], v
 export const metadata = {
   title: "AfterTheAct - IGL Community Platform",
   description: "The independent community platform for India's Got Latent.",
-  icons: {
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="%23D4AF37"/><path d="M4 6H20M4 12H12M4 18H8" stroke="%230A0A0A" stroke-width="2" stroke-linecap="round"/><path d="M14 15L17 18L22 10" stroke="%230A0A0A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  },
+  // Favicon + Apple touch icon come from the file-based convention:
+  // src/app/icon.png and src/app/apple-icon.png (the styled "A" from the logo).
 };
 
 export default function RootLayout({ children }) {
@@ -65,6 +64,7 @@ export default function RootLayout({ children }) {
               <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-brand-white/60">
                 <span className="text-brand-white/30">Instagram (soon)</span>
                 <span className="text-brand-white/30">Twitter / X (soon)</span>
+                <Link href="/terms" className="hover:text-broadcast-red transition-colors">Terms &amp; Privacy</Link>
                 <p className="text-brand-white/30 font-mono normal-case tracking-normal text-[11px] mt-2 leading-relaxed">
                   Disclaimer: Fan community site. Not affiliated with any official production.
                 </p>

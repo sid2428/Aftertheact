@@ -36,11 +36,12 @@ export default function MainNav() {
   const [confirmSignout, setConfirmSignout] = useState(false);
   const accountRef = useRef(null);
 
+  // Display labels only — routes/hrefs are unchanged.
   const links = [
-    { href: "/scoreboard", label: "Verdict Board" },
-    { href: "/leaderboard", label: "Prophet's Wall" },
+    { href: "/scoreboard", label: "Scoreboard" },
+    { href: "/leaderboard", label: "The Karma Wall" },
     { href: "/episodes", label: "Episodes" },
-    { href: "/community", label: "The Green Room" },
+    { href: "/community", label: "The Lounge" },
     ...(isLoggedIn ? [{ href: "/panel", label: "Judge the Judges" }] : []),
   ];
 

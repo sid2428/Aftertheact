@@ -421,10 +421,30 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
           ))}
         </div>
 
-        <svg className="hidden lg:block absolute left-10 xl:left-24 top-1/2 -translate-y-1/2 opacity-10" width="220" height="220" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3v18" /><path d="M7 21h10" /><path d="M5 7h14" /><path d="M12 3a2 2 0 1 0 0-.001" />
-          <path d="M5 7l-3 6a3 3 0 0 0 6 0L5 7Z" /><path d="M19 7l-3 6a3 3 0 0 0 6 0l-3-6Z" />
-        </svg>
+        <motion.svg
+          animate={{ rotate: [-1.5, 1.5, -1.5], y: [-4, 4, -4] }}
+          transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+          className="hidden lg:block absolute left-10 xl:left-24 top-1/2 -mt-[110px] opacity-[0.15]"
+          width="220"
+          height="220"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#7A5C10"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ 
+            transformOrigin: "50% 20%",
+            filter: "drop-shadow(0 0 15px rgba(212,175,55,0.4))"
+          }}
+        >
+          <path d="M12 3v18" />
+          <path d="M7 21h10" />
+          <path d="M5 7h14" />
+          <path d="M12 3a2 2 0 1 0 0-.001" />
+          <path d="M5 7l-3 6a3 3 0 0 0 6 0L5 7Z" />
+          <path d="M19 7l-3 6a3 3 0 0 0 6 0l-3-6Z" />
+        </motion.svg>
 
         <div className="max-w-7xl mx-auto w-full px-6 sm:px-12 py-12 relative z-10 lg:text-right">
           <motion.h1

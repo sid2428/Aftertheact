@@ -26,7 +26,7 @@ export default function IntroSequence({ children }) {
   const [videoSrc, setVideoSrc] = useState(null);
 
   useEffect(() => {
-    setVideoSrc(window.innerHeight > window.innerWidth ? "/vertical.mp4" : "/intro.mp4");
+    setVideoSrc(window.innerHeight > window.innerWidth ? "/vertical.mp4" : "/Horizontal.mp4");
   }, []);
 
   const videoRef = useRef(null);
