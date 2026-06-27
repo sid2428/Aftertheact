@@ -4,6 +4,7 @@ import { aggregateRatings } from "@/lib/judges";
 import Link from "next/link";
 
 export const metadata = {
+  alternates: { canonical: "/judges-scoreboard" },
   title: "Judge Popularity",
   description: "Which judge the jury actually rates — by votes and average score.",
 };

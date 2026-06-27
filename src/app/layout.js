@@ -4,6 +4,15 @@ import Link from "next/link";
 import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  OG_IMAGE,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seo";
 
 // Three fonts only:
 //   Display  — Anton (headings ≥ 2rem, episode numbers, brand)
@@ -13,9 +22,60 @@ const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], 
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
 const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], variable: "--font-rajdhani" });
 
+// All metadata below is head-only — titles, descriptions, canonical/OG/Twitter
+// tags and robots directives. None of it renders into the page body, so the
+// frontend UI is unchanged.
 export const metadata = {
-  title: "AfterTheAct - IGL Community Platform",
-  description: "The independent community platform for India's Got Latent.",
+  // Resolves all relative metadata URLs (canonical, OG images) against the live
+  // domain. Driven by NEXT_PUBLIC_SITE_URL — see src/lib/seo.js.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    // Used as-is on pages that don't set their own title (e.g. the homepage).
+    default: "AfterTheAct — Verdicts, Scores & Community for India's Got Latent",
+    // Child page titles become "The Lineup · AfterTheAct", etc.
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "entertainment",
+  // NOTE: canonical is intentionally NOT set here. In the App Router, an
+  // `alternates.canonical` on the root layout is inherited by every child page,
+  // which would point all routes at "/". Each page sets its own canonical via
+  // buildMetadata() in src/lib/seo.js instead.
+  // Let crawlers index everything public; per-page noindex is applied to private
+  // routes (login/onboarding/profile) and robots.txt blocks /admin and /api.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "AfterTheAct — Verdicts, Scores & Community for India's Got Latent",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_IN",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AfterTheAct — Verdicts, Scores & Community for India's Got Latent",
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE.url],
+  },
+  formatDetection: { telephone: false, email: false, address: false },
+  manifest: "/manifest.webmanifest",
   // Favicon + Apple touch icon come from the file-based convention:
   // src/app/icon.png and src/app/apple-icon.png (the styled "A" from the logo).
 };
@@ -24,6 +84,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
+
+        {/* Structured data for search engines. <script type="application/ld+json">
+            renders nothing visible — it only feeds rich results / knowledge panels. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+        />
 
         <SessionProviderWrapper>
           <SmoothScroll>

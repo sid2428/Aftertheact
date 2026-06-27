@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import LeaderboardClient from "./LeaderboardClient";
 
 export const metadata = {
+  alternates: { canonical: "/leaderboard" },
   title: "The Leaderboards | Oracle Accuracy and Season Standings",
   description: "The sharpest predictors and the highest-ranked jurors of the season.",
 };

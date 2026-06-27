@@ -21,9 +21,26 @@ export async function generateMetadata({ params }) {
     .single();
 
   if (!episode) return { title: "Episode" };
+
+  const title = `S${episode.season_number}E${episode.episode_number} - ${episode.title}`;
+  const description = `Community verdicts, crowd scores and judge ratings for ${episode.title} (Season ${episode.season_number}, Episode ${episode.episode_number}) on AfterTheAct.`;
+  const canonical = `/episode/${id}`;
+
   return {
-    title: `S${episode.season_number}E${episode.episode_number} - ${episode.title}`,
-    description: `Verdicts and scores for ${episode.title}.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "article",
+      title: `${title} · AfterTheAct`,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} · AfterTheAct`,
+      description,
+    },
   };
 }
 

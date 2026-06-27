@@ -6,6 +6,7 @@ import { aggregateRatings } from "@/lib/judges";
 import JudgePageClient from "@/components/JudgePageClient";
 
 export const metadata = {
+  alternates: { canonical: "/panel" },
   title: "Judge the Judges",
   description: "The jury is now on trial.",
 };

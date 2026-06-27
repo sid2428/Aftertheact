@@ -7,6 +7,8 @@ import OnboardingForm from "@/components/OnboardingForm";
 export const metadata = {
   title: "Claim Your Name | After The Act",
   description: "Pick the name the jury will know you by.",
+  // Personal/auth-gated flow — keep it out of search results.
+  robots: { index: false, follow: false },
 };
 
 const TEMP_USERNAME = /^u_[0-9a-f]{8}$/;

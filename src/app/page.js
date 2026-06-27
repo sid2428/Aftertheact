@@ -9,6 +9,18 @@ import IntroSequence from "@/components/IntroSequence";
 import FeaturedEpisodeSection from "@/components/FeaturedEpisodeSection";
 import ArcCarousel from "@/components/ArcCarousel";
 import { getPanelMembers } from "@/lib/panel";
+import { buildMetadata } from "@/lib/seo";
+
+// Head-only metadata for the homepage. Sets its own canonical ("/") and a richer
+// share description; the root layout's title `default` already supplies the
+// branded homepage <title>, so no title is set here. No effect on the rendered UI.
+export const metadata = buildMetadata({
+  path: "/",
+  description:
+    "The independent fan home for India's Got Latent (IGL): score every act, " +
+    "watch the live verdict board reorder in real time, predict the winners, and " +
+    "read the receipts after the show. Not affiliated with any official production.",
+});
 
 export default async function Home() {
   const session = await getServerSession(authOptions);

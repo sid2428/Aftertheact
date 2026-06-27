@@ -5,6 +5,7 @@ import ScoreboardPodium from "@/components/ScoreboardPodium";
 import FloatingRevealCountdown from "@/components/FloatingRevealCountdown";
 
 export const metadata = {
+  alternates: { canonical: "/scoreboard" },
   title: "The Verdict Board",
   description: "Every score. Every receipt. The community's running judgement of every act.",
 };

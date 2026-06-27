@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms & Privacy | AfterTheAct",
   description:
     "How AfterTheAct collects, uses, and protects your data, and the terms for using the platform — written to comply with India's Digital Personal Data Protection Act, 2023.",

@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import CommunityPageClient from "@/components/CommunityPageClient";
 
 export const metadata = {
+  alternates: { canonical: "/community" },
   title: "The Green Room",
   description: "No filter. No mercy. Just takes.",
 };
