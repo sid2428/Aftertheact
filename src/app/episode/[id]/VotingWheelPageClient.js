@@ -19,6 +19,7 @@ export default function VotingWheelPageClient({
   const [idx, setIdx] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [animDirection, setAnimDirection] = useState(""); // "next" or "prev"
+  const [allDone, setAllDone] = useState(false);
   const router = useRouter();
   const c = contestants[idx];
 
@@ -26,6 +27,8 @@ export default function VotingWheelPageClient({
     if (idx < contestants.length - 1) {
       setTimeout(() => goToNext(), 1800);
     } else {
+      // Show a completion message over the LOCKED stamp before leaving the wheel.
+      setAllDone(true);
       setTimeout(() => router.push("/scoreboard"), 1800);
     }
   };
@@ -112,6 +115,19 @@ export default function VotingWheelPageClient({
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
+      )}
+
+      {allDone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md px-6">
+          <div className="text-center">
+            <div className="font-display font-black uppercase tracking-widest text-3xl sm:text-4xl text-latent-gold drop-shadow-[0_0_20px_rgba(212,175,55,0.5)]">
+              All Verdicts Locked
+            </div>
+            <p className="mt-3 text-sm text-white/60 uppercase tracking-widest">
+              Heading to the Scoreboard&hellip;
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
