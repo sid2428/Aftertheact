@@ -155,8 +155,8 @@ export default function CurtainHero({ members = [] }) {
         </AnimatePresence>
       </div>
 
-      {/* Logo: centered on its own, unaffected by the scatter above */}
-      <div className="relative z-10 flex items-center justify-center px-6 -mt-24 md:mt-0">
+      {/* Logo: centered on its own, unaffected by the scatter above (desktop only — mobile has its own logo in MobileStage) */}
+      <div className="hidden md:flex relative z-10 items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
