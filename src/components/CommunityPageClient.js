@@ -390,8 +390,8 @@ export default function CommunityPageClient({
             </h1>
             <p className="text-xl text-white/60 font-medium">No filter. No mercy. Just takes.</p>
             <div className="flex flex-wrap gap-3">
-              <span className="bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/70">{stats.postsToday} Posts Today</span>
-              <span className="bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/70">{stats.activeRoasters} Active Roasters</span>
+              <span className="bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/70">{stats.posts} Takes</span>
+              <span className="bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/70">{stats.roasters} Roasters</span>
               {stats.mostRoasted && (
                 <span className="bg-[#111111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/70">Most Roasted: {stats.mostRoasted}</span>
               )}

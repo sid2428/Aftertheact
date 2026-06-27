@@ -153,7 +153,7 @@ function SelfDivider() {
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
-export default function LeaderboardClient({ topUsers, oracles, seasonSelf, oracleSelf }) {
+export default function LeaderboardClient({ topUsers, oracles, seasonSelf, oracleSelf, seasonNumber = 1 }) {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
 
@@ -171,7 +171,7 @@ export default function LeaderboardClient({ topUsers, oracles, seasonSelf, oracl
           >
             <span className="inline-flex items-center gap-2 px-3 py-1 mb-5 rounded-full border border-latent-gold/30 bg-latent-gold/10 font-display text-[10px] uppercase tracking-widest text-latent-gold/80">
               <span className="w-1.5 h-1.5 rounded-full bg-latent-gold animate-pulse" />
-              Season 2 · Updated every 30s
+              Season {seasonNumber} · Updated every 30s
             </span>
             <h1 className="text-4xl sm:text-7xl md:text-8xl font-display font-black uppercase tracking-tighter text-white leading-[0.9] mb-4">
               THE

@@ -114,7 +114,7 @@ export default function EpisodeCard({ ep, index = 0, reduced = false, flat = fal
       >
         {/* Poster */}
         <div className="relative h-64 w-full overflow-hidden shrink-0" style={{ transform: "translateZ(20px)" }}>
-          <EpisodePoster imageUrl={ep.thumbnail_url} className="absolute inset-0 z-0" />
+          <EpisodePoster imageUrl={ep.thumbnail_url} label={`S${ep.season_number}E${ep.episode_number}`} className="absolute inset-0 z-0" />
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/30 to-transparent pointer-events-none" />
 
           <span className={`absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-display text-[10px] uppercase tracking-widest ${statusPill(ep.status)}`}>

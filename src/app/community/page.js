@@ -25,13 +25,15 @@ export default async function CommunityPage() {
   let hotTakes = [];
   let likedPostIds = [];
   let dbReady = true;
-  let stats = { postsToday: 0, activeRoasters: 0, mostRoasted: null };
+  let stats = { posts: 0, roasters: 0, mostRoasted: null };
 
   try {
-    // The feed, the hot takes, and today's activity are independent — fetch together.
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const [postsRes, hotRes, todaysRes] = await Promise.all([
+    // The feed, the hot takes, and the activity tally are independent — fetch
+    // together. The hero stats describe the whole visible feed (total takes,
+    // distinct roasters, most-roasted act) rather than a calendar-day window:
+    // a "today" count reads 0 on a feed of older takes, which contradicts the
+    // posts visible right below it and reads as broken.
+    const [postsRes, hotRes, totalRes, activityRes] = await Promise.all([
       supabase
         .from("CommunityPost")
         .select(POST_SELECT)
@@ -46,21 +48,26 @@ export default async function CommunityPage() {
         .limit(5),
       supabase
         .from("CommunityPost")
+        .select("id", { count: "exact", head: true })
+        .eq("moderation_status", "VISIBLE"),
+      supabase
+        .from("CommunityPost")
         .select("user_id, contestant_tag, Contestant ( name )")
         .eq("moderation_status", "VISIBLE")
-        .gte("created_at", startOfDay.toISOString())
-        .limit(500),
+        .limit(1000),
     ]);
     if (postsRes.error) throw postsRes.error;
     posts = postsRes.data || [];
     hotTakes = hotRes.data || [];
 
-    const todays = todaysRes.data;
-    if (todays) {
-      stats.postsToday = todays.length;
-      stats.activeRoasters = new Set(todays.map((p) => p.user_id).filter(Boolean)).size;
+    const activity = activityRes.data;
+    if (activity) {
+      // Total is the exact head count; distinct roasters + most-roasted are
+      // computed over the (capped) activity rows, which is plenty for display.
+      stats.posts = totalRes.count ?? activity.length;
+      stats.roasters = new Set(activity.map((p) => p.user_id).filter(Boolean)).size;
       const tally = {};
-      for (const p of todays) {
+      for (const p of activity) {
         if (p.Contestant?.name) tally[p.Contestant.name] = (tally[p.Contestant.name] || 0) + 1;
       }
       const top = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
