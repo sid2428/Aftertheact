@@ -46,7 +46,7 @@ export default function LineupPosters({ episodes = [] }) {
   if (pool.length === 0) return null;
 
   return (
-    <div className="hidden gap-4 md:flex">
+    <div className="hidden gap-4 md:flex mt-8 lg:mt-12">
       {ROTATIONS.map((rotate, slot) => {
         const ep = pool[(tick + slot) % pool.length];
         return (
