@@ -3,6 +3,49 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+
+// Consent checkbox with a checkmark that draws itself in when ticked. Gates the
+// user-facing sign-in flows so we capture explicit, informed consent for data
+// processing (DPDP Act, 2023) before any account is created.
+function ConsentCheckbox({ checked, onChange }) {
+  return (
+    <label className="group flex cursor-pointer select-none items-start gap-3 text-left">
+      <span
+        className={`relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border-2 transition-all duration-300 ${
+          checked
+            ? "scale-110 border-latent-gold bg-latent-gold"
+            : "border-brand-border bg-[#050505] group-hover:border-white/40"
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="absolute inset-0 cursor-pointer opacity-0"
+          aria-label="Agree to the Terms and Privacy Policy"
+        />
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="#0A0A0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M4 12.5 L9.5 18 L20 6"
+            style={{
+              strokeDasharray: 26,
+              strokeDashoffset: checked ? 0 : 26,
+              transition: "stroke-dashoffset 0.35s ease 0.05s",
+            }}
+          />
+        </svg>
+      </span>
+      <span className="text-xs leading-relaxed text-white/55">
+        I agree to the{" "}
+        <Link href="/terms" target="_blank" className="font-semibold text-latent-gold hover:underline">
+          Terms &amp; Privacy Policy
+        </Link>{" "}
+        and consent to the minimal data processing described there.
+      </span>
+    </label>
+  );
+}
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -16,6 +59,7 @@ function LoginForm() {
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [agreed, setAgreed] = useState(false);
 
   // Tick down the resend cooldown.
   useEffect(() => {
@@ -26,6 +70,10 @@ function LoginForm() {
 
   const sendOtp = async () => {
     if (!email) return;
+    if (!agreed) {
+      setError("Please accept the Terms & Privacy Policy to continue.");
+      return;
+    }
     setIsLoading(true);
     setError("");
     try {
@@ -130,8 +178,8 @@ function LoginForm() {
                 />
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-latent-gold text-[#0A0A0A] hover:bg-white p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:opacity-50"
+                  disabled={isLoading || !agreed}
+                  className="w-full bg-latent-gold text-[#0A0A0A] hover:bg-white p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-latent-gold"
                 >
                   {isLoading ? "Sending..." : "Send OTP"}
                 </button>
@@ -208,6 +256,12 @@ function LoginForm() {
               </form>
             )}
 
+            {step !== 2 && (
+              <div className="pt-1">
+                <ConsentCheckbox checked={agreed} onChange={setAgreed} />
+              </div>
+            )}
+
             <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-brand-border"></div>
               <span className="flex-shrink-0 mx-4 text-white/40 text-xs font-display uppercase tracking-widest">or</span>
@@ -215,8 +269,15 @@ function LoginForm() {
             </div>
 
             <button
-              onClick={() => signIn("google", { callbackUrl })}
-              className="w-full flex items-center justify-center gap-4 bg-[#050505] text-white hover:bg-[#111] border border-brand-border hover:border-white/20 p-4 font-display font-black uppercase tracking-widest text-sm transition-all duration-300 group rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+              onClick={() => {
+                if (step !== 2 && !agreed) {
+                  setError("Please accept the Terms & Privacy Policy to continue.");
+                  return;
+                }
+                signIn("google", { callbackUrl });
+              }}
+              disabled={step !== 2 && !agreed}
+              className="w-full flex items-center justify-center gap-4 bg-[#050505] text-white hover:bg-[#111] border border-brand-border hover:border-white/20 p-4 font-display font-black uppercase tracking-widest text-sm transition-all duration-300 group rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#050505] disabled:hover:border-brand-border"
             >
               <svg className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

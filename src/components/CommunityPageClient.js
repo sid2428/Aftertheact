@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { MessageCircle, Flag, Trash2, Trophy, PenLine } from "lucide-react";
+import { MessageCircle, Flag, Trash2, Trophy, PenLine, Lock } from "lucide-react";
 import TypeOnce from "@/components/TypeOnce";
 
 const COMPOSE_PROMPTS = ["Drop your take…", "Was that score actually fair?…", "Who got robbed tonight?…"];
@@ -65,13 +65,29 @@ function timeAgo(iso) {
 }
 
 function TagBadge({ post }) {
-  if (post.Contestant?.name) {
-    return <span className="text-[10px] font-display font-black uppercase tracking-widest bg-latent-gold/15 text-latent-gold px-2 py-0.5 border border-latent-gold/30 rounded-sm">{post.Contestant.name}</span>;
-  }
+  const tags = [];
   if (post.Episode) {
-    return <span className="text-[10px] font-display font-black uppercase tracking-widest bg-latent-crimson/15 text-latent-crimson px-2 py-0.5 border border-latent-crimson/30 rounded-sm">S{post.Episode.season_number}E{post.Episode.episode_number}</span>;
+    tags.push(
+      <span
+        key="ep"
+        className="inline-flex items-center text-[9px] font-display font-black uppercase tracking-widest bg-latent-crimson/15 text-latent-crimson px-2 py-0.5 border border-latent-crimson/30 rounded-sm whitespace-nowrap"
+      >
+        S{post.Episode.season_number}E{post.Episode.episode_number}
+      </span>
+    );
   }
-  return null;
+  if (post.Contestant?.name) {
+    tags.push(
+      <span
+        key="ct"
+        className="inline-flex items-center text-[9px] font-display font-black uppercase tracking-widest bg-latent-gold/15 text-latent-gold px-2 py-0.5 border border-latent-gold/30 rounded-sm whitespace-nowrap"
+      >
+        {post.Contestant.name}
+      </span>
+    );
+  }
+  if (tags.length === 0) return null;
+  return <div className="flex flex-row flex-wrap gap-1">{tags}</div>;
 }
 
 function Avatar({ user, size = 40 }) {
@@ -159,13 +175,18 @@ function PostCard({ post, currentUser, liked, onToggleLike, onDelete, onReport }
 
   return (
     <div className="bg-[#111111] border border-white/[0.08] rounded-md p-5">
-      <div className="flex items-center gap-3 mb-3">
+      {/* Header: avatar + name/time left, tags right-aligned but inline */}
+      <div className="flex items-start gap-3 mb-3">
         <Avatar user={post.User} />
-        <div className="min-w-0">
-          <div className="font-display font-bold uppercase tracking-wide text-white truncate">{post.User?.username || "Unknown"}</div>
-          <div className="font-mono text-[11px] text-white/40">{timeAgo(post.created_at)}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="font-display font-bold uppercase tracking-wide text-white truncate max-w-[55%]">
+              {post.User?.username || "Unknown"}
+            </div>
+            <TagBadge post={post} />
+          </div>
+          <div className="font-mono text-[11px] text-white/40 mt-0.5">{timeAgo(post.created_at)}</div>
         </div>
-        <div className="ml-auto"><TagBadge post={post} /></div>
       </div>
 
       <p className="text-[15px] text-white/90 leading-relaxed font-sans break-words">{post.text}</p>
@@ -281,17 +302,23 @@ export default function CommunityPageClient({
   const [justPosted, setJustPosted] = useState(false);
   const [reportId, setReportId] = useState(null);
   const [activeEpisode, setActiveEpisode] = useState(null); // null = all episodes
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const reduced = useReducedMotion();
   const composePlaceholder = useCyclingPlaceholder(reduced);
 
-  // Reset contestant tag when switching episodes
+  // Reset contestant tag and page when switching episodes
   useEffect(() => {
     setContestantTagId("");
+    setPage(1);
   }, [activeEpisode]);
 
-  const visiblePosts = activeEpisode
+  const allVisiblePosts = activeEpisode
     ? posts.filter((p) => p.episode_tag === activeEpisode.id)
     : posts;
+
+  const totalPages = Math.max(1, Math.ceil(allVisiblePosts.length / PAGE_SIZE));
+  const visiblePosts = allVisiblePosts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Episode tab sets the episode tag; dropdown only controls contestant tag.
   const submitPost = async () => {
@@ -402,35 +429,37 @@ export default function CommunityPageClient({
 
       {/* Episode tabs */}
       {episodes.length > 0 && (
-        <div className="bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-6 sm:px-12 py-3 overflow-x-auto no-scrollbar">
-            <div className="flex gap-1.5 w-max">
-              <button
-                onClick={() => setActiveEpisode(null)}
-                className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
-                  !activeEpisode
-                    ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
-                    : "text-white/50 hover:text-white border border-white/10"
-                }`}
-              >
-                All Episodes
-              </button>
-              {episodes.map((ep) => {
-                const active = activeEpisode?.id === ep.id;
-                return (
-                  <button
-                    key={ep.id}
-                    onClick={() => setActiveEpisode(active ? null : ep)}
-                    className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
-                      active
-                        ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
-                        : "text-white/50 hover:text-white border border-white/10"
-                    }`}
-                  >
-                    S{ep.season_number}E{ep.episode_number} — {ep.title}
-                  </button>
-                );
-              })}
+        <div className="bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30 border-b border-white/[0.06]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-12">
+            <div className="overflow-x-auto no-scrollbar py-3">
+              <div className="flex gap-1.5 min-w-0 w-max max-w-full">
+                <button
+                  onClick={() => { setActiveEpisode(null); setPage(1); }}
+                  className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                    !activeEpisode
+                      ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
+                      : "text-white/50 hover:text-white border border-white/10"
+                  }`}
+                >
+                  All Episodes
+                </button>
+                {episodes.map((ep) => {
+                  const active = activeEpisode?.id === ep.id;
+                  return (
+                    <button
+                      key={ep.id}
+                      onClick={() => { setActiveEpisode(active ? null : ep); setPage(1); }}
+                      className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                        active
+                          ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
+                          : "text-white/50 hover:text-white border border-white/10"
+                      }`}
+                    >
+                      S{ep.season_number}E{ep.episode_number} — {ep.title}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -515,36 +544,116 @@ export default function CommunityPageClient({
             </div>
           )}
 
-          {/* Posts */}
-          {visiblePosts.map((post, i) => {
-            const gated = !currentUser && i >= 3;
-            return (
-              <div key={post.id} className="relative">
-                <div className={gated ? "blur-sm pointer-events-none select-none" : ""}>
-                  <PostCard
-                    post={post}
-                    currentUser={currentUser}
-                    liked={liked.has(post.id)}
-                    onToggleLike={toggleLike}
-                    onDelete={deletePost}
-                    onReport={setReportId}
-                  />
-                </div>
-              </div>
+          {/* Posts — the first few are free; for logged-out visitors the rest
+              blur out behind a LOCKED gate with a sign-in nudge sitting on the blur. */}
+          {(() => {
+            const renderCard = (post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUser={currentUser}
+                liked={liked.has(post.id)}
+                onToggleLike={toggleLike}
+                onDelete={deletePost}
+                onReport={setReportId}
+              />
             );
-          })}
 
-          {/* Logged-out CTA */}
-          {!currentUser && posts.length > 3 && (
-            <div className="bg-gradient-to-r from-latent-crimson/20 to-latent-gold/10 border border-white/10 rounded-md p-6 text-center">
-              <div className="font-display font-black uppercase tracking-widest text-white mb-3">Join the Jury to see more — and add your own take</div>
-              <Link href="/api/auth/signin" className="inline-block bg-gradient-to-r from-latent-gold to-[#B8860B] text-[#0A0A0A] font-display font-black uppercase text-sm tracking-widest px-6 py-2.5 rounded-sm">Sign In</Link>
+            const freePosts = [];
+            const gatedPosts = [];
+            visiblePosts.forEach((post, i) => {
+              const globalIdx = (page - 1) * PAGE_SIZE + i;
+              if (!currentUser && globalIdx >= 3) gatedPosts.push(post);
+              else freePosts.push(post);
+            });
+
+            return (
+              <>
+                {freePosts.map(renderCard)}
+
+                {gatedPosts.length > 0 && (
+                  <div className="relative">
+                    <div className="blur-[6px] pointer-events-none select-none space-y-6">
+                      {gatedPosts.map(renderCard)}
+                    </div>
+
+                    {/* LOCKED overlay — sticks in view while you scroll the blur */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/20 via-[#0A0A0A]/75 to-[#0A0A0A]/95">
+                      <div className="sticky top-1/4 flex flex-col items-center px-6 py-10 text-center">
+                        <div className="pointer-events-auto flex flex-col items-center">
+                          <div className="mb-4 grid h-16 w-16 place-items-center rounded-full border-2 border-latent-gold/50 bg-latent-gold/10 shadow-[0_0_30px_rgba(212,175,55,0.35)]">
+                            <Lock size={30} className="text-latent-gold" strokeWidth={2.5} />
+                          </div>
+
+                          <div className="relative">
+                            <span className="font-display text-5xl font-black uppercase tracking-tighter text-latent-gold drop-shadow-[0_0_25px_rgba(212,175,55,0.55)] sm:text-6xl">
+                              Locked
+                            </span>
+                            <span
+                              aria-hidden
+                              className="absolute -bottom-1.5 left-0 h-1.5 w-full rounded-full bg-latent-gold shadow-[0_0_18px_4px_rgba(212,175,55,0.5)]"
+                            />
+                          </div>
+
+                          <p className="mt-5 max-w-xs font-mono text-sm leading-relaxed text-white/70">
+                            Itna free content? Naah bhai. Sign in karke poora roast unlock kar. 🔒🔥
+                          </p>
+
+                          <Link
+                            href="/api/auth/signin"
+                            className="mt-5 inline-block rounded-sm bg-gradient-to-r from-latent-gold to-[#B8860B] px-7 py-3 font-display text-sm font-black uppercase tracking-widest text-[#0A0A0A] shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-transform hover:-translate-y-0.5"
+                          >
+                            Sign In to Unlock
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {allVisiblePosts.length === 0 && dbReady && (
+            <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">
+              {activeEpisode ? "No takes on this episode yet. Be the first." : "No takes yet. Be the first."}
             </div>
           )}
 
-          {visiblePosts.length === 0 && dbReady && (
-            <div className="text-center py-16 text-white/30 font-display font-black uppercase tracking-widest">
-              {activeEpisode ? "No takes on this episode yet. Be the first." : "No takes yet. Be the first."}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/10">
+              <button
+                onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                disabled={page === 1}
+                className="flex items-center gap-2 px-5 py-2.5 font-display text-xs uppercase tracking-widest border border-white/10 text-white/60 rounded-sm transition-all duration-200 hover:border-latent-gold/50 hover:text-latent-gold disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white/60"
+              >
+                ← Prev
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`w-8 h-8 rounded-sm font-display text-xs font-bold uppercase tracking-widest transition-all duration-200 ${
+                      p === page
+                        ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_14px_rgba(212,175,55,0.4)]"
+                        : "border border-white/10 text-white/40 hover:border-latent-gold/40 hover:text-latent-gold"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                disabled={page === totalPages}
+                className="flex items-center gap-2 px-5 py-2.5 font-display text-xs uppercase tracking-widest border border-white/10 text-white/60 rounded-sm transition-all duration-200 hover:border-latent-gold/50 hover:text-latent-gold disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white/60"
+              >
+                Next →
+              </button>
             </div>
           )}
         </div>
