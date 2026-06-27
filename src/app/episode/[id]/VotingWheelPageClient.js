@@ -116,6 +116,28 @@ export default function VotingWheelPageClient({
           </svg>
         </button>
       )}
+    <>
+      <VotingScoreWheel
+        key={c.id}                    // remount wheel completely on contestant change
+        act={{
+          name: c.name,
+          tagline: c.tagline,
+          initial: c.initial,
+        }}
+        episodeId={episodeId}
+        contestantId={c.id}
+        revealAt={revealAt}
+        userVoteScore={c.userVoteScore}
+        isEpisodeClosed={false}
+        isAuthenticated={isAuthenticated}
+        seasonLabel={
+          contestants.length > 1
+            ? `${seasonLabel} · ${idx + 1} / ${contestants.length}`
+            : seasonLabel
+        }
+        showTitle={showTitle}
+        onVoteLocked={handleVoteLocked}
+      />
 
       {allDone && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md px-6">
@@ -130,5 +152,6 @@ export default function VotingWheelPageClient({
         </div>
       )}
     </div>
+    </>
   );
 }
