@@ -7,7 +7,7 @@ import crypto from "crypto";
 //   - 60s cooldown per email   → kills resend-spam / mail-bombing one inbox
 //   - 5 sends/hour per email    → caps total mail to any one address
 //   - 20 sends/hour per IP      → stops using us as a spam cannon across emails
-const COOLDOWN_SEC = 60;
+const COOLDOWN_SEC = 15;
 const PER_EMAIL_HOUR = 5;
 const PER_IP_HOUR = 20;
 

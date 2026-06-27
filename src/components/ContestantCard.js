@@ -12,7 +12,7 @@ export default function ContestantCard({ contestant, appearance, episodeStatus }
   return (
     <RevealOnView
       className={`contestant-card brutal-surface relative overflow-hidden bg-brand-panel text-white ${
-        isVotingLive ? "border-live" : ""
+        isVotingLive ? "border-live" : "border-glow-gold"
       }`}
     >
 
