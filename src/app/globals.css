@@ -414,6 +414,12 @@ body::after {
     border: 1px solid rgba(139, 30, 45, 0.5);
     box-shadow: 0 0 24px rgba(139, 30, 45, 0.25);
   }
+  /* Persistent gold glow for default-state cards. Compound selector so it
+     beats .brutal-surface's own border/shadow regardless of cascade order. */
+  .brutal-surface.border-glow-gold {
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: var(--shadow-brutal-md), 0 0 24px rgba(212, 175, 55, 0.22);
+  }
 
   .judge-float { will-change: transform; }
   @media (prefers-reduced-motion: no-preference) {
