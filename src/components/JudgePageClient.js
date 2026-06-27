@@ -34,7 +34,11 @@ function ScoreWheel({ label, value, onChange }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <span className="font-display text-[10px] uppercase tracking-widest text-white/50">{label}</span>
-      <div 
+      <div className="flex items-baseline gap-1 font-number leading-none">
+        <span className="text-3xl font-black text-latent-gold">{value}</span>
+        <span className="text-sm font-bold text-white/30">/ 10</span>
+      </div>
+      <div
         style={{ 
           position: "relative",
           height: DRUM_H,
@@ -312,7 +316,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex -space-x-1">
                   {[...Array(Math.min(agg.count, 4))].map((_, i) => (
-                    <div key={i} className="w-5 h-5 rounded-full bg-white/10 border border-white/5 flex items-center justify-center text-[8px] text-white/30 font-bold">{i + 1}</div>
+                    <div key={i} className="w-5 h-5 rounded-full bg-white/10 border border-white/5" aria-hidden />
                   ))}
                 </div>
                 <span className="font-mono text-[11px] text-white/30">{agg.count} {agg.count === 1 ? "juror" : "jurors"} rated</span>

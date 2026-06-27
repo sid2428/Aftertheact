@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
 import EpisodeCard from "./EpisodeCard";
-import TypeOnce from "./TypeOnce";
 
 // A scroll-driven "arc" of episode cards: while the section is pinned, scrolling
 // slides the cards left→right along a shallow parabola, each becoming the
@@ -151,33 +150,6 @@ function ArcHeader() {
         Season Arc
       </span>
 
-      {/* Main title */}
-      <h2 className="font-display text-2xl sm:text-4xl md:text-5xl uppercase tracking-widest leading-none">
-        <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">
-          <TypeOnce text="LIVE TO" sessionKey="hero-live-to" speed={55} />
-        </span>
-        {" "}
-        <span
-          className="relative inline-block"
-          style={{ color: "#E53935", textShadow: "0 0 30px rgba(229,57,53,0.7), 0 0 60px rgba(229,57,53,0.35)" }}
-        >
-          <TypeOnce text="LOCKED" sessionKey="hero-locked" speed={55} delay={520} />
-          {/* Crimson underline */}
-          <span
-            aria-hidden
-            className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-[2px] sm:h-[3px] rounded-full"
-            style={{
-              background: "linear-gradient(90deg, #E53935, #FF5252)",
-              boxShadow: "0 0 12px 2px rgba(229,57,53,0.6)",
-            }}
-          />
-        </span>
-      </h2>
-
-      {/* Scroll hint — hidden on mobile to save vertical space */}
-      <p className="hidden sm:block font-mono text-[11px] uppercase tracking-[0.2em] text-white/30 mt-1">
-        scroll to browse episodes
-      </p>
     </div>
   );
 }
@@ -203,7 +175,7 @@ function ArcCard({ ep, i, total, progress }) {
 
   return (
     <motion.div
-      className="absolute left-1/2 top-[62%] sm:top-[52%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
+      className="absolute left-1/2 top-[78%] sm:top-[68%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
       // willChange + backfaceVisibility keep each card on its own GPU layer, so
       // the per-frame scale/rotate is a cheap composite instead of a repaint.
       style={{ x: xOffset, y, rotate, scale, opacity, zIndex, willChange: "transform", backfaceVisibility: "hidden" }}

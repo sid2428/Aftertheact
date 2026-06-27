@@ -57,7 +57,7 @@ export default async function LeaderboardPage() {
   const supabase = getServiceSupabase();
   const session = await getServerSession(authOptions);
 
-  const [{ data: topUsers }, { data: oracleRows }] = await Promise.all([
+  const [{ data: topUsers }, { data: oracleRows }, { data: latestSeason }] = await Promise.all([
     supabase
       .from("User")
       .select("id, username, latent_points_season, avatar_url, bio")
@@ -70,7 +70,16 @@ export default async function LeaderboardPage() {
       .from("User")
       .select("id, username, oracle_score, oracle_qualifying_episodes, avatar_url, bio")
       .gte("oracle_qualifying_episodes", 1),
+    // Drive the "Season N" label off real data so it never drifts from the rest
+    // of the site (which references the live season's episodes).
+    supabase
+      .from("Episode")
+      .select("season_number")
+      .order("season_number", { ascending: false })
+      .limit(1),
   ]);
+
+  const seasonNumber = latestSeason?.[0]?.season_number ?? 1;
 
   // Rank the whole qualifying field by karma, then take the top 10 to display.
   const oraclesRanked = rankByKarma(oracleRows);
@@ -124,6 +133,7 @@ export default async function LeaderboardPage() {
       oracles={oracles || []}
       seasonSelf={seasonSelf}
       oracleSelf={oracleSelf}
+      seasonNumber={seasonNumber}
     />
   );
 }

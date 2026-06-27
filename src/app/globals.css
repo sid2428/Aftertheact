@@ -680,4 +680,26 @@ body::after {
   }
 }
 
+/* ── Dice Roll Transition Animation ────────────────────────────────────────── */
+@keyframes diceRollNext {
+  0% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+  30% { transform: perspective(1000px) rotateY(-90deg) scale(0.9); opacity: 0; }
+  35% { transform: perspective(1000px) rotateY(90deg) scale(0.9); opacity: 0; }
+  100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+}
 
+@keyframes diceRollPrev {
+  0% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+  30% { transform: perspective(1000px) rotateY(90deg) scale(0.9); opacity: 0; }
+  35% { transform: perspective(1000px) rotateY(-90deg) scale(0.9); opacity: 0; }
+  100% { transform: perspective(1000px) rotateY(0deg) scale(1); opacity: 1; }
+}
+
+@layer utilities {
+  .animate-dice-next {
+    animation: diceRollNext 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .animate-dice-prev {
+    animation: diceRollPrev 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}

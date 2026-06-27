@@ -45,7 +45,7 @@ export default function RollingNumber({
   height = 48,
   className = "",
   suspense = false,
-  suspenseDuration = 5000,
+  suspenseDuration = 2000,
   headline = false,
 }) {
   const reduced = useReducedMotion();

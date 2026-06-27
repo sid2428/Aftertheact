@@ -19,10 +19,10 @@ export default function FloatingRevealCountdown({ revealAt }) {
   const [remaining, setRemaining] = useState(() => getRemaining(revealAt));
   const didRefreshRef = useRef(false);
 
-  const [animatingRemaining, setAnimatingRemaining] = useState(60 * HOUR_MS);
-  const [isAnimating, setIsAnimating] = useState(true);
-
-  // Interval for actual time ticking
+  // Tick the real remaining time once a second. (This used to also run a 5s
+  // mount "animation" that always *started* at a hardcoded 60 hours and eased
+  // down — which is why the board briefly showed a bogus "60 Hours : 00 Min"
+  // regardless of the actual reveal time. We now show the true value on mount.)
   useEffect(() => {
     didRefreshRef.current = false;
     const interval = window.setInterval(() => {
@@ -36,43 +36,11 @@ export default function FloatingRevealCountdown({ revealAt }) {
     return () => window.clearInterval(interval);
   }, [revealAt, router]);
 
-  // Animation on mount
-  useEffect(() => {
-    let start;
-    let animationFrame;
-    const duration = 5000;
-    const initialValue = 60 * HOUR_MS;
-    
-    const easeOutExpo = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
-
-    const tick = (timestamp) => {
-      if (!start) start = timestamp;
-      const elapsed = timestamp - start;
-      const t = Math.min(elapsed / duration, 1);
-      
-      const targetValue = getRemaining(revealAt);
-      const easedT = easeOutExpo(t);
-      const currentValue = initialValue - (initialValue - targetValue) * easedT;
-      
-      setAnimatingRemaining(currentValue);
-      
-      if (t < 1) {
-        animationFrame = requestAnimationFrame(tick);
-      } else {
-        setIsAnimating(false);
-      }
-    };
-    
-    animationFrame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [revealAt]);
-
-  const displayTime = isAnimating ? animatingRemaining : remaining;
   const parts = useMemo(() => {
-    const hours = Math.floor(displayTime / HOUR_MS);
-    const minutes = Math.floor((displayTime % HOUR_MS) / MINUTE_MS);
+    const hours = Math.floor(remaining / HOUR_MS);
+    const minutes = Math.floor((remaining % HOUR_MS) / MINUTE_MS);
     return { hours, minutes };
-  }, [displayTime]);
+  }, [remaining]);
 
   if (!revealAt) return null;
 
