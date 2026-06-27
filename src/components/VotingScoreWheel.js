@@ -6,12 +6,27 @@ import { useRouter, usePathname } from "next/navigation";
 /* ─────────────────────────────────────────────
    Audio — tick on scroll, thud on lock
 ───────────────────────────────────────────── */
+// One shared context, lazily created and resumed defensively on every call.
+// Mobile browsers (iOS Safari especially) start a *new* AudioContext in a
+// "suspended" state unless it's created/resumed inside a user-gesture call
+// stack — the LOCKED stamp sound fires from a useEffect after an await, well
+// outside any gesture, so a fresh per-call context there stays silent. Reusing
+// one context that gets resumed by the earlier, gesture-synchronous lock sound
+// keeps it running for the later stamp sound too.
+let sharedAudioCtx = null;
+function getAudioContext() {
+  if (typeof window === "undefined") return null;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new Ctx();
+  if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume().catch(() => {});
+  return sharedAudioCtx;
+}
+
 function playTone({ freq = 440, type = "sine", duration = 0.06, volume = 0.12, sweepTo = null }) {
-  if (typeof window === "undefined") return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -24,7 +39,6 @@ function playTone({ freq = 440, type = "sine", duration = 0.06, volume = 0.12, s
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
     osc.start(t);
     osc.stop(t + duration + 0.02);
-    osc.onended = () => { try { ctx.close(); } catch (_) {} };
   } catch (_) {}
 }
 
