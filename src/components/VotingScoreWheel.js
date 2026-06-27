@@ -6,12 +6,36 @@ import { useRouter, usePathname } from "next/navigation";
 /* ─────────────────────────────────────────────
    Audio — tick on scroll, thud on lock
 ───────────────────────────────────────────── */
+// One shared AudioContext, reused for every tone. Per-digit ticks fire fast
+// during a fling — a fresh context per call would hit the browser's cap and leak.
+let _sharedAudioCtx = null;
+function getAudioCtx() {
+  if (typeof window === "undefined") return null;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  if (!_sharedAudioCtx) {
+    try { _sharedAudioCtx = new Ctx(); } catch (_) { return null; }
+  }
+  if (_sharedAudioCtx.state === "suspended") { try { _sharedAudioCtx.resume(); } catch (_) { } }
+  return _sharedAudioCtx;
+}
+
+// Resolves true only when the device can actually play the tick/thud audio —
+// i.e. an AudioContext exists and reaches the "running" state (a muted tab or a
+// browser blocking autoplay stays "suspended"). The drum gates scrolling on this
+// so a silent spin gets caught and flagged as tampering. A user gesture (the
+// scroll/drag itself) is what lets resume() succeed, so it's called from there.
+function ensureAudioReady() {
+  const ctx = getAudioCtx();
+  if (!ctx) return Promise.resolve(false);
+  if (ctx.state === "running") return Promise.resolve(true);
+  return ctx.resume().then(() => ctx.state === "running").catch(() => false);
+}
+
 function playTone({ freq = 440, type = "sine", duration = 0.06, volume = 0.12, sweepTo = null }) {
-  if (typeof window === "undefined") return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -24,8 +48,7 @@ function playTone({ freq = 440, type = "sine", duration = 0.06, volume = 0.12, s
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
     osc.start(t);
     osc.stop(t + duration + 0.02);
-    osc.onended = () => { try { ctx.close(); } catch (_) {} };
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function playTick() {
@@ -53,6 +76,17 @@ function playLock() {
 export const SLOT_H = 88;
 const VISIBLE_SLOTS = 5;
 export const DRUM_H = SLOT_H * VISIBLE_SLOTS;
+
+// 3D drum look: viewport perspective + how hard each row tilts away from centre.
+// ponytail: tunable feel knobs — raise CURVE_MAX_DEG for a rounder drum, lower
+// PERSPECTIVE for a stronger lens.
+const PERSPECTIVE = 900;
+const CURVE_MAX_DEG = 70;
+
+// Minimum time (ms) between two knob clicks. 0 = click on every digit (fastest).
+// Raise this to space the ticks out — during a fast spin, extra digits pass
+// silently so the audio doesn't machine-gun. Try 60–120 to taste.
+const MIN_TICK_GAP_MS = 120;
 
 const INT_OPTS = Array.from({ length: 10 }, (_, i) => i + 1);
 const DEC_OPTS = Array.from({ length: 10 }, (_, i) => i);
@@ -293,7 +327,7 @@ function ActCard({ initial, name, tagline, compact = false }) {
 /* ─────────────────────────────────────────────
    Component 4 — DrumColumn
 ───────────────────────────────────────────── */
-export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ariaLabel }) {
+export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin, id, ariaLabel, onTamper }) {
   const ATTRACT_NUMS = [...shuffled(options), ...shuffled(options), ...shuffled(options)];
 
   const containerRef = useRef(null);
@@ -306,6 +340,11 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
   const lastY = useRef(0);
   const lastTime = useRef(0);
   const lastWheelTime = useRef(0);
+  const lastTickIndex = useRef(null);
+  const lastTickTime = useRef(0);
+  // Flips true once the device's audio is confirmed playable, so the gate only
+  // pays the async resume() check on the first interaction, not every move.
+  const audioOkRef = useRef(false);
   const phaseRef = useRef(autoSpin ? "attract" : "interactive");
 
   const [phase, setPhase] = useState(autoSpin ? "attract" : "interactive");
@@ -336,7 +375,7 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
   useEffect(() => {
     if (!autoSpin || phase !== "attract" || reducedMotion.current) return;
     let startTime = null;
-    const SPEED = 0.055;
+    const SPEED = 0.0055;
     const loopLen = options.length * SLOT_H;
     function anim(ts) {
       if (!startTime) startTime = ts;
@@ -350,8 +389,31 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
   }, [autoSpin, phase, options.length]);
 
   const applyTranslate = useCallback((y) => {
-    if (trackRef.current) trackRef.current.style.transform = `translateY(${y}px)`;
-  }, []);
+    const track = trackRef.current;
+    if (!track) return;
+    track.style.transform = `translateY(${y}px)`;
+    // Curve each row around the drum centre based on its live screen position so
+    // the lens distortion stays anchored to the viewport while the track scrolls.
+    const centre = DRUM_H / 2;
+    const kids = track.children;
+    for (let i = 0; i < kids.length; i++) {
+      const inner = kids[i].firstChild;
+      if (!inner) continue;
+      const itemCentre = y + i * SLOT_H + SLOT_H / 2;
+      const t = Math.max(-1, Math.min(1, (itemCentre - centre) / (DRUM_H / 2)));
+      inner.style.transform = `rotateX(${-t * CURVE_MAX_DEG}deg)`;
+    }
+    // Knob click: tick once each time a new digit passes the centre detent.
+    const idx = Math.max(0, Math.min(options.length - 1, Math.round((-y + centre - SLOT_H / 2) / SLOT_H)));
+    if (lastTickIndex.current !== null && idx !== lastTickIndex.current) {
+      const now = performance.now();
+      if (now - lastTickTime.current >= MIN_TICK_GAP_MS) {
+        playTick();
+        lastTickTime.current = now;
+      }
+    }
+    lastTickIndex.current = idx;
+  }, [options.length]);
 
   const getSnapPos = useCallback((rawPos) => {
     const centre = DRUM_H / 2;
@@ -378,9 +440,9 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       return;
     }
     let pos = from;
-    let vel = velRef.current * 0.5;
+    let vel = velRef.current * 0.000001;
     const STIFFNESS = 0.18;
-    const DAMPING = 0.65;
+    const DAMPING = 0.2 ; // ~70% less settle overshoot/rumble than the old 0.65
     let last = performance.now();
     function step(ts) {
       const dt = Math.min(ts - last, 32);
@@ -408,13 +470,12 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
         setSelectedIndex(idx);
         setPhase("snapped");
         onLocked(options[idx]);
-        playTick();
       });
       return;
     }
     let pos = fromPos;
     let vel = velocity;
-    const FRICTION = 0.82;
+    const FRICTION = 0.1; // ~40% more resistance than the old 0.82
     let last = performance.now();
     function decel(ts) {
       const dt = Math.min(ts - last, 32);
@@ -431,7 +492,6 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
           setSelectedIndex(fi);
           setPhase("snapped");
           onLocked(options[fi]);
-          playTick();
         });
         return;
       }
@@ -443,6 +503,14 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
 
   const onPointerDown = useCallback((e) => {
     if (isLocked) return;
+    // No audio = no smooth playback. Confirm the device can sound the ticks
+    // before this spin is trusted; if not, abort it and raise the tamper alarm.
+    if (!audioOkRef.current) {
+      ensureAudioReady().then((ok) => {
+        if (ok) audioOkRef.current = true;
+        else { isDragging.current = false; onTamper?.(); }
+      });
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
     if (phaseRef.current === "attract") {
       if (attractRafRef.current) cancelAnimationFrame(attractRafRef.current);
@@ -457,7 +525,7 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
     lastY.current = e.clientY;
     lastTime.current = performance.now();
     velRef.current = 0;
-  }, [applyTranslate, isLocked, options.length]);
+  }, [applyTranslate, isLocked, options.length, onTamper]);
 
   const onPointerMove = useCallback((e) => {
     if (!isDragging.current) return;
@@ -492,7 +560,6 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       setSelectedIndex(clamped);
       setPhase("snapped");
       onLocked(options[clamped]);
-      playTick();
     });
     setSelectedIndex(clamped);
   }, [onLocked, options, runSpring]);
@@ -506,8 +573,15 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
     else if (e.key === "End") newIdx = options.length - 1;
     else return;
     e.preventDefault();
+    if (!audioOkRef.current) {
+      ensureAudioReady().then((ok) => {
+        if (ok) { audioOkRef.current = true; moveToIndex(newIdx); }
+        else onTamper?.();
+      });
+      return;
+    }
     moveToIndex(newIdx);
-  }, [isLocked, moveToIndex, options.length, selectedIndex]);
+  }, [isLocked, moveToIndex, options.length, selectedIndex, onTamper]);
 
   // Mouse-wheel / trackpad scrolling — move one number per notch, and stop the
   // page from scrolling while the pointer is over the drum.
@@ -521,11 +595,18 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       if (now - lastWheelTime.current < 80) return;
       lastWheelTime.current = now;
       const dir = e.deltaY > 0 ? 1 : -1;
+      if (!audioOkRef.current) {
+        ensureAudioReady().then((ok) => {
+          if (ok) { audioOkRef.current = true; moveToIndex(selectedIndexRef.current + dir); }
+          else onTamper?.();
+        });
+        return;
+      }
       moveToIndex(selectedIndexRef.current + dir);
     };
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
-  }, [isLocked, moveToIndex]);
+  }, [isLocked, moveToIndex, onTamper]);
 
   useEffect(() => {
     if (!autoSpin && trackRef.current) {
@@ -534,7 +615,7 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
       posRef.current = initPos;
       applyTranslate(initPos);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -579,6 +660,8 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
         flexShrink: 0,
         overflow: "hidden",
         touchAction: "none",
+        perspective: `${PERSPECTIVE}px`,
+        perspectiveOrigin: "center center",
         background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%)",
         WebkitMaskImage:
           "linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)",
@@ -651,6 +734,8 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
             touchAction: "none",
             userSelect: "none",
             cursor: isLocked ? "default" : "grab",
+            transformStyle: "preserve-3d",
+            willChange: "transform",
           }}
         >
           {options.map((num, idx) => {
@@ -679,9 +764,10 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
                   userSelect: "none",
                   position: "relative",
                   zIndex: isSel ? 4 : 1,
+                  transformStyle: "preserve-3d",
                 }}
               >
-                {num}
+                <span style={{ display: "block", backfaceVisibility: "hidden" }}>{num}</span>
               </div>
             );
           })}
@@ -933,6 +1019,102 @@ function LockedStamp({ visible }) {
 }
 
 /* ─────────────────────────────────────────────
+   Component 9b — TamperAlert
+   Fires when the drum is scrolled with the device's audio off. Pure visual
+   drama — the buzzer can't sound, that's the whole point.
+───────────────────────────────────────────── */
+function TamperAlert({ visible }) {
+  if (!visible) return null;
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 30,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        pointerEvents: "none",
+        animation: "tamperFlash 0.18s steps(2, end) infinite",
+        backdropFilter: "blur(1px)",
+      }}
+    >
+      {/* scanlines */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.35) 3px, rgba(0,0,0,0.35) 4px)",
+          mixBlendMode: "multiply",
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{ animation: "tamperShake 0.22s linear infinite", textAlign: "center" }}>
+        <div
+          style={{
+            fontFamily: "var(--font-rajdhani)",
+            fontSize: "clamp(0.9rem, 2.5vw, 1.2rem)",
+            letterSpacing: "0.4em",
+            color: "#ffb3b3",
+            textTransform: "uppercase",
+            marginBottom: 6,
+          }}
+        >
+          ⚠ Signal Lost ⚠
+        </div>
+        <div
+          style={{
+            position: "relative",
+            fontFamily: "var(--font-anton)",
+            fontSize: "clamp(2.6rem, 11vw, 7rem)",
+            color: "#ff1a1a",
+            letterSpacing: "0.08em",
+            lineHeight: 0.95,
+            textShadow:
+              "3px 0 0 rgba(0,255,255,0.7), -3px 0 0 rgba(255,0,80,0.7), 0 0 40px rgba(255,0,0,0.6)",
+            animation: "tamperGlitch 0.3s steps(2, end) infinite",
+          }}
+        >
+          TAMPERING<br />DETECTED
+        </div>
+        <div
+          style={{
+            marginTop: 10,
+            fontFamily: "var(--font-anton)",
+            fontSize: "clamp(1rem, 4vw, 2rem)",
+            letterSpacing: "0.5em",
+            color: "#fff",
+            background: "#7a0000",
+            display: "inline-block",
+            padding: "4px 18px",
+            border: "2px solid #ff1a1a",
+          }}
+        >
+          EVM · OFFLINE
+        </div>
+        <div
+          style={{
+            marginTop: 16,
+            fontFamily: "var(--font-rajdhani)",
+            fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+            letterSpacing: "0.28em",
+            color: "rgba(255,255,255,0.7)",
+            textTransform: "uppercase",
+          }}
+        >
+          Unmute your device to cast a verified vote
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Component 10 — SealButton
 ───────────────────────────────────────────── */
 function SealButton({ disabled, onClick, sealed, needsAuth }) {
@@ -1029,6 +1211,17 @@ export default function VotingScoreWheel({
   const [showStamp, setShowStamp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [tampering, setTampering] = useState(false);
+
+  // Raised by a drum when it's scrolled with no audio on the device. Flash the
+  // alarm for ~2.6s; once the user unmutes and interacts, the drum re-arms and
+  // stops firing this.
+  const handleTamper = useCallback(() => setTampering(true), []);
+  useEffect(() => {
+    if (!tampering) return;
+    const t = setTimeout(() => setTampering(false), 2600);
+    return () => clearTimeout(t);
+  }, [tampering]);
 
   // The LOCKED stamp is a flash — show it for 3s, then clear it.
   useEffect(() => {
@@ -1079,7 +1272,7 @@ export default function VotingScoreWheel({
         ) {
           setError(result.error || "Something went wrong.");
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     setIsSubmitting(false);
@@ -1212,6 +1405,7 @@ export default function VotingScoreWheel({
               isLocked={sealed}
               lockedValue={intPart}
               autoSpin={false}
+              onTamper={handleTamper}
             />
 
             <DecimalDot />
@@ -1224,19 +1418,20 @@ export default function VotingScoreWheel({
               isLocked={sealed || intPart === 10}
               lockedValue={decPart}
               autoSpin={false}
+              onTamper={handleTamper}
             />
           </div>
 
-          <HintText 
-            visible={!sealed} 
-            sealed={sealed} 
+          <HintText
+            visible={!sealed}
+            sealed={sealed}
             text={
-              !leftLocked 
-                ? "Scroll or drag a number to start" 
-                : !rightLocked 
-                  ? "Now select the decimal" 
+              !leftLocked
+                ? "Scroll or drag a number to start"
+                : !rightLocked
+                  ? "Now select the decimal"
                   : ""
-            } 
+            }
           />
 
 
@@ -1265,6 +1460,7 @@ export default function VotingScoreWheel({
       </div>
 
       <LockedStamp visible={showStamp} />
+      <TamperAlert visible={tampering} />
     </div>
   );
 }

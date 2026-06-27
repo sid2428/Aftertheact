@@ -642,6 +642,34 @@ body::after {
   100% { transform: scale(1.0); opacity: 0; }
 }
 
+/* Tamper alert: violent glitch shake + red strobe when the drum is
+   scrolled with no audio on the device. Set on the TamperAlert element. */
+@keyframes tamperShake {
+  0%, 100% { transform: translate(0, 0) skewX(0deg); }
+  10% { transform: translate(-6px, 3px) skewX(-3deg); }
+  20% { transform: translate(7px, -4px) skewX(4deg); }
+  30% { transform: translate(-8px, -2px) skewX(-2deg); }
+  40% { transform: translate(6px, 5px) skewX(3deg); }
+  50% { transform: translate(-5px, -3px) skewX(-4deg); }
+  60% { transform: translate(8px, 2px) skewX(2deg); }
+  70% { transform: translate(-7px, 4px) skewX(-3deg); }
+  80% { transform: translate(5px, -5px) skewX(3deg); }
+  90% { transform: translate(-4px, 2px) skewX(-2deg); }
+}
+
+@keyframes tamperFlash {
+  0%, 100% { background: rgba(120,0,0,0.0); }
+  50% { background: rgba(160,0,0,0.42); }
+}
+
+@keyframes tamperGlitch {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+  20% { clip-path: inset(20% 0 40% 0); transform: translateX(-5px); }
+  40% { clip-path: inset(55% 0 8% 0); transform: translateX(6px); }
+  60% { clip-path: inset(10% 0 65% 0); transform: translateX(-4px); }
+  80% { clip-path: inset(70% 0 5% 0); transform: translateX(3px); }
+}
+
 /* Drum column gradient fade mask – utility so the pseudo-elements
    in VotingScoreWheel can reference a single class. */
 @layer utilities {
