@@ -51,6 +51,15 @@ const nextConfig = {
     ];
   },
   images: {
+    // Next 16 blocks query strings on local images unless allowlisted (enumeration
+    // guard). Uploaded images are cache-busted with version queries (e.g. judge
+    // avatars served as ?v=2), so allow any query under /uploads. Defining
+    // localPatterns switches to allowlist mode, so every *other* local image must
+    // be covered too — hence the no-query catch-all below.
+    localPatterns: [
+      { pathname: "/uploads/**" }, // omit search → any (or no) query string allowed
+      { pathname: "/**", search: "" }, // all other local assets, no query string
+    ],
     remotePatterns: [
       // Google OAuth avatars
       {

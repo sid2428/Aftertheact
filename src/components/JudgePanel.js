@@ -21,8 +21,8 @@ export default function JudgePanel({ members = [] }) {
             key={m.id || i}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "0px 200px 0px 200px" }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="group shrink-0 w-52 sm:w-64 snap-center perspective-1000"
           >
             <div className="relative transform-gpu transition-all duration-500 ease-out group-hover:scale-[1.03] group-hover:-translate-y-3">

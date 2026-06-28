@@ -1,69 +1,66 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from "framer-motion";
 import EpisodeCard from "./EpisodeCard";
 
-// A scroll-driven "arc" of episode cards: while the section is pinned, scrolling
-// slides the cards left→right along a shallow parabola, each becoming the
-// centered, largest card in turn. Pinning + scroll progress are owned by GSAP
-// ScrollTrigger (pin: true uses fixed positioning, so it holds even though an
-// ancestor uses overflow-x-hidden, and it stays in sync with the global Lenis
-// smooth-scroll). The progress feeds Framer MotionValues that transform each card.
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+// An "arc" of episode cards that the viewer scrubs *horizontally* without the
+// page scroll being hijacked. The section sits in normal flow (no pin), so a
+// vertical scroll carries you straight past it. Horizontal motion is driven
+// only when the pointer is over the card band (desktop wheel) or by a sideways
+// swipe (mobile) — and it releases to the page once you hit either end. A
+// 0→1 `target` MotionValue, smoothed through a spring, feeds the per-card
+// transforms below (same arc math as before, just a different input).
 export default function ArcCarousel({ episodes = [] }) {
   const reduced = useReducedMotion();
   const sectionRef = useRef(null);
-  const pinRef = useRef(null);
-  const progress = useMotionValue(0);
+  const bandRef = useRef(null);
+  const target = useMotionValue(0);
+  const progress = useSpring(target, { stiffness: 100, damping: 30, mass: 0.5 });
 
-  useEffect(() => {
-    if (reduced || episodes.length === 0) return;
-    let cancelled = false;
-    let ctx;
-
-    (async () => {
-      const { default: gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      if (cancelled || !sectionRef.current) return;
-      gsap.registerPlugin(ScrollTrigger);
-
-      ctx = gsap.context(() => {
-        ScrollTrigger.create({
-          trigger: sectionRef.current,
-          start: "top top",
-          // Pin long enough to step through every card, then release cleanly
-          // (pinSpacing reserves exactly this much runway — no black gap after).
-          end: () => "+=" + episodes.length * window.innerHeight * 0.8,
-          pin: pinRef.current,
-          pinSpacing: true,
-          // A small scrub lag lerps progress toward the scroll position instead
-          // of snapping to it, so variable-rate touch-scroll events on mobile
-          // resolve into fluid motion rather than frame-to-frame jitter.
-          scrub: 1,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => progress.set(self.progress),
-        });
-      }, sectionRef);
-
-      ScrollTrigger.refresh();
-    })();
-
-    return () => {
-      cancelled = true;
-      if (ctx) ctx.revert();
-    };
-  }, [reduced, episodes.length, progress]);
-
-  // Mobile: let a sideways swipe drive the same scroll-through animation as a
-  // downward scroll. Lenis leaves touch scrolling native, so a horizontal drag
-  // would otherwise do nothing here. We detect a horizontal-dominant gesture and
-  // translate it into vertical scroll, which the ScrollTrigger above turns into
-  // progress — swiping left slides the cards left so they follow the finger.
+  // Desktop: wheel over the card band scrubs the arc; everywhere else (and once
+  // we're parked at an end and still pushing outward) the event falls through to
+  // Lenis on `window` and scrolls the page. stopPropagation while we capture
+  // keeps Lenis from also moving the page underneath us.
   useEffect(() => {
     if (reduced || episodes.length === 0) return;
     const el = sectionRef.current;
     if (!el) return;
 
+    // Full 0→1 sweep costs roughly the same wheel distance the old pinned
+    // version reserved, so the scrub speed feels unchanged.
+    const span = () => episodes.length * window.innerHeight * 0.8;
+
+    const onWheel = (e) => {
+      const band = bandRef.current?.getBoundingClientRect();
+      if (!band || e.clientY < band.top || e.clientY > band.bottom) return;
+
+      // Trackpads send horizontal deltas too — follow whichever axis dominates.
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const cur = target.get();
+      if ((cur <= 0 && d < 0) || (cur >= 1 && d > 0)) return; // at an end → let the page scroll
+
+      e.preventDefault();
+      e.stopPropagation();
+      target.set(clamp01(cur + d / span()));
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [reduced, episodes.length, target]);
+
+  // Mobile: a horizontal-dominant swipe scrubs the arc (preventDefault to claim
+  // the gesture); a vertical swipe is left native, so it scrolls the page past
+  // the carousel. Swipe left (dx < 0) lowers progress → cards slide left, so the
+  // content tracks the finger.
+  useEffect(() => {
+    if (reduced || episodes.length === 0) return;
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const span = () => episodes.length * window.innerHeight * 0.8;
     let lastX = 0;
     let lastY = 0;
     let horizontal = false;
@@ -79,16 +76,12 @@ export default function ArcCarousel({ episodes = [] }) {
       const t = e.touches[0];
       const dx = t.clientX - lastX;
       const dy = t.clientY - lastY;
-      // Lock to horizontal once the drag clearly favours the x-axis, so a normal
-      // vertical scroll still falls through to the browser untouched.
       if (!horizontal && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 4) {
         horizontal = true;
       }
       if (horizontal) {
         e.preventDefault();
-        // Follow the finger: swipe left (dx < 0) scrolls up → progress down →
-        // cards slide left (the content tracks the finger, not against it).
-        window.scrollBy(0, dx * 1.6);
+        target.set(clamp01(target.get() + (dx * 1.6) / span()));
         lastX = t.clientX;
         lastY = t.clientY;
       }
@@ -100,7 +93,7 @@ export default function ArcCarousel({ episodes = [] }) {
       el.removeEventListener("touchstart", onStart);
       el.removeEventListener("touchmove", onMove);
     };
-  }, [reduced, episodes.length]);
+  }, [reduced, episodes.length, target]);
 
   if (!episodes || episodes.length === 0) return null;
 
@@ -123,13 +116,19 @@ export default function ArcCarousel({ episodes = [] }) {
   }
 
   return (
-    <section ref={sectionRef} className="relative bg-[#0A0A0A] overflow-x-clip">
-      <div ref={pinRef} className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
+    <section ref={sectionRef} className="relative isolate bg-[#0A0A0A] overflow-x-clip">
+      <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
         {/* Header — sits above the cards (centered card reaches zIndex 100) so the
             title stays visible; pointer-events-none so it never intercepts card clicks. */}
         <div className="pointer-events-none absolute top-4 md:top-8 left-0 right-0 z-[110] text-center px-4">
           <ArcHeader />
         </div>
+
+        {/* Invisible vertical band over where the cards render (~centre of the
+            stage). The wheel handler only scrubs when the pointer is inside it,
+            so the header/empty areas above and below stay free for page scroll.
+            pointer-events-none → it never blocks card clicks; used for geometry only. */}
+        <div ref={bandRef} aria-hidden className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[560px]" />
 
         {/* The Arc Track */}
         <div className="relative flex w-full max-w-7xl items-center justify-center">
