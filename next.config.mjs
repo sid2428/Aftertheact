@@ -29,9 +29,13 @@ const nextConfig = {
         ],
       },
       {
-        // Uploaded filenames are random UUIDs, so caching forever is safe — a new upload is a new URL.
+        // Upload filenames are reused slugs (e.g. samay-raina.jpg), not content-hashed — so
+        // NOT `immutable`: an in-place replacement must be able to propagate, and a 404 cached
+        // before the file was deployed must self-heal instead of sticking for a year. Long edge
+        // cache via stale-while-revalidate keeps the perf (served instantly from cache) while
+        // a stale entry refreshes on the next background revalidation.
         source: "/uploads/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       },
       {
         // Brand/intro assets in /public otherwise default to `max-age=0` (re-fetched every
