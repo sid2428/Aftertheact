@@ -6,6 +6,7 @@ import LeaderboardClient from "./LeaderboardClient";
 export const metadata = {
   title: "The Leaderboards | Oracle Accuracy and Season Standings",
   description: "The sharpest predictors and the highest-ranked jurors of the season.",
+  alternates: { canonical: "/leaderboard" },
 };
 
 export const revalidate = 30;

@@ -6,6 +6,7 @@ import CommunityPageClient from "@/components/CommunityPageClient";
 export const metadata = {
   title: "The Green Room",
   description: "No filter. No mercy. Just takes.",
+  alternates: { canonical: "/community" },
 };
 
 export const revalidate = 0; // always fresh

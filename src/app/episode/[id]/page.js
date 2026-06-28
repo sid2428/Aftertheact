@@ -24,6 +24,8 @@ export async function generateMetadata({ params }) {
   return {
     title: `S${episode.season_number}E${episode.episode_number} - ${episode.title}`,
     description: `Verdicts and scores for ${episode.title}.`,
+    // Override the inherited "/" canonical so each episode points at itself, not the homepage.
+    alternates: { canonical: `/episode/${id}` },
   };
 }
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Judge Popularity",
   description: "Which judge the jury actually rates — by votes and average score.",
+  alternates: { canonical: "/judges-scoreboard" },
 };
 
 export const revalidate = 60;

@@ -4,6 +4,7 @@ export const metadata = {
   title: "Terms & Privacy | AfterTheAct",
   description:
     "How AfterTheAct collects, uses, and protects your data, and the terms for using the platform — written to comply with India's Digital Personal Data Protection Act, 2023.",
+  alternates: { canonical: "/terms" },
 };
 
 // Plain server component — static legal copy. Last reviewed 27 June 2026.
