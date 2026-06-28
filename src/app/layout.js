@@ -4,6 +4,7 @@ import Link from "next/link";
 import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 // Three fonts only:
 //   Display  — Anton (headings ≥ 2rem, episode numbers, brand)
@@ -29,6 +30,9 @@ export const metadata = {
     images: ["/logo.png"],
   },
   twitter: { card: "summary_large_image" },
+  // Google Search Console ownership proof. Env-gated: the meta tag is omitted when
+  // GOOGLE_SITE_VERIFICATION is unset, so it only appears once you paste GSC's code.
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
   // Favicon + Apple touch icon come from the file-based convention:
   // src/app/icon.png and src/app/apple-icon.png (the styled "A" from the logo).
 };
@@ -47,6 +51,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }} />
+        <GoogleAnalytics />
 
         <SessionProviderWrapper>
           <SmoothScroll>
