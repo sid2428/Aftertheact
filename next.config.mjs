@@ -29,13 +29,14 @@ const nextConfig = {
         ],
       },
       {
-        // Upload filenames are reused slugs (e.g. samay-raina.jpg), not content-hashed — so
-        // NOT `immutable`: an in-place replacement must be able to propagate, and a 404 cached
-        // before the file was deployed must self-heal instead of sticking for a year. Long edge
-        // cache via stale-while-revalidate keeps the perf (served instantly from cache) while
-        // a stale entry refreshes on the next background revalidation.
+        // Upload filenames are reused slugs (e.g. samay-raina.jpg), not content-hashed, and are
+        // referenced from DB rows that can go live before the file ships — so NOT `immutable`
+        // and no long max-age (a 404 cached before deploy must not stick). Revalidate: the
+        // browser keeps the copy but re-checks via ETag every 5 min, so unchanged images return
+        // a 0-byte 304 (no re-download of the heavy bytes) while replacements/late files heal
+        // within minutes on every device.
         source: "/uploads/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" }],
       },
       {
         // Brand/intro assets in /public otherwise default to `max-age=0` (re-fetched every
