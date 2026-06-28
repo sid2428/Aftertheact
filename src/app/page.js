@@ -17,8 +17,7 @@ export default async function Home() {
     .from("Episode")
     .select("*, ContestantEpisodeAppearance(count)")
     .order("season_number", { ascending: false })
-    .order("episode_number", { ascending: false })
-    .limit(10);
+    .order("episode_number", { ascending: false });
 
   // Signed-in: jump straight to the live voting episode, otherwise the scoreboard.
   if (session?.user) {
