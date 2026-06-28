@@ -431,17 +431,17 @@ export default function CommunityPageClient({
       {episodes.length > 0 && (
         <div className="bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-30 border-b border-white/[0.06]">
           <div className="max-w-7xl mx-auto px-4 sm:px-12">
-            <div className="overflow-x-auto no-scrollbar py-3">
-              <div className="flex gap-1.5 min-w-0 w-max max-w-full">
+            <div className="py-3">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setActiveEpisode(null); setPage(1); }}
-                  className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                  className={`font-display font-bold uppercase tracking-widest text-xs px-3 py-1.5 rounded-sm border transition-colors ${
                     !activeEpisode
-                      ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
-                      : "text-white/50 hover:text-white border border-white/10"
+                      ? "bg-latent-gold/15 text-latent-gold border-latent-gold/50"
+                      : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"
                   }`}
                 >
-                  All Episodes
+                  All
                 </button>
                 {episodes.map((ep) => {
                   const active = activeEpisode?.id === ep.id;
@@ -449,13 +449,13 @@ export default function CommunityPageClient({
                     <button
                       key={ep.id}
                       onClick={() => { setActiveEpisode(active ? null : ep); setPage(1); }}
-                      className={`px-4 py-2 rounded-full font-display text-xs uppercase tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                      className={`font-display font-bold uppercase tracking-widest text-xs px-3 py-1.5 rounded-sm border transition-colors ${
                         active
-                          ? "bg-latent-gold text-[#0A0A0A] shadow-[0_0_18px_rgba(212,175,55,0.4)]"
-                          : "text-white/50 hover:text-white border border-white/10"
+                          ? "bg-latent-gold/15 text-latent-gold border-latent-gold/50"
+                          : "bg-white/5 text-white/50 border-white/10 hover:border-white/30"
                       }`}
                     >
-                      S{ep.season_number}E{ep.episode_number} — {ep.title}
+                      S{ep.season_number}E{ep.episode_number}
                     </button>
                   );
                 })}
