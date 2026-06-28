@@ -54,11 +54,9 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(0); // 0: enter email, 1: enter otp, 2: admin login
+  const [step, setStep] = useState(0); // 0: enter email, 1: enter otp
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [adminUsername, setAdminUsername] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [agreed, setAgreed] = useState(false);
 
@@ -127,25 +125,6 @@ function LoginForm() {
     }
   };
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    if (!adminUsername || !adminPassword) return;
-    setIsLoading(true);
-    setError("");
-
-    const result = await signIn("admin-login", {
-      username: adminUsername,
-      password: adminPassword,
-      callbackUrl: "/admin",
-      redirect: true,
-    });
-
-    if (result?.error) {
-      setError("Invalid admin credentials");
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6 selection:bg-latent-crimson/30">
       <div className="max-w-md w-full bg-[#111111] border border-brand-border p-8 sm:p-12 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative rounded-md overflow-hidden">
@@ -190,7 +169,7 @@ function LoginForm() {
                   {isLoading ? "Sending..." : "Send OTP"}
                 </button>
               </form>
-            ) : step === 1 ? (
+            ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <p className="text-sm text-white/60">Sent to {email}</p>
                 <input
@@ -227,39 +206,6 @@ function LoginForm() {
                   </button>
                 </div>
               </form>
-            ) : (
-              <form onSubmit={handleAdminLogin} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={adminUsername}
-                  onChange={(e) => setAdminUsername(e.target.value)}
-                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors"
-                  required
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full bg-[#050505] text-white border border-brand-border p-4 font-medium rounded-sm focus:outline-none focus:border-latent-gold transition-colors"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-latent-crimson text-white hover:bg-red-700 p-4 font-display font-black uppercase tracking-widest text-lg transition-all duration-300 rounded-sm disabled:opacity-50"
-                >
-                  {isLoading ? "Authenticating..." : "Enter Switchboard"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(0)}
-                  className="text-xs text-white/40 hover:text-white uppercase tracking-wider mt-2 w-full text-center"
-                >
-                  Back to User Login
-                </button>
-              </form>
             )}
 
             <div className="relative flex items-center py-2">
@@ -270,13 +216,13 @@ function LoginForm() {
 
             <button
               onClick={() => {
-                if (step !== 2 && !agreed) {
+                if (!agreed) {
                   setError("Please accept the Terms & Privacy Policy to continue.");
                   return;
                 }
                 signIn("google", { callbackUrl });
               }}
-              disabled={step !== 2 && !agreed}
+              disabled={!agreed}
               className="w-full flex items-center justify-center gap-4 bg-[#050505] text-white hover:bg-[#111] border border-brand-border hover:border-white/20 p-4 font-display font-black uppercase tracking-widest text-sm transition-all duration-300 group rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#050505] disabled:hover:border-brand-border"
             >
               <svg className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -290,20 +236,9 @@ function LoginForm() {
 
             {/* Consent sits below both sign-in methods so it reads as common to
                 each — it gates the OTP and Google flows alike (see `agreed`). */}
-            {step !== 2 && (
-              <div className="pt-1">
-                <ConsentCheckbox checked={agreed} onChange={setAgreed} />
-              </div>
-            )}
-
-            {step !== 2 && (
-              <button
-                onClick={() => setStep(2)}
-                className="w-full text-center text-[10px] uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors mt-8"
-              >
-                Admin Access
-              </button>
-            )}
+            <div className="pt-1">
+              <ConsentCheckbox checked={agreed} onChange={setAgreed} />
+            </div>
           </div>
         </div>
 

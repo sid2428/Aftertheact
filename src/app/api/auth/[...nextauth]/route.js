@@ -11,21 +11,44 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    // Showrunner (admin) login. Two factors: a one-time code mailed to the fixed
+    // admin inbox (see /api/auth/showrunner-otp) AND the id/password. The login
+    // page itself lives at an unlinked secret URL, so this is never reachable
+    // from the public UI. Credentials default to the agreed values but can be
+    // overridden via env (SHOWRUNNER_ID / SHOWRUNNER_PASSWORD) in production.
     CredentialsProvider({
-      name: 'Admin Panel',
-      id: 'admin-login',
+      name: 'Showrunner',
+      id: 'showrunner-login',
       credentials: {
-        username: { label: "Username", type: "text", placeholder: "admin" },
-        password: { label: "Password", type: "password" }
+        username: { label: "Showrunner ID", type: "text" },
+        password: { label: "Password", type: "password" },
+        otp: { label: "Access Code", type: "text" }
       },
       async authorize(credentials) {
-        if (
-          credentials.username === process.env.ADMIN_USERNAME &&
-          credentials.password === process.env.ADMIN_PASSWORD
-        ) {
-          return { id: "admin-master", name: "Showrunner", email: "admin@aftertheact.com", isAdmin: true };
+        const otp = credentials?.otp?.trim();
+        const username = credentials?.username;
+        const password = credentials?.password;
+        if (!otp || !username || !password) {
+          throw new Error("All fields are required");
         }
-        return null;
+
+        // Verify the one-time code first.
+        const storedOtp = await redis.get("showrunner:otp");
+        if (!storedOtp || storedOtp.toString() !== otp) {
+          throw new Error("Invalid or expired access code");
+        }
+
+        // Then the id/password.
+        const expectedId = process.env.SHOWRUNNER_ID || "Shivtik@1515";
+        const expectedPassword = process.env.SHOWRUNNER_PASSWORD || "Shivtik@151515";
+        if (username !== expectedId || password !== expectedPassword) {
+          throw new Error("Invalid credentials");
+        }
+
+        // Burn the code so it can't be replayed.
+        await redis.del("showrunner:otp");
+
+        return { id: "admin-master", name: "Showrunner", email: "admin@aftertheact.com", isAdmin: true };
       }
     }),
     CredentialsProvider({
@@ -56,7 +79,7 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === 'admin-login' || (account?.provider === 'credentials' && user.id === 'admin-master')) {
+      if (account?.provider === 'showrunner-login' || (account?.provider === 'credentials' && user.id === 'admin-master')) {
         // Admin credentials bypass DB entirely
         user.dbId = user.id;
         user.username = user.name;
@@ -72,7 +95,7 @@ export const authOptions = {
       // Check if user exists in our database
       const { data: existingUser, error: checkError } = await supabase
         .from('User')
-        .select('id, username, is_admin, onboarded')
+        .select('id, username, is_admin, onboarded, avatar_url')
         .eq('email', user.email)
         .single();
         
@@ -112,8 +135,19 @@ export const authOptions = {
         user.username = existingUser.username;
         user.isAdmin = existingUser.is_admin || false;
         user.onboarded = existingUser.onboarded || false;
+
+        // Backfill the Google profile photo so Gmail users show their real
+        // picture instead of a name-initial fallback. Only fill when we have no
+        // avatar yet, so a user's custom uploaded avatar is never clobbered.
+        if (account?.provider === 'google' && user.image && !existingUser.avatar_url) {
+          const { error: avatarError } = await supabase
+            .from('User')
+            .update({ avatar_url: user.image })
+            .eq('id', existingUser.id);
+          if (avatarError) console.error('Error backfilling avatar:', avatarError);
+        }
       }
-      
+
       return true;
     },
     async jwt({ token, user, trigger, session }) {
