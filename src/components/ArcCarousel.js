@@ -6,6 +6,14 @@ import EpisodeCard from "./EpisodeCard";
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+// True when the (full-height) stage sits roughly centred in the viewport — the
+// scrub only engages here, so the user always parks the carousel before it
+// captures the scroll, and a nudge off-centre hands scrolling back to the page.
+const isCentered = (el) => {
+  const r = el.getBoundingClientRect();
+  return Math.abs(r.top + r.height / 2 - window.innerHeight / 2) < window.innerHeight * 0.14;
+};
+
 // An "arc" of episode cards that the viewer scrubs *horizontally* without the
 // page scroll being hijacked. The section sits in normal flow (no pin), so a
 // vertical scroll carries you straight past it. Horizontal motion is driven
@@ -34,8 +42,12 @@ export default function ArcCarousel({ episodes = [] }) {
     const span = () => episodes.length * window.innerHeight * 0.8;
 
     const onWheel = (e) => {
+      // Only hijack once the stage has settled to (near) screen centre — until
+      // then a vertical scroll carries it there, and a scroll past it leaves.
+      if (!isCentered(el)) return;
+
       const band = bandRef.current?.getBoundingClientRect();
-      if (!band || e.clientY < band.top || e.clientY > band.bottom) return;
+      if (!band || e.clientX < band.left || e.clientX > band.right || e.clientY < band.top || e.clientY > band.bottom) return;
 
       // Trackpads send horizontal deltas too — follow whichever axis dominates.
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -64,15 +76,22 @@ export default function ArcCarousel({ episodes = [] }) {
     let lastX = 0;
     let lastY = 0;
     let horizontal = false;
+    let inBand = false;
 
     const onStart = (e) => {
       const t = e.touches[0];
+      const band = bandRef.current?.getBoundingClientRect();
+      inBand = !!band && t.clientX >= band.left && t.clientX <= band.right && t.clientY >= band.top && t.clientY <= band.bottom;
       lastX = t.clientX;
       lastY = t.clientY;
       horizontal = false;
     };
 
     const onMove = (e) => {
+      // Only scrub when the swipe began inside the glass window and the stage is
+      // centred; otherwise the touch falls through to native page scroll.
+      if (!inBand || !isCentered(el)) return;
+
       const t = e.touches[0];
       const dx = t.clientX - lastX;
       const dy = t.clientY - lastY;
@@ -124,17 +143,39 @@ export default function ArcCarousel({ episodes = [] }) {
           <ArcHeader />
         </div>
 
-        {/* Invisible vertical band over where the cards render (~centre of the
-            stage). The wheel handler only scrubs when the pointer is inside it,
-            so the header/empty areas above and below stay free for page scroll.
-            pointer-events-none → it never blocks card clicks; used for geometry only. */}
-        <div ref={bandRef} aria-hidden className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[560px]" />
+        {/* Invisible hit-zone matching the glass window. The scrub only engages
+            when the pointer/touch is inside it, so every edge — top, bottom,
+            left, right — stays free for page scroll. pointer-events-none → it
+            never blocks card clicks; used for geometry only. */}
+        <div ref={bandRef} aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[92vw] sm:h-[560px] sm:w-[min(92vw,1040px)]" />
 
-        {/* The Arc Track */}
-        <div className="relative flex w-full max-w-7xl items-center justify-center">
-          {episodes.map((ep, i) => (
-            <ArcCard key={ep.id} ep={ep} i={i} total={episodes.length} progress={progress} />
-          ))}
+        {/* The window — clips the line-up to the frame, so episodes queued to the
+            left and right stay hidden until you scrub them in. Cards center
+            inside it; the arc fans them down-and-out past the rounded edge. */}
+        <div className="absolute left-1/2 top-1/2 z-[1] h-[500px] w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[2rem] sm:h-[560px] sm:w-[min(92vw,1040px)]">
+          <div className="relative h-full w-full">
+            {episodes.map((ep, i) => (
+              <ArcCard key={ep.id} ep={ep} i={i} total={episodes.length} progress={progress} />
+            ))}
+          </div>
+        </div>
+
+        {/* Liquid-glass trim on top of the window — an elevated, translucent
+            boundary that shows the eye where horizontal scrubbing lives. The
+            side fades hint at "more beyond"; the rail fills 0→1 — pinned empty
+            or full means you're at an end and further scroll releases to the
+            page. pointer-events-none so it never blocks card clicks. */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-[105] h-[500px] w-[92vw] -translate-x-1/2 -translate-y-1/2 sm:h-[560px] sm:w-[min(92vw,1040px)]">
+          <div className="absolute inset-0 rounded-[2rem] border border-latent-gold/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_70px_rgba(212,175,55,0.05),0_40px_120px_rgba(0,0,0,0.55)]" />
+
+          {/* Edge fades: blur + darken cards drifting out each side. */}
+          <div className="absolute inset-y-0 left-0 w-16 rounded-l-[2rem] bg-gradient-to-r from-[#0A0A0A] to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_right,black,transparent)] sm:w-24" />
+          <div className="absolute inset-y-0 right-0 w-16 rounded-r-[2rem] bg-gradient-to-l from-[#0A0A0A] to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_left,black,transparent)] sm:w-24" />
+
+          {/* Scrub rail — the explicit scroll-limit indicator. */}
+          <div className="absolute bottom-5 left-1/2 h-1 w-40 -translate-x-1/2 overflow-hidden rounded-full bg-white/10">
+            <motion.div className="h-full origin-left rounded-full bg-gradient-to-r from-latent-gold to-latent-crimson" style={{ scaleX: progress }} />
+          </div>
         </div>
       </div>
     </section>
@@ -175,7 +216,7 @@ function ArcCard({ ep, i, total, progress }) {
 
   return (
     <motion.div
-      className="absolute left-1/2 top-[78%] sm:top-[68%] -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
+      className="absolute left-1/2 top-1/2 -ml-[140px] -mt-[220px] w-[280px] h-[440px]"
       // willChange + backfaceVisibility keep each card on its own GPU layer, so
       // the per-frame scale/rotate is a cheap composite instead of a repaint.
       style={{ x: xOffset, y, rotate, scale, opacity, zIndex, willChange: "transform", backfaceVisibility: "hidden" }}

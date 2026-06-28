@@ -1,13 +1,89 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 export default function JudgePanel({ members = [] }) {
+  const reduced = useReducedMotion();
+  const sectionRef = useRef(null);
+  const trackRef = useRef(null);
+
+  // Desktop only (≥768px, motion allowed): the judges row scrolls horizontally
+  //  • wheel over the row  → manual horizontal scroll, page locked, releases to
+  //    the page at either end.
+  //  • scrolling the page  → a marquee parallax slides the row as the section
+  //    passes through the viewport, WITHOUT locking the page (reads scroll, never
+  //    prevents it). Suspended while the pointer is over the row so the manual
+  //    wheel owns it. On mobile/reduced-motion neither runs — native swipe only.
+  useEffect(() => {
+    if (reduced) return;
+    const track = trackRef.current;
+    const section = sectionRef.current;
+    if (!track || !section) return;
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
+
+    const range = () => track.scrollWidth - track.clientWidth;
+    const MARQUEE = 0.2; // scroll-linked drift runs at a quarter of full-range speed
+    let hovering = false;
+    let target = track.scrollLeft;
+    let raf = 0;
+
+    // Ease the actual scroll toward `target` so both the wheel and the marquee
+    // glide instead of jumping. Stops itself once settled to avoid a forever-rAF.
+    const tick = () => {
+      const diff = target - track.scrollLeft;
+      track.scrollLeft += diff * 0.15;
+      if (Math.abs(diff) > 0.5) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        track.scrollLeft = target;
+        raf = 0;
+      }
+    };
+    const animate = () => { if (!raf) raf = requestAnimationFrame(tick); };
+
+    const onWheel = (e) => {
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const max = range();
+      if ((target <= 0 && d < 0) || (target >= max && d > 0)) return; // at an end → let the page scroll
+      e.preventDefault();
+      e.stopPropagation(); // keep Lenis from also scrolling the page
+      target = Math.max(0, Math.min(max, target + d));
+      animate();
+    };
+
+    const onScroll = () => {
+      if (hovering) return; // manual wheel owns the row while pointed at
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const p = (vh - rect.top) / (vh + rect.height); // 0 entering → 1 leaving
+      target = (p < 0 ? 0 : p > 1 ? 1 : p) * range() * MARQUEE;
+      animate();
+    };
+
+    const onEnter = () => { hovering = true; };
+    const onLeave = () => { hovering = false; };
+
+    track.addEventListener("wheel", onWheel, { passive: false });
+    track.addEventListener("pointerenter", onEnter);
+    track.addEventListener("pointerleave", onLeave);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      track.removeEventListener("wheel", onWheel);
+      track.removeEventListener("pointerenter", onEnter);
+      track.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [reduced, members.length]);
+
   if (!members.length) return null;
 
   return (
-    <section className="max-w-7xl mx-auto px-6 sm:px-12 mt-24">
+    <section ref={sectionRef} className="max-w-7xl mx-auto px-6 sm:px-12 mt-24">
       <div className="flex items-end justify-between border-b border-latent-gold/20 pb-3 mb-10">
         <h2 className="text-3xl sm:text-4xl font-display font-black uppercase tracking-tighter text-white">The Panel</h2>
         <Link href="/panel" className="font-display font-black uppercase tracking-widest text-xs text-latent-gold hover:text-latent-gold-light transition-colors">
@@ -15,7 +91,7 @@ export default function JudgePanel({ members = [] }) {
         </Link>
       </div>
 
-      <div className="flex gap-6 sm:gap-8 overflow-x-auto pb-8 pt-4 px-4 -mx-4 no-scrollbar snap-x snap-mandatory">
+      <div ref={trackRef} className="flex gap-6 sm:gap-8 overflow-x-auto pb-8 pt-4 px-4 -mx-4 no-scrollbar snap-x snap-mandatory md:snap-none">
         {members.map((m, i) => (
           <motion.div
             key={m.id || i}
