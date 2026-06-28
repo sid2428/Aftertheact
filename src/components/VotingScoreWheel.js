@@ -442,7 +442,7 @@ export function DrumColumn({ options, onLocked, isLocked, lockedValue, autoSpin,
     let pos = from;
     let vel = velRef.current * 0.000001;
     const STIFFNESS = 0.18;
-    const DAMPING = 0.2 ; // ~70% less settle overshoot/rumble than the old 0.65
+    const DAMPING = 0.2; // ~70% less settle overshoot/rumble than the old 0.65
     let last = performance.now();
     function step(ts) {
       const dt = Math.min(ts - last, 32);
