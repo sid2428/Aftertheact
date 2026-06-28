@@ -55,6 +55,17 @@ export default async function VotingWheelPage({ searchParams }) {
 
   if (!episode) notFound();
 
+  // Voting only happens while an episode is LIVE. For any other status, send the
+  // viewer to the episode page (it renders the right view per status) with a
+  // short notice explaining why they can't vote here.
+  if (episode.status !== "LIVE") {
+    const notice =
+      episode.status === "UPCOMING"
+        ? "This episode isn't live yet — voting opens at air time."
+        : "Voting has closed for this episode.";
+    redirect(`/episode/${episodeId}?notice=${encodeURIComponent(notice)}`);
+  }
+
   // Load contestant / appearance
   const { data: appearance } = await supabase
     .from("ContestantEpisodeAppearance")
@@ -84,9 +95,6 @@ export default async function VotingWheelPage({ searchParams }) {
     if (vote) existingScore = vote.score;
   }
 
-  const isClosed =
-    episode.status === "REVEALED" || episode.status === "ARCHIVED";
-
   // Build act object for the wheel
   const act = {
     name: contestant?.name || "Unknown Act",
@@ -103,7 +111,7 @@ export default async function VotingWheelPage({ searchParams }) {
       contestantId={contestantId}
       revealAt={episode.voting_window_close}
       userVoteScore={existingScore}
-      isEpisodeClosed={isClosed}
+      isEpisodeClosed={false}
       seasonLabel={seasonLabel}
       showTitle="After The Act"
     />
