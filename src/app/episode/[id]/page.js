@@ -50,8 +50,9 @@ function EpisodeStatusBadge({ status }) {
   );
 }
 
-export default async function EpisodePage({ params }) {
+export default async function EpisodePage({ params, searchParams }) {
   const { id } = await params;
+  const { notice } = (await searchParams) || {};
   const session = await getServerSession(authOptions);
   const supabase = getServiceSupabase();
 
@@ -170,6 +171,13 @@ export default async function EpisodePage({ params }) {
 
 
       <main className="mx-auto max-w-7xl space-y-12 p-4 sm:p-6 lg:p-12">
+        {notice && (
+          <div className="brutal-surface bg-[#120f02] p-6 font-mono font-black text-oracle-gold">
+            <span className="mb-2 block font-display text-xs font-black uppercase tracking-widest text-oracle-gold/70">Notice:</span>
+            {notice}
+          </div>
+        )}
+
         {episode.admin_note && (
           <div className="brutal-surface bg-brand-panel p-6 font-mono font-black text-white">
             <span className="mb-2 block font-display text-xs font-black uppercase tracking-widest text-broadcast-red">System Broadcast:</span>
