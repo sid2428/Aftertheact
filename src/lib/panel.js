@@ -38,20 +38,30 @@ function withId(member) {
   };
 }
 
+// One-time cache-bust for judge images. Devices that cached a 404 for one of
+// these slugs while it was `immutable` won't revalidate (immutable = never
+// re-check), so the only way to reach them is to change the URL. We append `?v=`
+// on read (display) and strip it on write so the version never persists into
+// Redis. Going forward the must-revalidate header keeps images fresh on its own;
+// only bump ASSET_V again if a future image batch gets stuck the same way.
+const ASSET_V = "2";
+const bustImage = (src) => (src && src.startsWith("/uploads/") ? `${src.split("?")[0]}?v=${ASSET_V}` : src);
+const stripVersion = (src) => (typeof src === "string" ? src.split("?")[0] : src);
+
 // Panel members shown flanking the logo in the hero and rated on /panel.
 // Stored as one Redis blob of:
 // [{ id, name, image, descriptor, instagram_handle, bio, tags }]
 export async function getPanelMembers() {
   try {
     const members = await redis.get(KEY);
-    return Array.isArray(members) ? members.map(withId) : [];
+    return Array.isArray(members) ? members.map(withId).map((m) => ({ ...m, image: bustImage(m.image) })) : [];
   } catch {
     return [];
   }
 }
 
 export async function setPanelMembers(members) {
-  await redis.set(KEY, members.map(withId));
+  await redis.set(KEY, members.map((m) => withId({ ...m, image: stripVersion(m.image) })));
 }
 
 // Create or update one judge. An existing `id` updates that judge in place
