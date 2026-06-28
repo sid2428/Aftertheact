@@ -8,6 +8,7 @@ import JudgePageClient from "@/components/JudgePageClient";
 export const metadata = {
   title: "Judge the Judges",
   description: "The jury is now on trial.",
+  alternates: { canonical: "/panel" },
 };
 
 export const revalidate = 0;

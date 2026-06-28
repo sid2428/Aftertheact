@@ -27,6 +27,7 @@ const SCORING_STEPS = [
 export const metadata = {
   title: "The Lineup",
   description: "Every episode of the trial. Vote on the live ones, relive the verdicts.",
+  alternates: { canonical: "/episodes" },
 };
 
 export const revalidate = 60;

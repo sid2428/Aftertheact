@@ -7,6 +7,7 @@ import FloatingRevealCountdown from "@/components/FloatingRevealCountdown";
 export const metadata = {
   title: "The Verdict Board",
   description: "Every score. Every receipt. The community's running judgement of every act.",
+  alternates: { canonical: "/scoreboard" },
 };
 
 export const revalidate = 60; // ISR cache 60 seconds

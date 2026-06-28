@@ -5,6 +5,7 @@
 export const metadata = {
   title: "Cast Your Verdict — After The Act",
   description: "Score the act with the live verdict wheel.",
+  robots: { index: false, follow: false },
 };
 
 export default function VotingWheelLayout({ children }) {

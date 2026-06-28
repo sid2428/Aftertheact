@@ -4,6 +4,8 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import ProfileCommentsPanel from "@/components/ProfileCommentsPanel";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function MyProfile() {
   const session = await getServerSession(authOptions);
 

@@ -7,6 +7,7 @@ import AdminLogoutButton from "@/components/admin/AdminLogoutButton";
 
 export const metadata = {
   title: "Admin Control Panel - AfterTheAct",
+  robots: { index: false, follow: false },
 };
 
 export default async function AdminLayout({ children }) {
