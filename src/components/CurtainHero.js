@@ -18,14 +18,15 @@ const SIDE_SLOTS = {
 
 const CYCLE_MS = 3500;
 
-// Monotonic counter ticking on an interval; pauses if there's nothing to cycle.
-// Monotonic (not modulo'd) so the per-tick value can double as a z-index — each
-// incoming face sits above the one it replaces, including across the wrap.
+// Monotonic counter ticking every *half* cycle; pauses if there's nothing to
+// cycle. The two side faces derive their own swap-count from it with a one-beat
+// offset (see below) so the left face swaps, then a beat later the right —
+// never both on the same frame.
 function useCycle(length) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (length <= 1) return;
-    const id = setInterval(() => setTick((t) => t + 1), CYCLE_MS);
+    const id = setInterval(() => setTick((t) => t + 1), CYCLE_MS / 2);
     return () => clearInterval(id);
   }, [length]);
   return tick;
@@ -128,14 +129,18 @@ export default function CurtainHero({ members = [] }) {
 
   const tick = useCycle(heroMembers.length);
   const len = heroMembers.length;
-  const idx = len ? tick % len : 0;
   const half = Math.ceil(len / 2) || 1;
-  const leftMember = len ? heroMembers[idx] : null;
-  const rightMember = len ? heroMembers[(idx + half) % len] : null;
+  // Left advances on odd ticks, right on even — each half-cycle only one side
+  // swaps. The per-side counts are monotonic, so they double as z (incoming
+  // face above the one it replaces) and stay offset by `half` in the roster.
+  const leftCount = Math.floor((tick + 1) / 2);
+  const rightCount = Math.floor(tick / 2);
+  const leftMember = len ? heroMembers[leftCount % len] : null;
+  const rightMember = len ? heroMembers[(rightCount + half) % len] : null;
 
   return (
     <div
-      className="relative min-h-[90vh] flex items-center justify-center overflow-hidden"
+      className="relative isolate min-h-[90vh] flex items-center justify-center overflow-hidden"
       style={{
         background:
           "radial-gradient(ellipse at 50% 80%, rgba(139,30,45,0.15) 0%, transparent 60%), radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 50%), url('/bluecurtains-bg.png') center/cover",
@@ -150,8 +155,8 @@ export default function CurtainHero({ members = [] }) {
       {/* Desktop: one judge face per side, cycling through the roster (hidden on mobile) */}
       <div className="hidden md:block">
         <AnimatePresence mode="popLayout">
-          {leftMember && <Face key={`l-${tick}`} member={leftMember} delay={tick === 0 ? 1.6 : 0} slot={SIDE_SLOTS.left} z={tick} />}
-          {rightMember && <Face key={`r-${tick}`} member={rightMember} delay={tick === 0 ? 1.75 : 0} slot={SIDE_SLOTS.right} z={tick} />}
+          {leftMember && <Face key={`l-${leftCount}`} member={leftMember} delay={leftCount === 0 ? 1.6 : 0} slot={SIDE_SLOTS.left} z={leftCount} />}
+          {rightMember && <Face key={`r-${rightCount}`} member={rightMember} delay={rightCount === 0 ? 1.75 : 0} slot={SIDE_SLOTS.right} z={rightCount} />}
         </AnimatePresence>
       </div>
 
