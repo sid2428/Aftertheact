@@ -14,16 +14,39 @@ const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton
 const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], variable: "--font-rajdhani" });
 
 export const metadata = {
+  // Resolves all relative metadata URLs (canonical, og:image) against the canonical www host.
+  metadataBase: new URL("https://www.aftertheact.com"),
   title: "AfterTheAct - IGL Community Platform",
   description: "The independent community platform for India's Got Latent.",
+  alternates: { canonical: "/" },
+  // Shared link previews. og:title/og:description are auto-filled per page from each
+  // page's title/description; we only set the site-wide constants here.
+  openGraph: {
+    siteName: "AfterTheAct",
+    type: "website",
+    locale: "en_IN",
+    url: "https://www.aftertheact.com",
+    images: ["/logo.png"],
+  },
+  twitter: { card: "summary_large_image" },
   // Favicon + Apple touch icon come from the file-based convention:
   // src/app/icon.png and src/app/apple-icon.png (the styled "A" from the logo).
+};
+
+// Brand entity for search engines. Invisible JSON-LD; describes the site, not page content.
+const ORG_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "AfterTheAct",
+  url: "https://www.aftertheact.com",
+  description: "The independent community platform for India's Got Latent.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }} />
 
         <SessionProviderWrapper>
           <SmoothScroll>
