@@ -94,9 +94,6 @@ export default function RootLayout({ children }) {
                 <p className="text-brand-white/30 font-mono normal-case tracking-normal text-[11px] mt-2 leading-relaxed">
                   Disclaimer: Fan community site. Not affiliated with any official production.
                 </p>
-                <Link href="/admin-login" className="text-brand-white/20 hover:text-broadcast-red font-mono font-bold transition-colors text-[10px] uppercase tracking-widest mt-2">
-                  Showrunner Access
-                </Link>
               </div>
             </div>
           </div>

@@ -14,7 +14,9 @@ export default async function AdminLayout({ children }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.isAdmin) {
-    redirect("/admin-login");
+    // Don't reveal the secret showrunner entry point to unauthenticated visitors —
+    // send them to the homepage as if the control panel didn't exist.
+    redirect("/");
   }
 
   return (
