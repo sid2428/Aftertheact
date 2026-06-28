@@ -26,15 +26,17 @@ export default function IntroSequence({ children }) {
   const [videoSrc, setVideoSrc] = useState(null);
 
   useEffect(() => {
-    // Pick the cut by device class, not just current orientation: touch-primary
-    // devices (phones, iPads) get the vertical cut even when held in landscape,
-    // while laptops/desktops (fine pointer) get the horizontal cut. Fall back to
-    // a width check for the rare device that reports neither cleanly.
-    const isMobileLike =
-      window.matchMedia("(pointer: coarse)").matches ||
-      window.matchMedia("(hover: none)").matches ||
-      window.innerWidth < 1024;
-    setVideoSrc(isMobileLike ? "/Vertical.mp4" : "/Horizontal.mp4");
+    // Pick the cut by the actual shape of the viewport, since the videos are
+    // orientation-specific: a portrait viewport (taller than wide) gets the
+    // vertical cut, landscape gets the horizontal one. matchMedia drives it so
+    // we react if the device is rotated before the intro starts playing.
+    const portrait = window.matchMedia("(orientation: portrait)");
+    const apply = () =>
+      setVideoSrc(portrait.matches ? "/Vertical.mp4" : "/Horizontal.mp4");
+
+    apply();
+    portrait.addEventListener("change", apply);
+    return () => portrait.removeEventListener("change", apply);
   }, []);
 
   const videoRef = useRef(null);
