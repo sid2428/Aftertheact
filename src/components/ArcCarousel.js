@@ -58,7 +58,7 @@ export default function ArcCarousel({ episodes = [] }) {
   // downward scroll. Lenis leaves touch scrolling native, so a horizontal drag
   // would otherwise do nothing here. We detect a horizontal-dominant gesture and
   // translate it into vertical scroll, which the ScrollTrigger above turns into
-  // progress — so both "down" and "sideways" slide the cards toward the right.
+  // progress — swiping left slides the cards left so they follow the finger.
   useEffect(() => {
     if (reduced || episodes.length === 0) return;
     const el = sectionRef.current;
@@ -86,8 +86,9 @@ export default function ArcCarousel({ episodes = [] }) {
       }
       if (horizontal) {
         e.preventDefault();
-        // Swipe left (dx < 0) scrolls down → progress up → cards slide right.
-        window.scrollBy(0, -dx * 1.6);
+        // Follow the finger: swipe left (dx < 0) scrolls up → progress down →
+        // cards slide left (the content tracks the finger, not against it).
+        window.scrollBy(0, dx * 1.6);
         lastX = t.clientX;
         lastY = t.clientY;
       }

@@ -50,10 +50,10 @@ export default function RootLayout({ children }) {
             <div className="space-y-3">
               <h3 className="font-display font-black uppercase tracking-widest text-brand-white text-sm">Explore</h3>
               <div className="flex flex-col gap-2 font-display font-bold uppercase tracking-widest text-xs text-brand-white/60">
-                <Link href="/scoreboard" className="hover:text-broadcast-red transition-colors">Verdict Board</Link>
-                <Link href="/leaderboard" className="hover:text-broadcast-red transition-colors">Prophet&apos;s Wall</Link>
-                <Link href="/episodes" className="hover:text-broadcast-red transition-colors">The Lineup</Link>
-                <Link href="/community" className="hover:text-broadcast-red transition-colors">The Green Room</Link>
+                <Link href="/scoreboard" className="hover:text-broadcast-red transition-colors">Scoreboard</Link>
+                <Link href="/leaderboard" className="hover:text-broadcast-red transition-colors">The Karma Wall</Link>
+                <Link href="/episodes" className="hover:text-broadcast-red transition-colors">Episodes</Link>
+                <Link href="/community" className="hover:text-broadcast-red transition-colors">The Lounge</Link>
                 <Link href="/panel" className="hover:text-broadcast-red transition-colors">Judge the Judges</Link>
               </div>
             </div>

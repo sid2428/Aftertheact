@@ -262,12 +262,6 @@ function LoginForm() {
               </form>
             )}
 
-            {step !== 2 && (
-              <div className="pt-1">
-                <ConsentCheckbox checked={agreed} onChange={setAgreed} />
-              </div>
-            )}
-
             <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-brand-border"></div>
               <span className="flex-shrink-0 mx-4 text-white/40 text-xs font-display uppercase tracking-widest">or</span>
@@ -293,7 +287,15 @@ function LoginForm() {
               </svg>
               Sign In with Google
             </button>
-            
+
+            {/* Consent sits below both sign-in methods so it reads as common to
+                each — it gates the OTP and Google flows alike (see `agreed`). */}
+            {step !== 2 && (
+              <div className="pt-1">
+                <ConsentCheckbox checked={agreed} onChange={setAgreed} />
+              </div>
+            )}
+
             {step !== 2 && (
               <button
                 onClick={() => setStep(2)}
