@@ -26,7 +26,15 @@ export default function IntroSequence({ children }) {
   const [videoSrc, setVideoSrc] = useState(null);
 
   useEffect(() => {
-    setVideoSrc(window.innerHeight > window.innerWidth ? "/vertical.mp4" : "/Horizontal.mp4");
+    // Pick the cut by device class, not just current orientation: touch-primary
+    // devices (phones, iPads) get the vertical cut even when held in landscape,
+    // while laptops/desktops (fine pointer) get the horizontal cut. Fall back to
+    // a width check for the rare device that reports neither cleanly.
+    const isMobileLike =
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(hover: none)").matches ||
+      window.innerWidth < 1024;
+    setVideoSrc(isMobileLike ? "/Vertical.mp4" : "/Horizontal.mp4");
   }, []);
 
   const videoRef = useRef(null);

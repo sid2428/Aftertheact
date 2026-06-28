@@ -19,10 +19,15 @@ export default async function Home() {
     .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
-  // Signed-in: jump straight to the live voting episode, otherwise the scoreboard.
+  // Signed-in: jump straight to the live voting episode. If none is live, land on
+  // the most recent episode page with a "no episode is live" notice instead.
   if (session?.user) {
     const live = episodes?.find((ep) => ep.status === "LIVE");
-    redirect(live ? `/episode/${live.id}` : "/scoreboard");
+    const target = live || episodes?.[0] || null;
+    if (target) {
+      const notice = live ? "" : "No episode is live right now.";
+      redirect(notice ? `/episode/${target.id}?notice=${encodeURIComponent(notice)}` : `/episode/${target.id}`);
+    }
   }
 
   const panelMembers = await getPanelMembers();
