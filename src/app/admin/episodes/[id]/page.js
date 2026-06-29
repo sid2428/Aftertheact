@@ -44,7 +44,7 @@ export default async function ManageEpisode({ params }) {
           <div><label className={labelClass}>Episode</label><input type="number" name="episode_number" defaultValue={episode.episode_number} required className={inputClass} /></div>
         </div>
         <div><label className={labelClass}>Title</label><input type="text" name="title" defaultValue={episode.title} required className={inputClass} /></div>
-        <div><label className={labelClass}>Air Date</label><input type="datetime-local" name="air_date" defaultValue={new Date(episode.air_date).toISOString().slice(0, 16)} required className={inputClass} /></div>
+        <div><label className={labelClass}>Air Date</label><input type="date" name="air_date" defaultValue={new Date(episode.air_date).toISOString().slice(0, 10)} required className={inputClass} /></div>
         <div>
           <label className={labelClass}>Reveal At</label>
           <input

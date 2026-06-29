@@ -198,7 +198,7 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
             </div>
             <div>
               <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Air Date</label>
-              <input type="datetime-local" value={episodeForm.air_date} onChange={e => setEpisodeForm({...episodeForm, air_date: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" />
+              <input type="date" value={episodeForm.air_date} onChange={e => setEpisodeForm({...episodeForm, air_date: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" />
               <p className="mt-1 text-[11px] font-mono text-white/30">Leave empty to default to now — editable later.</p>
             </div>
             <div>
