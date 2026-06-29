@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import ResilientImg from "./ResilientImg";
 
 // The fanned trio of posters to the right of the "THE LINEUP" headline. Each
 // slot holds a frame that morphs through the episode list on a stagger — the
@@ -14,7 +15,7 @@ function Poster({ ep }) {
   return (
     <>
       {ep.thumbnail_url ? (
-        <img src={ep.thumbnail_url} alt={ep.title} className="h-full w-full object-cover" />
+        <ResilientImg src={ep.thumbnail_url} alt={ep.title} fallbackLetter={`E${ep.episode_number}`} className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#1a1a1a] to-[#050505]">
           <span className="font-display text-5xl font-black text-white/10">E{ep.episode_number}</span>

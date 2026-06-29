@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import ResilientImg from "./ResilientImg";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import LiveVoting from "./LiveVoting";
@@ -73,7 +74,7 @@ export default function VotingSection({ episodeId, contestants, isEpisodeClosed 
               <div className="w-full md:w-1/3 shrink-0">
                 <div className="relative aspect-square w-full border border-brand-border bg-[#050505] rounded-md overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                   {c.image_url ? (
-                    <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
+                    <ResilientImg src={c.image_url} alt={c.name} fallbackLetter={c.name[0]} className="object-cover w-full h-full" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center font-display font-black text-8xl text-white/10">{c.name[0]}</div>
                   )}

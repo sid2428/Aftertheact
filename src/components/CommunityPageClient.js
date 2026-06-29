@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ResilientImg from "./ResilientImg";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { MessageCircle, Flag, Trash2, Trophy, PenLine, Lock } from "lucide-react";
@@ -95,7 +96,7 @@ function Avatar({ user, size = 40 }) {
   return (
     <div style={px} className="rounded-full overflow-hidden bg-[#0A0A0A] border border-white/10 flex items-center justify-center shrink-0">
       {user?.avatar_url ? (
-        <img src={user.avatar_url} alt={user.username || ""} className="w-full h-full object-cover" />
+        <ResilientImg src={user.avatar_url} alt={user.username || ""} fallbackLetter={user?.username?.[0] || "?"} className="w-full h-full object-cover" />
       ) : (
         <span className="font-display font-black text-white/30 uppercase">{user?.username?.[0] || "?"}</span>
       )}

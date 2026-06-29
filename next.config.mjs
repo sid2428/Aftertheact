@@ -29,28 +29,41 @@ const nextConfig = {
         ],
       },
       {
-        // Upload filenames are reused slugs (e.g. samay-raina.jpg), not content-hashed, and are
-        // referenced from DB rows that can go live before the file ships — so NOT `immutable`
-        // and no long max-age (a 404 cached before deploy must not stick). Revalidate: the
-        // browser keeps the copy but re-checks via ETag every 5 min, so unchanged images return
-        // a 0-byte 304 (no re-download of the heavy bytes) while replacements/late files heal
-        // within minutes on every device.
+        // Uploads use UUID filenames (randomUUID().ext), so a replaced photo
+        // naturally gets a new URL. `no-cache` adds a safety net: the browser
+        // stores the file locally but always validates via ETag before serving.
+        //
+        // For unchanged files: 304 Not Modified (~200 bytes, zero egress).
+        // For deleted/replaced files: instant 404 or new content — no stale
+        // responses stuck in the browser cache.
+        //
+        // The one round-trip per asset per page load is the cost; on Vercel's
+        // edge network this is typically <50ms and the ETag check is ~200 bytes.
         source: "/uploads/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" }],
+        headers: [{ key: "Cache-Control", value: "public, no-cache" }],
       },
       {
-        // Brand/intro assets in /public otherwise default to `max-age=0` (re-fetched every
-        // visit). They're public, non-sensitive, and stable — cache on-device for a week,
-        // then serve stale while revalidating so a redesign still propagates. NOT `immutable`:
-        // unlike /uploads these keep fixed filenames and can change in place.
-        // Listed explicitly so nothing dynamic or sensitive is ever cached by accident.
+        // Brand/intro assets use fixed filenames and are actively updated (e.g.
+        // intro videos get re-cut between episodes).
+        //
+        // `no-cache` does NOT mean "don't cache". It means:
+        //   1. Browser stores the file locally (full cache, no re-download)
+        //   2. On every request, sends a conditional GET with the ETag
+        //   3. Server returns 304 Not Modified (~200 bytes) if unchanged
+        //   4. Server returns 200 + new file if changed (instant propagation)
+        //
+        // Result: instant updates when you change a video, AND ~99.99% egress
+        // savings on unchanged assets (304 vs re-downloading 3MB).
         source:
-          "/:asset(bluecurtains-bg.png|logo.png|intro.mp4|latent_viral_clip.m4a)",
-        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
+          "/:asset(bluecurtains-bg.png|logo.png|intro.mp4|vertical-v2.mp4|horizontal-v2.mp4|latent_viral_clip.m4a)",
+        headers: [{ key: "Cache-Control", value: "public, no-cache" }],
       },
     ];
   },
   images: {
+    // Next.js image optimizer server-side cache. Matches the upload max-age so
+    // optimized variants stay cached as long as the source image does.
+    minimumCacheTTL: 86400,
     // Next 16 blocks query strings on local images unless allowlisted (enumeration
     // guard). Uploaded images are cache-busted with version queries (e.g. judge
     // avatars served as ?v=2), so allow any query under /uploads. Defining

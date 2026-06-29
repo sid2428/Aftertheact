@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+import ResilientImg from "./ResilientImg";
+
 export default function JudgePanel({ members = [] }) {
   const reduced = useReducedMotion();
   const sectionRef = useRef(null);
@@ -108,7 +110,7 @@ export default function JudgePanel({ members = [] }) {
               {/* Framed portrait */}
               <div className="relative z-10 aspect-[4/5] w-full overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0A] shadow-[0_15px_35px_rgba(0,0,0,0.6)] transition-all duration-500 group-hover:border-latent-gold/50 group-hover:shadow-[0_20px_40px_rgba(212,175,55,0.2)]">
                 {m.image ? (
-                  <img src={m.image} alt={m.name} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110 group-hover:brightness-110" />
+                  <ResilientImg src={m.image} alt={m.name} fallbackLetter={m.name?.[0]} className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110 group-hover:brightness-110" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center font-display font-black text-6xl text-white/5">{m.name?.[0] || "?"}</div>
                 )}
