@@ -21,10 +21,29 @@ export default function VotingWheelPageClient({
   const [animDirection, setAnimDirection] = useState(""); // "next" or "prev"
   const [allDone, setAllDone] = useState(false);
 
+  // Votes cast this session live here, keyed by contestant id, seeded with any
+  // verdict the server already had on record. Navigating back to a contestant
+  // re-mounts the wheel with this score so it shows up sealed and can't be
+  // voted on twice. (The server also rejects duplicates, but this stops the UI
+  // from ever offering a second vote.)
+  const [votedScores, setVotedScores] = useState(() => {
+    const seed = {};
+    for (const ct of contestants) {
+      if (ct.userVoteScore != null) seed[ct.id] = ct.userVoteScore;
+    }
+    return seed;
+  });
+
   const router = useRouter();
   const c = contestants[idx];
 
-  const handleVoteLocked = () => {
+  // The dice flip is 600ms; the contestant swap is timed to its midpoint so the
+  // card is edge-on (fully transparent) at the exact moment the content changes.
+  const ANIM_MS = 600;
+  const SWAP_MS = ANIM_MS / 2;
+
+  const handleVoteLocked = (score) => {
+    setVotedScores((prev) => ({ ...prev, [c.id]: score }));
     if (idx < contestants.length - 1) {
       setTimeout(() => goToNext(), 1800);
     } else {
@@ -39,11 +58,11 @@ export default function VotingWheelPageClient({
     setAnimDirection("next");
     setIsAnimating(true);
 
+    setTimeout(() => setIdx((prev) => prev + 1), SWAP_MS);
     setTimeout(() => {
-      setIdx((prev) => prev + 1);
       setIsAnimating(false);
       setAnimDirection("");
-    }, 600);
+    }, ANIM_MS);
   };
 
   const goToPrev = () => {
@@ -52,11 +71,11 @@ export default function VotingWheelPageClient({
     setAnimDirection("prev");
     setIsAnimating(true);
 
+    setTimeout(() => setIdx((prev) => prev - 1), SWAP_MS);
     setTimeout(() => {
-      setIdx((prev) => prev - 1);
       setIsAnimating(false);
       setAnimDirection("");
-    }, 600);
+    }, ANIM_MS);
   };
 
   const wrapperClass = isAnimating
@@ -102,7 +121,7 @@ export default function VotingWheelPageClient({
           episodeId={episodeId}
           contestantId={c.id}
           revealAt={revealAt}
-          userVoteScore={c.userVoteScore}
+          userVoteScore={votedScores[c.id] ?? c.userVoteScore}
           isEpisodeClosed={false}
           isAuthenticated={isAuthenticated}
           seasonLabel={
