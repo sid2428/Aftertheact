@@ -4,6 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
 
+const MAX_VIDEO_RETRIES = 2;
+const VIDEO_RETRY_DELAY_MS = 1500;
+
 // Assets in the order the visitor stumbles on them after pressing Enter:
 // intro.mp4 is already buffering via the <video preload="auto"> below, so it's
 // omitted here; the curtains fly in mid-intro (~7s) and the homepage reveals its
@@ -16,6 +19,13 @@ const PRELOAD_SEQUENCE = [
 const SEEN_KEY = "ata_intro_seen";
 const SAFETY_MS = 12000; // never strand the user on a black screen
 
+// Deploy-time cache-buster for intro videos. On Vercel, NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA
+// is set automatically on every deploy. When you push new video files, the next
+// deploy produces a new SHA → new video URL → users download the fresh cut
+// instead of serving a stale cached version. Falls back to empty string (no
+// query param) in local dev.
+const DEPLOY_ID = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 8) || "";
+
 // A portrait viewport (taller than it is wide) gets the vertical cut, landscape
 // gets the horizontal one. Direct dimension comparison is more reliable on
 // mobile than the "(orientation: portrait)" media query, which some browsers
@@ -23,7 +33,8 @@ const SAFETY_MS = 12000; // never strand the user on a black screen
 function pickVideoSrc() {
   if (typeof window === "undefined") return null;
   const portrait = window.innerHeight >= window.innerWidth;
-  return portrait ? "/Vertical.mp4" : "/Horizontal.mp4";
+  const base = portrait ? "/Vertical.mp4" : "/Horizontal.mp4";
+  return DEPLOY_ID ? `${base}?v=${DEPLOY_ID}` : base;
 }
 
 
@@ -56,6 +67,7 @@ export default function IntroSequence({ children }) {
 
   const videoRef = useRef(null);
   const doneRef = useRef(false);
+  const videoRetriesRef = useRef(0);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -66,6 +78,21 @@ export default function IntroSequence({ children }) {
     // Drop the overlay from the DOM after the fade completes.
     setTimeout(() => setShowOverlay(false), 600);
   }, []);
+
+  // On video error, retry once with a cache-busting param (bypasses any
+  // edge-cached error response), then give up and skip gracefully.
+  const handleVideoError = useCallback(() => {
+    if (videoRetriesRef.current < MAX_VIDEO_RETRIES && videoSrc) {
+      videoRetriesRef.current += 1;
+      setTimeout(() => {
+        const sep = videoSrc.includes("?") ? "&" : "?";
+        const retryUrl = `${videoSrc.split("?")[0]}${sep}_retry=${videoRetriesRef.current}&_t=${Date.now()}`;
+        setVideoSrc(retryUrl);
+      }, VIDEO_RETRY_DELAY_MS);
+    } else {
+      finish();
+    }
+  }, [videoSrc, finish]);
 
   // Decide on mount whether to play the intro at all.
   useEffect(() => {
@@ -165,7 +192,7 @@ export default function IntroSequence({ children }) {
               playsInline
               preload="auto"
               onEnded={finish}
-              onError={finish}
+              onError={handleVideoError}
               initial={{ opacity: 1 }}
               animate={{ opacity: videoGone ? 0 : 1 }}
               transition={{ duration: 0.5 }}

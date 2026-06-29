@@ -2,6 +2,7 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { getPanelMembers } from "@/lib/panel";
 import { aggregateRatings } from "@/lib/judges";
 import Link from "next/link";
+import ResilientImg from "@/components/ResilientImg";
 
 export const metadata = {
   title: "Judge Popularity",
@@ -46,7 +47,7 @@ export default async function JudgesScoreboardPage() {
 
               <div className="relative w-12 h-12 border border-brand-border bg-[#0A0A0A] overflow-hidden shrink-0 rounded-sm">
                 {j.image ? (
-                  <img src={j.image} alt={j.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                  <ResilientImg src={j.image} alt={j.name} fallbackLetter={j.name?.[0] || "?"} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center font-display font-black text-xl text-white/10 uppercase">{j.name?.[0] || "?"}</div>
                 )}

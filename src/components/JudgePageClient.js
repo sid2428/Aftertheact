@@ -1,5 +1,7 @@
 "use client";
 
+import ResilientImg from "./ResilientImg";
+
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
@@ -224,7 +226,7 @@ function JudgeCard({ judge, badge, mine, isLoggedIn, episodeId }) {
                 <div className="relative flex-shrink-0">
                   <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10 ring-offset-2 ring-offset-[#161616]">
                     {judge.image
-                      ? <img src={judge.image} alt={judge.name} className="w-full h-full object-cover object-top" />
+                      ? <ResilientImg src={judge.image} alt={judge.name} fallbackLetter={judge.name?.[0]} className="w-full h-full object-cover object-top" />
                       : <div className="w-full h-full bg-white/5 flex items-center justify-center font-display font-black text-2xl text-white/20">{judge.name?.[0]}</div>
                     }
                   </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import ResilientImg from "./ResilientImg";
 
 export function ScoreboardHero({ topThree = [] }) {
   return (
@@ -93,7 +94,7 @@ export function ScoreboardHero({ topThree = [] }) {
                   <div className="bg-white p-2 pb-6 sm:p-3 sm:pb-8 shadow-[0_15px_50px_rgba(0,0,0,0.8)] border-4 border-white transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(212,175,55,0.4)]">
                     <div className="w-28 h-28 sm:w-36 sm:h-36 bg-[#111111] overflow-hidden flex items-center justify-center">
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} className="object-cover w-full h-full" />
+                        <ResilientImg src={c.image_url} alt={c.name} fallbackLetter={c.name?.[0]} className="object-cover w-full h-full" />
                       ) : (
                         <span className="font-display font-black text-4xl sm:text-5xl text-black/20">{c.name?.[0]}</span>
                       )}
