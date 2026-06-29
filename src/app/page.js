@@ -16,6 +16,7 @@ export default async function Home() {
   const { data: episodes } = await supabase
     .from("Episode")
     .select("*, ContestantEpisodeAppearance(count)")
+    .neq("status", "ARCHIVED")
     .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
