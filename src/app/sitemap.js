@@ -10,7 +10,7 @@ const ROUTES = [
   { path: "/episodes", priority: 0.8 },
   { path: "/community", priority: 0.7 },
   { path: "/panel", priority: 0.7 },
-  { path: "/judges-scoreboard", priority: 0.6 },
+
   { path: "/terms", priority: 0.3 },
 ];
 

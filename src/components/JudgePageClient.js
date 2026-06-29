@@ -499,9 +499,7 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
           ) : (
             <div className="font-mono text-sm text-white/30">No episodes to classify judges by yet.</div>
           )}
-          <Link href="/judges-scoreboard" className="font-display font-bold uppercase tracking-widest text-xs text-white/50 hover:text-latent-gold transition-colors">
-            Judge Popularity →
-          </Link>
+
         </div>
 
         {judges.length === 0 ? (
