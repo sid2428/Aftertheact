@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { notFound } from "next/navigation";
 import VotingWheelPageClient from "./VotingWheelPageClient";
+import NoticePopup from "@/components/NoticePopup";
 
 export const revalidate = 0;
 
@@ -173,12 +174,7 @@ export default async function EpisodePage({ params, searchParams }) {
 
 
       <main className="mx-auto max-w-7xl space-y-12 p-4 sm:p-6 lg:p-12">
-        {notice && (
-          <div className="brutal-surface bg-[#120f02] p-6 font-mono font-black text-oracle-gold">
-            <span className="mb-2 block font-display text-xs font-black uppercase tracking-widest text-oracle-gold/70">Notice:</span>
-            {notice}
-          </div>
-        )}
+        <NoticePopup notice={notice} />
 
         {episode.admin_note && (
           <div className="brutal-surface bg-brand-panel p-6 font-mono font-black text-white">
