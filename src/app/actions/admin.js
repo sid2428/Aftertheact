@@ -3,7 +3,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServiceSupabase } from "@/lib/supabase";
-import { setPanelMembers, MAX_PANEL } from "@/lib/panel";
 import { saveUploadedImage } from "@/lib/uploadImage";
 import { revalidatePath } from "next/cache";
 import { triggerRevelation as runRevelation } from "@/app/actions/revelation";
@@ -19,13 +18,15 @@ export async function createEpisode(data) {
         season_number: parseInt(data.season_number),
         episode_number: parseInt(data.episode_number),
         title: data.title,
-        air_date: new Date().toISOString(), // Default to now, can be updated later
+        air_date: data.air_date ? new Date(data.air_date).toISOString() : new Date().toISOString(),
+        judge_ids: Array.isArray(data.judge_ids) ? data.judge_ids : [],
         status: "UPCOMING"
       });
 
     if (error) throw new Error(error.message);
 
     revalidatePath(`/admin`);
+    revalidatePath(`/panel`);
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -150,28 +151,6 @@ export async function updateRoast(formData) {
   const supabase = getServiceSupabase();
   await supabase.from("Roast").update({ content: formData.get("content") }).eq("id", formData.get("id"));
   revalidatePath(`/admin/users/${formData.get("user_id")}`);
-}
-
-export async function savePanelMembers(formData) {
-  await verifyAdmin();
-  const members = [];
-  for (let i = 0; i < MAX_PANEL; i++) {
-    const name = (formData.get(`name_${i}`) || "").trim();
-    const descriptor = (formData.get(`descriptor_${i}`) || "").trim();
-    const instagram_handle = (formData.get(`instagram_${i}`) || "").trim();
-    const bio = (formData.get(`bio_${i}`) || "").trim();
-    const tags = (formData.get(`tags_${i}`) || "").split(",").map((t) => t.trim()).filter(Boolean);
-    const id = (formData.get(`id_${i}`) || "").trim() || undefined;
-    const existingImage = (formData.get(`existing_image_${i}`) || "").trim();
-    const imageFile = formData.get(`image_${i}`);
-    const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, "judges") : existingImage;
-    if (image || name) members.push({ id, name, image, descriptor, instagram_handle, bio, tags });
-  }
-  await setPanelMembers(members);
-  revalidatePath("/admin/panel");
-  revalidatePath("/panel");
-  revalidatePath("/");
-  revalidatePath("/");
 }
 
 export async function addContestantToEpisode(episodeId, data) {

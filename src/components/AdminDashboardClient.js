@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { updateEpisodeStatus, triggerRevelation, addContestantToEpisode, createEpisode } from "@/app/actions/admin";
 
-export default function AdminDashboardClient({ initialEpisodes, initialRoasts, initialReportedPosts = [] }) {
+export default function AdminDashboardClient({ initialEpisodes, initialRoasts, initialReportedPosts = [], panelMembers = [] }) {
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [roasts, setRoasts] = useState(initialRoasts);
   const [reportedPosts, setReportedPosts] = useState(initialReportedPosts);
@@ -28,7 +28,12 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
   
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [contestantForm, setContestantForm] = useState({ name: '', talent_type: '', bio: '', judge_average: 0, self_score: 0, peoples_verdict_weighted: 0 });
-  const [episodeForm, setEpisodeForm] = useState({ season_number: 1, episode_number: 1, title: '' });
+  const [episodeForm, setEpisodeForm] = useState({ season_number: 1, episode_number: 1, title: '', air_date: '', judge_ids: [] });
+
+  const toggleJudge = (id) => setEpisodeForm((f) => ({
+    ...f,
+    judge_ids: f.judge_ids.includes(id) ? f.judge_ids.filter((j) => j !== id) : [...f.judge_ids, id],
+  }));
 
   const handleStatusChange = async (episodeId, newStatus) => {
     setLoadingAction(`status-${episodeId}`);
@@ -190,6 +195,26 @@ export default function AdminDashboardClient({ initialEpisodes, initialRoasts, i
             <div>
               <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Title</label>
               <input type="text" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" required placeholder="e.g. The Qualifiers" />
+            </div>
+            <div>
+              <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Air Date</label>
+              <input type="datetime-local" value={episodeForm.air_date} onChange={e => setEpisodeForm({...episodeForm, air_date: e.target.value})} className="w-full bg-[#050505] text-white border border-brand-border p-2 font-mono font-bold rounded-sm focus:border-latent-gold outline-none" />
+              <p className="mt-1 text-[11px] font-mono text-white/30">Leave empty to default to now — editable later.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-display font-black uppercase text-white/50 mb-1">Judges on this episode</label>
+              {panelMembers.length === 0 ? (
+                <p className="text-[11px] font-mono text-white/30">No judges in the panel yet — add them in Hero Panel.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {panelMembers.map((j) => (
+                    <label key={j.id} className="flex items-center gap-2 bg-[#050505] border border-brand-border p-2 rounded-sm cursor-pointer">
+                      <input type="checkbox" checked={episodeForm.judge_ids.includes(j.id)} onChange={() => toggleJudge(j.id)} className="accent-latent-gold" />
+                      <span className="font-mono text-xs text-white/80 truncate">{j.name || j.id}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
             <button disabled={loadingAction === 'create-episode'} className="btn-primary mt-4 w-full">
               {loadingAction === 'create-episode' ? 'Initializing...' : 'Initialize Episode'}

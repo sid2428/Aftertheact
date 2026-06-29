@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 
@@ -49,6 +49,7 @@ function ConsentCheckbox({ checked, onChange }) {
 
 function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const [email, setEmail] = useState("");
@@ -88,7 +89,7 @@ function LoginForm() {
         if (data.retryAfter) setCooldown(data.retryAfter);
       } else {
         setStep(1);
-        setCooldown(60); // matches server COOLDOWN_SEC
+        setCooldown(15); // matches server COOLDOWN_SEC
       }
     } catch (err) {
       setError("Something went wrong");
@@ -107,17 +108,22 @@ function LoginForm() {
     if (!otp) return;
     setIsLoading(true);
     setError("");
-    
+
+    // redirect: false so a wrong code lands back here with the form state
+    // intact instead of a full-page bounce to /login?error=CredentialsSignin
+    // that this page never reads.
     const result = await signIn("email-otp", {
       email,
       otp,
       callbackUrl,
-      redirect: true,
+      redirect: false,
     });
-    
+
     if (result?.error) {
-      setError(result.error);
+      setError("Incorrect or expired OTP. Please check the code and try again.");
       setIsLoading(false);
+    } else if (result?.ok) {
+      router.push(result.url || callbackUrl);
     }
   };
 

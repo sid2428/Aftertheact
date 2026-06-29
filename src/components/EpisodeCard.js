@@ -109,7 +109,7 @@ export default function EpisodeCard({ ep, index = 0, reduced = false, flat = fal
         className={`group/card flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 ${flat ? "card-surface" : "glass-surface"} shadow-2xl transition-all duration-500 ${
           isLive
             ? "border-latent-crimson/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_40px_rgba(139,30,45,0.3)]"
-            : "hover:border-latent-gold/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_40px_rgba(212,175,55,0.25)]"
+            : "border-latent-gold/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_24px_rgba(212,175,55,0.18)] hover:border-latent-gold/50 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_40px_rgba(212,175,55,0.3)]"
         } ${innerClassName}`}
       >
         {/* Poster */}
