@@ -5,6 +5,7 @@ import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Three fonts only:
 //   Display  — Anton (headings ≥ 2rem, episode numbers, brand)
@@ -98,6 +99,7 @@ export default function RootLayout({ children }) {
             </div>
           </div>
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
