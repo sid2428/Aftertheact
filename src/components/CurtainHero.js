@@ -225,23 +225,7 @@ export default function CurtainHero({ members = [] }) {
         </motion.div>
       </motion.div>
 
-      {/* Red velvet curtains — flick and bounce open from the middle */}
-      <motion.img
-        src="/curtains-left.png"
-        alt=""
-        initial={{ x: "0%" }}
-        animate={{ x: "-101%" }}
-        transition={{ delay: 0.3, duration: 1.7, ease: "anticipate" }}
-        className="absolute top-0 left-0 h-full w-[52%] object-cover z-20 pointer-events-none"
-      />
-      <motion.img
-        src="/curtains-right.png"
-        alt=""
-        initial={{ x: "0%" }}
-        animate={{ x: "101%" }}
-        transition={{ delay: 0.3, duration: 1.7, ease: "anticipate" }}
-        className="absolute top-0 right-0 h-full w-[52%] object-cover z-20 pointer-events-none"
-      />
+
     </div>
   );
 }
