@@ -97,6 +97,11 @@ export default function RootLayout({ children }) {
               </div>
             </div>
           </div>
+          <div className="border-t border-brand-white/10">
+            <div className="max-w-7xl mx-auto px-6 py-5 text-center font-mono text-[11px] text-brand-white/40">
+              © 2026 After The Act. All rights reserved.
+            </div>
+          </div>
         </footer>
       </body>
     </html>

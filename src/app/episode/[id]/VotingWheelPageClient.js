@@ -117,6 +117,7 @@ export default function VotingWheelPageClient({
             name: c.name,
             tagline: c.tagline,
             initial: c.initial,
+            imageUrl: c.imageUrl,
           }}
           episodeId={episodeId}
           contestantId={c.id}

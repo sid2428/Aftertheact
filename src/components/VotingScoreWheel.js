@@ -222,7 +222,7 @@ function HeaderBar({ showTitle, seasonLabel, revealAt, narrow = false }) {
 /* ─────────────────────────────────────────────
    Component 3 — ActCard
 ───────────────────────────────────────────── */
-function ActCard({ initial, name, tagline, compact = false }) {
+function ActCard({ initial, imageUrl, name, tagline, compact = false }) {
   return (
     <div
       style={{
@@ -258,17 +258,26 @@ function ActCard({ initial, name, tagline, compact = false }) {
             pointerEvents: "none",
           }}
         />
-        <span
-          style={{
-            fontFamily: "var(--font-anton)",
-            fontSize: compact ? "2.6rem" : "clamp(5rem, 14vw, 9rem)",
-            color: "rgba(255,255,255,0.18)",
-            lineHeight: 1,
-            userSelect: "none",
-          }}
-        >
-          {initial || "?"}
-        </span>
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={name || "Contestant"}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <span
+            style={{
+              fontFamily: "var(--font-anton)",
+              fontSize: compact ? "2.6rem" : "clamp(5rem, 14vw, 9rem)",
+              color: "rgba(255,255,255,0.18)",
+              lineHeight: 1,
+              userSelect: "none",
+            }}
+          >
+            {initial || "?"}
+          </span>
+        )}
       </div>
 
       <div style={{ textAlign: compact ? "left" : "center" }}>
@@ -1189,6 +1198,7 @@ export default function VotingScoreWheel({
         >
           <ActCard
             initial={act.initial || act.name?.[0] || "?"}
+            imageUrl={act.imageUrl}
             name={act.name}
             tagline={act.tagline}
             compact={narrow}

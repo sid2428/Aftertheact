@@ -136,6 +136,7 @@ export default async function EpisodePage({ params, searchParams }) {
           name: app.Contestant.name,
           tagline: app.Contestant.talent_type ?? null,
           initial: app.Contestant.name?.[0]?.toUpperCase() ?? "?",
+          imageUrl: app.Contestant.image_url ?? null,
           userVoteScore: userVotesMap[app.Contestant.id] ?? null,
         }))}
         episodeId={episode.id}
