@@ -125,7 +125,15 @@ export const authOptions = {
           console.error('Error inserting user:', insertError);
           return false;
         }
-        
+
+        // Karma starts at 1000 (see migration 0028). The User column DEFAULT
+        // already shows 1000; this baseline ledger row is what makes the floor
+        // survive every reveal re-sum (totals = SUM(ledger)). Best-effort.
+        const { error: baselineError } = await supabase
+          .from('LatentPointsLedger')
+          .insert({ user_id: newUser.id, episode_id: null, action_type: 'baseline', points: 1000 });
+        if (baselineError) console.error('Error seeding karma baseline:', baselineError);
+
         user.dbId = newUser.id;
         user.username = tempUsername;
         user.isAdmin = newUser.is_admin || false;
