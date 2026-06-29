@@ -55,7 +55,7 @@ const nextConfig = {
         // Result: instant updates when you change a video, AND ~99.99% egress
         // savings on unchanged assets (304 vs re-downloading 3MB).
         source:
-          "/:asset(bluecurtains-bg.png|logo.png|intro.mp4|vertical.mp4|Horizontal.mp4|latent_viral_clip.m4a)",
+          "/:asset(bluecurtains-bg.png|logo.png|intro.mp4|vertical-v2.mp4|horizontal-v2.mp4|latent_viral_clip.m4a)",
         headers: [{ key: "Cache-Control", value: "public, no-cache" }],
       },
     ];

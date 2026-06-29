@@ -33,7 +33,7 @@ const DEPLOY_ID = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 8) || 
 function pickVideoSrc() {
   if (typeof window === "undefined") return null;
   const portrait = window.innerHeight >= window.innerWidth;
-  const base = portrait ? "/Vertical.mp4" : "/Horizontal.mp4";
+  const base = portrait ? "/vertical-v2.mp4" : "/horizontal-v2.mp4";
   return DEPLOY_ID ? `${base}?v=${DEPLOY_ID}` : base;
 }
 
