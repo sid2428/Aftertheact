@@ -16,6 +16,16 @@ const PRELOAD_SEQUENCE = [
 const SEEN_KEY = "ata_intro_seen";
 const SAFETY_MS = 12000; // never strand the user on a black screen
 
+// A portrait viewport (taller than it is wide) gets the vertical cut, landscape
+// gets the horizontal one. Direct dimension comparison is more reliable on
+// mobile than the "(orientation: portrait)" media query, which some browsers
+// report inconsistently during load.
+function pickVideoSrc() {
+  if (typeof window === "undefined") return null;
+  const portrait = window.innerHeight >= window.innerWidth;
+  return portrait ? "/Vertical.mp4" : "/Horizontal.mp4";
+}
+
 
 
 export default function IntroSequence({ children }) {
@@ -28,15 +38,20 @@ export default function IntroSequence({ children }) {
   useEffect(() => {
     // Pick the cut by the actual shape of the viewport, since the videos are
     // orientation-specific: a portrait viewport (taller than wide) gets the
-    // vertical cut, landscape gets the horizontal one. matchMedia drives it so
-    // we react if the device is rotated before the intro starts playing.
-    const portrait = window.matchMedia("(orientation: portrait)");
+    // vertical cut, landscape gets the horizontal one. We compare the real
+    // viewport dimensions (more reliable across mobile browsers than the
+    // orientation media query) and re-evaluate on resize/rotate so the right
+    // cut is queued before the intro starts playing.
     const apply = () =>
-      setVideoSrc(portrait.matches ? "/Vertical.mp4" : "/Horizontal.mp4");
+      setVideoSrc(pickVideoSrc());
 
     apply();
-    portrait.addEventListener("change", apply);
-    return () => portrait.removeEventListener("change", apply);
+    window.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+    };
   }, []);
 
   const videoRef = useRef(null);
@@ -82,8 +97,37 @@ export default function IntroSequence({ children }) {
     // to <link rel="preload">). The video has the dwell time to itself; these get
     // the ~7s of playback before the curtains and homepage need them.
     PRELOAD_SEQUENCE.forEach((href) => ReactDOM.preload(href, { as: "image" }));
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {});
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Re-pick the cut now, in case the device rotated between mount and the tap,
+    // and make sure the element actually has that source loaded.
+    const src = pickVideoSrc();
+    if (src) {
+      setVideoSrc(src);
+      const current = video.currentSrc || video.src;
+      if (!current.endsWith(src)) {
+        video.src = src;
+        video.load();
+      }
+    }
+
+    // This play() is driven by a real user gesture (the Enter tap), so browsers
+    // allow it to start WITH sound — that's how the music plays. If the browser
+    // still refuses the unmuted play (some power-saving modes do), retry muted so
+    // the video is at least visible rather than skipping the intro entirely.
+    video.muted = false;
+    video.volume = 1;
+    const attempt = video.play();
+    if (attempt && typeof attempt.catch === "function") {
+      attempt.catch(() => {
+        video.muted = true;
+        video.play().catch((err) => {
+          console.warn("Video failed to play, skipping intro:", err);
+          finish();
+        });
+      });
     }
   };
 
@@ -118,7 +162,6 @@ export default function IntroSequence({ children }) {
             <motion.video
               ref={videoRef}
               src={videoSrc}
-              muted
               playsInline
               preload="auto"
               onEnded={finish}
