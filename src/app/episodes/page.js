@@ -38,6 +38,7 @@ export default async function EpisodesPage() {
     .from("Episode")
     .select("*, ContestantEpisodeAppearance(count)")
     .neq("status", "ARCHIVED")
+    .order("season_number", { ascending: false })
     .order("episode_number", { ascending: false });
 
   const recent = (episodes || []).slice(0, 3);

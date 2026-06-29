@@ -499,9 +499,9 @@ export default function JudgePageClient({ judges, myRatings, mostControversialId
           ) : (
             <div className="font-mono text-sm text-white/30">No episodes to classify judges by yet.</div>
           )}
-          <Link href="/judges-scoreboard" className="font-display font-bold uppercase tracking-widest text-xs text-white/50 hover:text-latent-gold transition-colors">
-            Judge Popularity →
-          </Link>
+          <a href="#judges-scoreboard" className="font-display font-bold uppercase tracking-widest text-xs text-white/50 hover:text-latent-gold transition-colors">
+            Judge Popularity ↓
+          </a>
         </div>
 
         {judges.length === 0 ? (
@@ -549,7 +549,7 @@ function JudgesScoreboard({ judges }) {
   return (
     <section className="mt-24 space-y-6">
       <div className="flex items-end justify-between border-b border-brand-border pb-3">
-        <h2 className="text-3xl font-display font-black uppercase tracking-widest text-white">Judges Scoreboard</h2>
+        <h2 id="judges-scoreboard" className="text-3xl font-display font-black uppercase tracking-widest text-white">Judges Scoreboard</h2>
         <span className="font-display text-xs uppercase tracking-widest text-white/50">By Panel Score</span>
       </div>
       <div className="scoreboard-table-wrapper rounded-md p-3 sm:p-4">
