@@ -118,6 +118,7 @@ export default function IntroSequence({ children }) {
             <motion.video
               ref={videoRef}
               src={videoSrc}
+              muted
               playsInline
               preload="auto"
               onEnded={finish}

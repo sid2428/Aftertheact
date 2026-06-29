@@ -45,7 +45,7 @@ const nextConfig = {
         // unlike /uploads these keep fixed filenames and can change in place.
         // Listed explicitly so nothing dynamic or sensitive is ever cached by accident.
         source:
-          "/:asset(bluecurtains-bg.png|curtains-left.png|curtains-right.png|logo.png|intro.mp4|latent_viral_clip.m4a)",
+          "/:asset(bluecurtains-bg.png|logo.png|intro.mp4|latent_viral_clip.m4a)",
         headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
       },
     ];
