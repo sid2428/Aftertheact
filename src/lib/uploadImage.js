@@ -1,7 +1,6 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
+import { getServiceSupabase } from "@/lib/supabase";
 
 const ALLOWED_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -19,10 +18,9 @@ function sniffImageType(buf) {
   return null;
 }
 
-// Saves an uploaded image into public/uploads/<subdir>/ and returns its public
-// path. The image is validated by its header, resized/compressed with sharp,
-// and stripped of EXIF metadata before being written. Each file gets a random
-// name, so the URL is content-addressed enough to cache forever.
+// Saves an uploaded image into Supabase Storage under the 'uploads' bucket
+// and returns its public URL. The image is validated by its header, 
+// resized/compressed with sharp, and stripped of EXIF metadata before being written.
 export async function saveUploadedImage(file, subdir) {
   if (!file || typeof file === "string" || !file.size) return null;
   if (file.size > MAX_BYTES) throw new Error("Image too large (max 5MB).");
@@ -51,10 +49,35 @@ export async function saveUploadedImage(file, subdir) {
     else output = await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
   }
 
-  const dir = path.join(process.cwd(), "public", "uploads", subdir);
-  await mkdir(dir, { recursive: true });
   const filename = `${randomUUID()}.${ext}`;
-  await writeFile(path.join(dir, filename), output);
+  const filePath = `${subdir}/${filename}`;
+  const supabase = getServiceSupabase();
 
-  return `/uploads/${subdir}/${filename}`;
+  // Ensure bucket exists (best effort)
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (buckets && !buckets.find((b) => b.name === "uploads")) {
+      await supabase.storage.createBucket("uploads", { public: true });
+    }
+  } catch (e) {
+    console.warn("Could not check/create uploads bucket", e);
+  }
+
+  const { data, error } = await supabase.storage
+    .from("uploads")
+    .upload(filePath, output, {
+      contentType: detected,
+      upsert: true,
+    });
+
+  if (error) {
+    console.error("Supabase storage error:", error);
+    throw new Error(`Failed to upload image to storage: ${error.message}`);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("uploads")
+    .getPublicUrl(filePath);
+
+  return publicUrlData.publicUrl;
 }
