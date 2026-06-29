@@ -92,7 +92,7 @@ export default async function CommunityPage() {
   // Tag options for the composer.
   const [{ data: contestants }, { data: episodes }, { data: appearances }] = await Promise.all([
     supabase.from("Contestant").select("id, name").order("name").limit(200),
-    supabase.from("Episode").select("id, season_number, episode_number, title").order("episode_number", { ascending: false }).limit(50),
+    supabase.from("Episode").select("id, season_number, episode_number, title").order("season_number", { ascending: false }).order("episode_number", { ascending: false }).limit(50),
     supabase.from("ContestantEpisodeAppearance").select("episode_id, Contestant(id, name)").limit(2000),
   ]);
 
