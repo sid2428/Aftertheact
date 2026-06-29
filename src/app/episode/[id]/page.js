@@ -7,6 +7,7 @@ import { triggerExpiredRevelation } from "@/app/actions/revelation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import VotingWheelPageClient from "./VotingWheelPageClient";
 import NoticePopup from "@/components/NoticePopup";
 
@@ -189,9 +190,9 @@ export default async function EpisodePage({ params, searchParams }) {
               <h2 className="mb-2 font-display text-4xl font-black uppercase tracking-tight text-oracle-gold">The Oracle Board is open</h2>
               <p className="max-w-2xl font-medium text-white/65">Lock in Top, Bottom, and Alignment before air time. Predictions locked. Bhai, ab sirf wait karo.</p>
             </div>
-            <button className="brutal-button shrink-0 px-8 py-4 font-display font-black uppercase tracking-widest">
+            <Link href="/episodes" className="brutal-button shrink-0 px-8 py-4 font-display font-black uppercase tracking-widest text-center">
               Make Predictions
-            </button>
+            </Link>
           </div>
         )}
 
