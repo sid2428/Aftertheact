@@ -5,6 +5,7 @@ import MainNav from "@/components/MainNav";
 import SmoothScroll from "@/components/SmoothScroll";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/next";
 
 // Three fonts only:
 //   Display  — Anton (headings ≥ 2rem, episode numbers, brand)
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
       <body className={`${inter.variable} ${anton.variable} ${rajdhani.variable} font-sans bg-brand-bg text-white min-h-screen flex flex-col selection:bg-broadcast-red/30`}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }} />
         <GoogleAnalytics />
+        <Analytics />
 
         <SessionProviderWrapper>
           <SmoothScroll>
