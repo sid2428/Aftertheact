@@ -46,9 +46,6 @@ next-env.d.ts
 # Visual brainstorm companion
 .superpowers/
 
-# Local uploads
-public/uploads/
-
 # Office documents
 *.docx
 ~$*.docx

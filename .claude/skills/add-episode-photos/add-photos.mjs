@@ -125,18 +125,19 @@ console.log("");
 if (dry) { console.log("--dry: nothing written."); process.exit(0); }
 if (!plan.length) { console.log("Nothing to do."); process.exit(0); }
 
-// ── apply: copy file -> public/uploads/contestants/v2/<slug><ext>, set image_url ─
-const destDir = join(REPO_ROOT, "public", "uploads", "contestants", "v2");
+// ── apply: copy file -> public/uploads/contestants/<slug>-<uuid><ext>, set image_url ─
+const destDir = join(REPO_ROOT, "public", "uploads", "contestants");
 mkdirSync(destDir, { recursive: true });
 let ok = 0;
 for (const { file, contestant } of plan) {
   const ext = extname(file).toLowerCase();
-  const destName = `${contestant.slug}${ext}`;
+  const uuid = Math.floor(Math.random() * 100000);
+  const destName = `${contestant.slug}-${uuid}${ext}`;
   copyFileSync(join(seedDir, file), join(destDir, destName));
-  const image_url = `/uploads/contestants/v2/${destName}`;
+  const image_url = `/uploads/contestants/${destName}`;
   const { error } = await sb.from("Contestant").update({ image_url }).eq("id", contestant.id);
   if (error) console.log(`  FAIL ${contestant.name}: ${error.message}`);
   else { console.log(`  OK   ${contestant.name}: ${image_url}`); ok++; }
 }
-console.log(`\nDone: ${ok}/${plan.length} updated. Commit public/uploads/contestants/v2/ so the files deploy.`);
+console.log(`\nDone: ${ok}/${plan.length} updated. Commit public/uploads/contestants/ so the files deploy.`);
 if (unmatched.length) console.log(`Still unmatched: ${unmatched.join(", ")} — rename and re-run.`);
