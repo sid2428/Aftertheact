@@ -6,8 +6,8 @@ import { aggregateRatings } from "@/lib/judges";
 import JudgePageClient from "@/components/JudgePageClient";
 
 export const metadata = {
-  title: "Judge the Judges",
-  description: "The jury is now on trial.",
+  title: "Rate the India's Got Latent Judges",
+  description: "Judge the Judges: the jury is now on trial. Score the India's Got Latent panel and see how the crowd rates every judge.",
   alternates: { canonical: "/panel" },
 };
 

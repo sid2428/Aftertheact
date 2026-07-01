@@ -23,11 +23,20 @@ export async function generateMetadata({ params }) {
     .single();
 
   if (!episode) return { title: "Episode" };
+  const tag = `S${episode.season_number}E${episode.episode_number}`;
+  const title = `India's Got Latent ${tag}: ${episode.title} — Vote & Scores`;
+  const description = `Vote on every act in India's Got Latent ${tag} “${episode.title}”, watch live crowd scores, and read the verdict.`;
   return {
-    title: `S${episode.season_number}E${episode.episode_number} - ${episode.title}`,
-    description: `Verdicts and scores for ${episode.title}.`,
+    title,
+    description,
     // Override the inherited "/" canonical so each episode points at itself, not the homepage.
     alternates: { canonical: `/episode/${id}` },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: `/episode/${id}`,
+    },
   };
 }
 
@@ -148,8 +157,20 @@ export default async function EpisodePage({ params, searchParams }) {
     );
   }
 
+  // Per-episode structured data — helps this page win the episode's search results.
+  const episodeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TVEpisode",
+    name: episode.title,
+    episodeNumber: episode.episode_number,
+    partOfSeason: { "@type": "TVSeason", seasonNumber: episode.season_number },
+    partOfSeries: { "@type": "TVSeries", name: "India's Got Latent" },
+    url: `https://www.aftertheact.com/episode/${episode.id}`,
+  };
+
   return (
     <div className="min-h-screen bg-brand-bg text-white selection:bg-broadcast-red/30">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeJsonLd) }} />
       <header className="border-b-4 border-broadcast-red bg-[#080808] p-4 sm:p-6">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>

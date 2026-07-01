@@ -4,8 +4,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import CommunityPageClient from "@/components/CommunityPageClient";
 
 export const metadata = {
-  title: "The Green Room",
-  description: "No filter. No mercy. Just takes.",
+  title: "India's Got Latent Fan Community — Takes & Discussion",
+  description: "The Green Room: no filter, no mercy, just takes from the India's Got Latent fandom. Post, react, and roast with the community.",
   alternates: { canonical: "/community" },
 };
 

@@ -18,31 +18,76 @@ const rajdhani = Rajdhani({ weight: ["500", "600", "700"], subsets: ["latin"], v
 export const metadata = {
   // Resolves all relative metadata URLs (canonical, og:image) against the canonical www host.
   metadataBase: new URL("https://www.aftertheact.com"),
-  title: "AfterTheAct - IGL Community Platform",
-  description: "The independent community platform for India's Got Latent.",
+  // Keyword-rich home title (default) + a template so every page reads "<Page> | AfterTheAct".
+  // Per-page `title` strings fill the %s; the home page inherits `default` (no suffix).
+  title: {
+    default: "AfterTheAct — India's Got Latent Fan Voting, Scores & Verdicts",
+    template: "%s | AfterTheAct",
+  },
+  // Balanced framing: leads with the search term, states "unofficial fan community"
+  // (nominative fair use) so link previews read as a real community, not a scraper.
+  description:
+    "The unofficial fan community for India's Got Latent — vote on every act, watch live crowd scores, rate the judges, and read the verdict after each episode.",
+  keywords: [
+    "India's Got Latent",
+    "IGL",
+    "India's Got Latent voting",
+    "India's Got Latent episodes",
+    "India's Got Latent scoreboard",
+    "India's Got Latent judges",
+    "vote India's Got Latent",
+    "IGL fan community",
+    "Samay Raina",
+  ],
+  applicationName: "AfterTheAct",
   alternates: { canonical: "/" },
-  // Shared link previews. og:title/og:description are auto-filled per page from each
-  // page's title/description; we only set the site-wide constants here.
+  category: "entertainment",
+  // Let search engines show large image previews / full snippets (rich results + higher CTR).
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
+  // Shared link previews. og:title/og:description are auto-filled per page from each page's
+  // title/description. The og:image comes from the file-convention opengraph-image.js routes
+  // (site default + per-episode) — no need to hard-code an image here.
   openGraph: {
     siteName: "AfterTheAct",
     type: "website",
     locale: "en_IN",
     url: "https://www.aftertheact.com",
-    images: ["/logo.png"],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: { card: "summary_large_image", site: "@aftertheact" },
   // GSC ownership is verified via DNS (TXT record) at the domain level — no meta tag needed.
   // Favicon + Apple touch icon come from the file-based convention:
   // src/app/icon.png and src/app/apple-icon.png (the styled "A" from the logo).
 };
 
 // Brand entity for search engines. Invisible JSON-LD; describes the site, not page content.
+// WebSite + Organization with a logo and `about` gives Google a clean knowledge-panel anchor.
 const ORG_JSONLD = {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "AfterTheAct",
-  url: "https://www.aftertheact.com",
-  description: "The independent community platform for India's Got Latent.",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://www.aftertheact.com/#website",
+      name: "AfterTheAct",
+      alternateName: "After The Act",
+      url: "https://www.aftertheact.com",
+      description: "The unofficial fan community for India's Got Latent.",
+      inLanguage: "en-IN",
+      about: { "@type": "TVSeries", name: "India's Got Latent" },
+      publisher: { "@id": "https://www.aftertheact.com/#org" },
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://www.aftertheact.com/#org",
+      name: "AfterTheAct",
+      url: "https://www.aftertheact.com",
+      logo: "https://www.aftertheact.com/logo.png",
+      description: "Independent, unofficial fan community platform for India's Got Latent. Not affiliated with any official production.",
+    },
+  ],
 };
 
 export default function RootLayout({ children }) {
