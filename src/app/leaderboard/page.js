@@ -4,8 +4,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import LeaderboardClient from "./LeaderboardClient";
 
 export const metadata = {
-  title: "The Leaderboards | Oracle Accuracy and Season Standings",
-  description: "The sharpest predictors and the highest-ranked jurors of the season.",
+  title: "India's Got Latent Leaderboard — Top Predictors & Judges",
+  description: "The Karma Wall: the sharpest predictors and the highest-ranked jurors of the season. Who called India's Got Latent right?",
   alternates: { canonical: "/leaderboard" },
 };
 

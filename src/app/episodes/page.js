@@ -25,8 +25,8 @@ const SCORING_STEPS = [
 ];
 
 export const metadata = {
-  title: "The Lineup",
-  description: "Every episode of the trial. Vote on the live ones, relive the verdicts.",
+  title: "India's Got Latent Episodes — Vote & Verdicts",
+  description: "The Lineup: every episode of India's Got Latent. Vote on the live ones, relive the verdicts, and see how the crowd scored each act.",
   alternates: { canonical: "/episodes" },
 };
 

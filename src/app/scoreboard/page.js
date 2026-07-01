@@ -5,8 +5,8 @@ import ScoreboardPodium from "@/components/ScoreboardPodium";
 import FloatingRevealCountdown from "@/components/FloatingRevealCountdown";
 
 export const metadata = {
-  title: "The Verdict Board",
-  description: "Every score. Every receipt. The community's running judgement of every act.",
+  title: "India's Got Latent Scoreboard — Live Community Scores",
+  description: "The Verdict Board: every score, every receipt — the community's running judgement of every India's Got Latent act, with live crowd scores after each episode.",
   alternates: { canonical: "/scoreboard" },
 };
 
